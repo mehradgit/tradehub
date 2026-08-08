@@ -1,66 +1,117 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+// src/app/page.js
+import { prisma } from "@/lib/prisma";
+import Layout from "@/components/layout/Layout";
+import HeroSection from "@/components/home/HeroSection";
+import StatsBar from "@/components/home/StatsBar";
+import FeaturedProducts from "@/components/home/FeaturedProducts";
+import BuyingRequests from "@/components/home/BuyingRequests";
+import Sidebar from "@/components/home/Sidebar";
 
-export default function Home() {
+export default async function HomePage() {
+  // ====== دریافت داده‌ها از دیتابیس ======
+  const [products, requests, suppliers, buyers, stats] = await Promise.all([
+    // محصولات ویژه (۶ عدد)
+    prisma.product.findMany({
+      where: { isVisible: true },
+      take: 4,
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        unit: true,
+        images: true,
+        badge: true,
+        country: true,
+        countryCode: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }).catch(() => []), // ✅ در صورت خطا، آرایه خالی برگردان
+
+    // درخواست‌های خرید (۴ عدد)
+    prisma.buyingRequest.findMany({
+      where: { isVisible: true },
+      take: 4,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        isUrgent: true,
+        buyerCountry: true,
+        deliveryCountry: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }).catch(() => []), // ✅ در صورت خطا، آرایه خالی برگردان
+
+    // تأمین‌کنندگان برتر (۳ عدد)
+    prisma.user.findMany({
+      where: { role: "SUPPLIER" },
+      take: 3,
+      select: {
+        id: true,
+        name: true,
+        country: true,
+        countryCode: true,
+      },
+      orderBy: { createdAt: "asc" },
+    }).catch(() => []),
+
+    // خریداران فعال (۳ عدد)
+    prisma.user.findMany({
+      where: { role: "BUYER" },
+      take: 3,
+      select: {
+        id: true,
+        name: true,
+        country: true,
+        countryCode: true,
+      },
+      orderBy: { createdAt: "asc" },
+    }).catch(() => []),
+
+    // آمار سایت
+    prisma.$transaction([
+      prisma.user.count({ where: { role: "SUPPLIER" } }),
+      prisma.user.count({ where: { role: "BUYER" } }),
+      prisma.product.count({ where: { isVisible: true } }),
+    ])
+      .then(([supplierCount, buyerCount, productCount]) => ({
+        suppliers: supplierCount || 8200,
+        buyers: buyerCount || 4500,
+        products: productCount || 24000,
+      }))
+      .catch(() => ({
+        suppliers: 8200,
+        buyers: 4500,
+        products: 24000,
+      })),
+  ]);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <Layout>
+      {/* Hero Section */}
+      <HeroSection stats={stats} />
+
+      <div className="container py-3">
+        {/* Stats Bar */}
+        <StatsBar />
+
+        {/* Main Content Grid */}
+        <div className="row g-4">
+          <div className="col-lg-9">
+            {/* Featured Products */}
+            <FeaturedProducts products={products || []} requests={requests || []} />
+
+            {/* Buying Requests (به‌عنوان بخش اضافی) */}
+            <BuyingRequests requests={requests || []} />
+          </div>
+
+          <div className="col-lg-3 ms-auto">
+            {/* Sidebar */}
+            <Sidebar suppliers={suppliers || []} buyers={buyers || []} />
+          </div>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }

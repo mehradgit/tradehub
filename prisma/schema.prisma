@@ -1,0 +1,171 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  role          String   @default("BUYER")
+  plan          String   @default("FREE")
+  companyName   String?
+  country       String?
+  countryCode   String?
+  businessType  String?
+  phone         String?
+  bio           String?
+  address       String?
+  website       String?
+  companyEmail  String?
+  employeeCount String?
+  socialLinks   Json?
+  coverImage    String?
+  logo          String?
+  registrationComplete Boolean @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  products Product[]
+  buyingRequests BuyingRequest[]
+  savedProducts SavedProduct[] // ✅ اضافه شد (رابطه با SavedProduct)
+  productInquiriesAsBuyer    ProductInquiry[] @relation("buyerInquiries")
+  productInquiriesAsSupplier ProductInquiry[] @relation("supplierInquiries")
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  name           String
+  category       String
+  subCategory    String?
+  shortDesc      String   @db.VarChar(255)
+  fullDesc       String?  @db.Text
+  price          Float
+  currency       String   @default("USD")
+  unit           String   @default("kg")
+  moq            Int
+  stock          Int?
+  leadTime       Int?
+  images         Json
+  badge          String?
+  country        String?
+  countryCode    String?
+  origin         String?
+  certifications String?
+  packaging      String?
+  shippingTerms  String?
+  isVisible      Boolean  @default(true)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  savedBy SavedProduct[] // ✅ اضافه شد (رابطه با SavedProduct)
+  inquiries ProductInquiry[]
+}
+
+model BuyingRequest {
+  id              String   @id @default(cuid())
+  title           String
+  category        String
+  subCategory     String?
+  description     String
+  quantity        Int
+  unit            String   @default("kg")
+  budgetRange     String?
+  currency        String   @default("USD")
+  deadline        DateTime?
+  shippingTerms   String?
+  deliveryCountry String
+  packagingReq    String?
+  certifications  String?
+  attachments     Json
+  isUrgent        Boolean  @default(false)
+  isVisible       Boolean  @default(true)
+  buyerCountry    String?
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ====== مدل SavedProduct (جدید) ======
+model SavedProduct {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+// ====== مدل درخواست محصول (خریدار -> تأمین‌کننده) ======
+model ProductInquiry {
+  id             String   @id @default(cuid())
+  productId      String
+  userId         String   // خریدار (کاربری که درخواست می‌دهد)
+  supplierId     String   // تأمین‌کننده (صاحب محصول)
+  message        String   @db.Text
+  quantity       Int?
+  requestedPrice Float?
+  status         String   @default("pending") // pending, responded, accepted, rejected
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  product  Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade, name: "buyerInquiries")
+  supplier User    @relation(fields: [supplierId], references: [id], onDelete: Cascade, name: "supplierInquiries")
+
+  @@index([productId])
+  @@index([userId])
+  @@index([supplierId])
+}

@@ -1,0 +1,101 @@
+// src/app/api/auth/complete-registration/route.js
+import { prisma } from "@/lib/prisma";
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const {
+      email,
+      name,
+      companyName,
+      country,
+      businessType,
+      phone,
+      bio,
+      address,
+      website,
+      companyEmail,
+      employeeCount,
+      role,
+      logo,
+      coverImage,
+    } = body;
+
+    // ====== اعتبارسنجی فیلدهای اجباری ======
+    if (!email || !name || !companyName || !country) {
+      return new Response(
+        JSON.stringify({ message: "Required fields missing" }),
+        { status: 400 }
+      );
+    }
+
+    // ====== پیدا کردن کاربر ======
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: "User not found" }),
+        { status: 404 }
+      );
+    }
+
+    // ====== اگر کاربر قبلاً ثبت‌نام کامل کرده ======
+    if (user.registrationComplete === true) {
+      return new Response(
+        JSON.stringify({ message: "Registration already completed" }),
+        { status: 400 }
+      );
+    }
+
+    // ====== آماده‌سازی داده‌های به‌روزرسانی ======
+    const updateData = {
+      name,
+      companyName,
+      country,
+      businessType: businessType || null,
+      phone: phone || null,
+      bio: bio || null,
+      address: address || null,
+      website: website || null,
+      companyEmail: companyEmail || null,
+      employeeCount: employeeCount || null,
+      role: role || "BUYER",
+      registrationComplete: true,
+      emailVerified: user.emailVerified || new Date(),
+    };
+
+    // ====== ذخیره مسیر تصاویر (در صورت وجود) ======
+    if (logo) {
+      updateData.image = logo;
+      updateData.logo = logo;
+    }
+    if (coverImage) {
+      updateData.coverImage = coverImage;
+    }
+
+    // ====== به‌روزرسانی کاربر ======
+    const updatedUser = await prisma.user.update({
+      where: { email },
+      data: updateData,
+    });
+
+    // ====== حذف رمز عبور از پاسخ ======
+    const { password, ...userWithoutPassword } = updatedUser;
+
+    return new Response(
+      JSON.stringify({
+        message: "Registration completed successfully",
+        user: userWithoutPassword,
+      }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Complete registration error:", error);
+    return new Response(
+      JSON.stringify({
+        message: "Failed to complete registration",
+        error: error.message,
+      }),
+      { status: 500 }
+    );
+  }
+}
