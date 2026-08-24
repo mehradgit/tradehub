@@ -2,6 +2,7 @@
 import Link from "next/link";
 import CountryFlag from "@/components/ui/CountryFlag";
 import { getCountryCode } from "@/utils/countryHelpers";
+import { getCountryViaCode } from "@/lib/countries";
 
 export default function RequestCard({ request }) {
   // ✅ اگر request undefined باشد، چیزی نمایش نده
@@ -13,7 +14,7 @@ export default function RequestCard({ request }) {
   const countryCode = getCountryCode(displayCountry);
 
   return (
-    <Link href={`/requests/${request.id}`} className="text-decoration-none">
+    <Link href={`/requests/${request.requestNumber}/${request.slug}`} className="text-decoration-none">
       <div className={`request-card ${request.isUrgent ? "wanted" : ""}`}>
         <div className="request-header">
           <h3 className="request-title">{request.title}</h3>
@@ -34,7 +35,7 @@ export default function RequestCard({ request }) {
             })}
           </span>
           <span className="meta-item">
-            <CountryFlag countryCode={countryCode} size="14px" />
+            <CountryFlag countryCode={getCountryViaCode(displayCountry)} size="14px" />
             <span style={{ marginLeft: "4px" }}>{displayCountry || "—"}</span>
           </span>
         </div>

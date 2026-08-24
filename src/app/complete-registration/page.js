@@ -2,23 +2,33 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import Layout from "@/components/layout/Layout";
 import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
+import CountrySelect from "@/components/ui/CountrySelect";
+import CategorySelect from "@/components/ui/CategorySelect";
+import RichTextEditor from "@/components/ui/RichTextEditor";
+import { getCountryName } from "@/lib/countries";
 
-export default function EditProfilePage() {
+export default function CompleteRegistrationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status, update } = useSession();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState("");
+
+  const emailFromUrl = searchParams.get("email");
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
     country: "",
+    countryCode: "",
     businessType: "",
     phone: "",
     bio: "",
@@ -27,8 +37,11 @@ export default function EditProfilePage() {
     companyEmail: "",
     employeeCount: "",
     role: "BUYER",
+    primaryCategory: "",
+    primarySubCategory: "",
     logo: null,
     coverImage: null,
+    galleryImages: [],
   });
 
   const [existingLogo, setExistingLogo] = useState(null);
@@ -36,26 +49,64 @@ export default function EditProfilePage() {
   const [uploadProgress, setUploadProgress] = useState({
     logo: 0,
     coverImage: 0,
+    gallery: 0,
   });
   const [isUploading, setIsUploading] = useState({
     logo: false,
     coverImage: false,
+    gallery: false,
   });
 
   const logoInputRef = useRef(null);
   const coverInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
+  // ====== هدایت‌های شرطی ======
+  useEffect(() => {
+    if (status === "loading" || hasRedirected) return;
+
+    if (session?.user?.registrationComplete === true) {
+      router.push("/dashboard");
+      setHasRedirected(true);
+      return;
+    }
+
+    if (!session && !emailFromUrl) {
+      router.push("/login");
+      setHasRedirected(true);
+      return;
+    }
+  }, [session, status, emailFromUrl, router, hasRedirected]);
+
+  // ====== دریافت اطلاعات کاربر ======
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         const res = await fetch("/api/user/profile");
-        if (!res.ok) throw new Error("Failed to fetch profile");
+        if (res.status === 401 || res.status === 403) {
+          router.push("/login");
+          setHasRedirected(true);
+          return;
+        }
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Server error (${res.status})`);
+        }
+
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error("Invalid response from server (expected JSON)");
+        }
+
         const user = await res.json();
 
         setFormData({
           name: user.name || "",
           companyName: user.companyName || "",
           country: user.country || "",
+          countryCode: user.countryCode || "",
           businessType: user.businessType || "",
           phone: user.phone || "",
           bio: user.bio || "",
@@ -64,82 +115,159 @@ export default function EditProfilePage() {
           companyEmail: user.companyEmail || "",
           employeeCount: user.employeeCount || "",
           role: user.role || "BUYER",
+          primaryCategory: user.primaryCategory || "",
+          primarySubCategory: user.primarySubCategory || "",
           logo: null,
           coverImage: null,
+          galleryImages: [],
         });
 
         setExistingLogo(user.logo || user.image || null);
         setExistingCover(user.coverImage || null);
       } catch (err) {
         toast.error(err.message);
+        setError(err.message);
       } finally {
         setFetching(false);
       }
     };
 
     if (status === "loading") return;
-    if (!session) {
-      router.push("/login");
-      return;
+    if (session || emailFromUrl) {
+      fetchUserProfile();
     }
+  }, [session, status, emailFromUrl, router]);
 
-    fetchUserProfile();
-  }, [session, status, router]);
-
+  // ====== تغییرات فیلدها ======
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
   };
 
+  // ====== تغییرات دسته‌بندی ======
+  const handleCategoryChange = (category, subCategory) => {
+    setFormData((prev) => ({
+      ...prev,
+      primaryCategory: category,
+      primarySubCategory: subCategory || "",
+    }));
+    if (error) setError("");
+  };
+
+  // ====== تغییرات توضیحات (Rich Text) ======
+  const handleBioChange = (value) => {
+    setFormData((prev) => ({ ...prev, bio: value }));
+  };
+
+  // ====== آپلود فایل‌ها ======
   const handleFileChange = async (e, fieldName) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.warning("Please select a valid image file.");
-      e.target.value = "";
+    // برای فیلدهای تکی (logo, coverImage)
+    if (fieldName !== "galleryImages") {
+      const file = files[0];
+      if (!file.type.startsWith("image/")) {
+        toast.warning("Please select a valid image file.");
+        e.target.value = "";
+        return;
+      }
+      const sizeMB = file.size / (1024 * 1024);
+      if (sizeMB > 3) {
+        toast.error(
+          `Image size (${sizeMB.toFixed(1)}MB) exceeds the 3MB limit.`,
+        );
+        e.target.value = "";
+        return;
+      }
+
+      try {
+        setIsUploading((prev) => ({ ...prev, [fieldName]: true }));
+        setUploadProgress((prev) => ({ ...prev, [fieldName]: 0 }));
+
+        const result = await uploadFileWithProgress(
+          file,
+          "profiles",
+          (percent) => {
+            setUploadProgress((prev) => ({ ...prev, [fieldName]: percent }));
+          },
+        );
+
+        console.log(`✅ Uploaded ${fieldName}:`, result.path);
+
+        setFormData((prev) => ({
+          ...prev,
+          [fieldName]: result.path,
+        }));
+
+        toast.success(`Image uploaded! (${result.saved}% smaller)`);
+      } catch (err) {
+        toast.error(err.message || "Failed to upload image.");
+      } finally {
+        setIsUploading((prev) => ({ ...prev, [fieldName]: false }));
+        setTimeout(() => {
+          setUploadProgress((prev) => ({ ...prev, [fieldName]: 0 }));
+        }, 1000);
+      }
       return;
     }
 
-    const sizeMB = file.size / (1024 * 1024);
-    if (sizeMB > 3) {
-      toast.error(`Image size (${sizeMB.toFixed(1)}MB) exceeds the 3MB limit.`);
-      e.target.value = "";
-      return;
-    }
+    // ====== آپلود گالری (چند فایل) ======
+    setIsUploading((prev) => ({ ...prev, gallery: true }));
+    setUploadProgress((prev) => ({ ...prev, gallery: 0 }));
 
     try {
-      setIsUploading((prev) => ({ ...prev, [fieldName]: true }));
-      setUploadProgress((prev) => ({ ...prev, [fieldName]: 0 }));
-
-      const result = await uploadFileWithProgress(
-        file,
-        "profiles",
-        (percent) => {
-          setUploadProgress((prev) => ({ ...prev, [fieldName]: percent }));
-        },
-      );
+      const uploadedPaths = [];
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) {
+          toast.warning(`Skipping ${file.name}: not an image.`);
+          continue;
+        }
+        const sizeMB = file.size / (1024 * 1024);
+        if (sizeMB > 3) {
+          toast.warning(`Skipping ${file.name}: size exceeds 3MB.`);
+          continue;
+        }
+        const result = await uploadFileWithProgress(
+          file,
+          "profiles",
+          (percent) => {
+            setUploadProgress((prev) => ({ ...prev, gallery: percent }));
+          },
+        );
+        uploadedPaths.push(result.path);
+      }
 
       setFormData((prev) => ({
         ...prev,
-        [fieldName]: result.path,
+        galleryImages: [...prev.galleryImages, ...uploadedPaths],
       }));
 
-      toast.success(`Image uploaded! (${result.saved}% smaller)`);
+      toast.success(`${uploadedPaths.length} images uploaded for gallery!`);
     } catch (err) {
-      toast.error(err.message || "Failed to upload image.");
+      toast.error(err.message || "Failed to upload gallery images.");
     } finally {
-      setIsUploading((prev) => ({ ...prev, [fieldName]: false }));
+      setIsUploading((prev) => ({ ...prev, gallery: false }));
       setTimeout(() => {
-        setUploadProgress((prev) => ({ ...prev, [fieldName]: 0 }));
+        setUploadProgress((prev) => ({ ...prev, gallery: 0 }));
       }, 1000);
     }
   };
 
-  const removeImage = (fieldName, isExisting = false) => {
+  // ====== حذف تصاویر ======
+  const removeImage = (fieldName, index = null, isExisting = false) => {
+    if (fieldName === "galleryImages" && index !== null) {
+      setFormData((prev) => ({
+        ...prev,
+        galleryImages: prev.galleryImages.filter((_, i) => i !== index),
+      }));
+      return;
+    }
+
     if (isExisting) {
       if (fieldName === "logo") setExistingLogo(null);
-      else setExistingCover(null);
+      else if (fieldName === "coverImage") setExistingCover(null);
     } else {
       setFormData((prev) => ({ ...prev, [fieldName]: null }));
       if (fieldName === "logo" && logoInputRef.current) {
@@ -151,40 +279,61 @@ export default function EditProfilePage() {
     }
   };
 
+  // ====== ارسال فرم ======
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
 
     try {
+      const email = session?.user?.email || emailFromUrl;
+      if (!email) {
+        throw new Error("Email is required");
+      }
+
       const payload = {
-        ...formData,
+        email,
+        name: formData.name,
+        companyName: formData.companyName,
+        countryCode: formData.countryCode,
+        country: formData.country,
+        businessType: formData.businessType || null,
+        phone: formData.phone || null,
+        bio: formData.bio || null,
+        address: formData.address || null,
+        website: formData.website || null,
+        companyEmail: formData.companyEmail || null,
+        employeeCount: formData.employeeCount || null,
+        role: formData.role || "BUYER",
         logo: formData.logo || existingLogo,
         coverImage: formData.coverImage || existingCover,
+        primaryCategory: formData.primaryCategory || null,
+        primarySubCategory: formData.primarySubCategory || null,
+        galleryImages: formData.galleryImages,
       };
 
-      const res = await fetch("/api/user/update-profile", {
-        method: "PUT",
+      const res = await fetch("/api/auth/complete-registration", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to update profile");
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to complete registration");
+      }
 
-      await update();
-      setExistingLogo(payload.logo);
-      setExistingCover(payload.coverImage);
-      setFormData((prev) => ({ ...prev, logo: null, coverImage: null }));
-
-      toast.success("Profile updated successfully!");
-      router.push("/dashboard");
+      await update({ registrationComplete: true });
+      toast.success("Registration completed successfully!");
+      window.location.href = "/dashboard";
     } catch (err) {
+      setError(err.message);
       toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
-  
+
   // ====== وضعیت بارگذاری ======
   if (status === "loading") {
     return (
@@ -198,8 +347,13 @@ export default function EditProfilePage() {
     );
   }
 
-  if (!session && !emailFromUrl) return null;
-  if (session?.user?.registrationComplete === true) return null;
+  if (hasRedirected) {
+    return null;
+  }
+
+  if (!session && !emailFromUrl) {
+    return null;
+  }
 
   return (
     <Layout>
@@ -237,13 +391,13 @@ export default function EditProfilePage() {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* ====== ایمیل (غیرقابل تغییر) ====== */}
+            {/* ====== ایمیل ====== */}
             <div className="form-group mb-3">
               <label className="form-label fw-semibold">Email Address</label>
               <input
                 type="email"
                 className="form-control"
-                value={userEmail}
+                value={session?.user?.email || emailFromUrl || ""}
                 disabled
                 style={{ background: "#f5f5f5" }}
               />
@@ -284,30 +438,24 @@ export default function EditProfilePage() {
               />
             </div>
 
-            {/* ====== کشور و نوع کسب‌وکار ====== */}
+            {/* ====== کشور ====== */}
             <div className="row g-3">
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
                   Country <span className="text-danger">*</span>
                 </label>
-                <select
-                  className="form-select"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
+                <CountrySelect
+                  onChange={(code) => {
+                    const name = getCountryName(code);
+                    setFormData((prev) => ({
+                      ...prev,
+                      countryCode: code,
+                      country: name,
+                    }));
+                  }}
+                  placeholder="Select country"
                   required
-                >
-                  <option value="">Select country</option>
-                  <option>United States</option>
-                  <option>United Kingdom</option>
-                  <option>Germany</option>
-                  <option>France</option>
-                  <option>Canada</option>
-                  <option>Australia</option>
-                  <option>Iran</option>
-                  <option>Turkey</option>
-                  <option>UAE</option>
-                </select>
+                />
               </div>
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Business Type</label>
@@ -327,6 +475,31 @@ export default function EditProfilePage() {
                   <option>Processor</option>
                 </select>
               </div>
+            </div>
+
+            {/* ====== دسته‌بندی محصولات ====== */}
+            <div className="form-group mt-3">
+              <label className="form-label fw-semibold">Product Category</label>
+              <CategorySelect
+                categoryValue={formData.primaryCategory}
+                subCategoryValue={formData.primarySubCategory}
+                onCategoryChange={(cat) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    primaryCategory: cat,
+                    primarySubCategory: "",
+                  }));
+                  if (error) setError("");
+                }}
+                onSubCategoryChange={(sub) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    primarySubCategory: sub,
+                  }));
+                  if (error) setError("");
+                }}
+                categoryRequired={false}
+              />
             </div>
 
             {/* ====== تلفن و ایمیل شرکت ====== */}
@@ -368,19 +541,17 @@ export default function EditProfilePage() {
               />
             </div>
 
-            {/* ====== بیوگرافی ====== */}
+            {/* ====== توضیحات شرکت (Rich Text Editor) ====== */}
             <div className="form-group mt-3">
               <label className="form-label fw-semibold">
                 Company Bio / Description
               </label>
-              <textarea
-                className="form-control"
-                rows="3"
-                name="bio"
-                placeholder="Tell us about your company..."
+              <RichTextEditor
                 value={formData.bio}
-                onChange={handleChange}
-              ></textarea>
+                onChange={handleBioChange}
+                placeholder="Tell us about your company..."
+                height={200}
+              />
             </div>
 
             {/* ====== آدرس و تعداد کارکنان ====== */}
@@ -417,138 +588,183 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* ====== تصاویر ====== */}
+            {/* ====== بخش تصاویر ====== */}
             <h5 className="fw-bold mt-4 mb-3">Company Images</h5>
             <p className="text-muted small">
               <i className="fas fa-info-circle me-1"></i>
               Maximum file size: 3MB · Supported formats: JPG, PNG, WEBP
             </p>
 
-            {/* ====== لوگو ====== */}
-            <div className="form-group mb-3">
-              <label className="form-label fw-semibold">
-                Logo / Profile Image
-              </label>
-              <div className="d-flex align-items-start gap-3 flex-wrap">
+            {/* ====== پیش‌نمایش ترکیبی (کاور + لوگو) ====== */}
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Profile Preview</label>
+              <div
+                className="border rounded-3 position-relative overflow-hidden"
+                style={{
+                  width: "100%",
+                  height: "120px",
+                  background: "var(--light)",
+                }}
+              >
+                {/* کاور */}
                 <div
-                  className="border rounded-3 p-2 text-center"
-                  style={{ width: "120px", height: "120px", cursor: "pointer" }}
-                  onClick={() => logoInputRef.current.click()}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    backgroundImage: formData.coverImage
+                      ? `url(${formData.coverImage})`
+                      : "none",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                />
+                {/* لوگو (دایره‌ای، هم‌پوشانی) */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "-20px",
+                    left: "20px",
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "50%",
+                    border: "3px solid white",
+                    background: formData.logo
+                      ? `url(${formData.logo}) center/cover`
+                      : "var(--gray-light)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                  }}
                 >
-                  {formData.logo ? (
-                    <img
-                      src={formData.logo}
-                      alt="Logo preview"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "8px",
-                      }}
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
-                      <i className="fas fa-camera fa-2x"></i>
-                      <small>Upload</small>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <input
-                    type="file"
-                    ref={logoInputRef}
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={(e) => handleFileChange(e, "logo")}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary btn-sm mb-1"
-                    onClick={() => logoInputRef.current.click()}
-                    disabled={isUploading.logo}
-                  >
-                    {isUploading.logo ? "Uploading..." : "Choose Image"}
-                  </button>
-                  <UploadProgress
-                    progress={uploadProgress.logo}
-                    label="Uploading logo..."
-                  />
-                  {formData.logo && (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-danger mt-1"
-                      onClick={() => removeImage("logo")}
-                    >
-                      <i className="fas fa-trash"></i> Remove
-                    </button>
+                  {!formData.logo && (
+                    <i
+                      className="fas fa-camera text-muted"
+                      style={{ fontSize: "20px" }}
+                    ></i>
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* ====== تصویر کاور ====== */}
-            <div className="form-group mb-3">
-              <label className="form-label fw-semibold">Cover Image</label>
-              <div className="d-flex align-items-start gap-3 flex-wrap">
-                <div
-                  className="border rounded-3 p-2 text-center"
-                  style={{ width: "200px", height: "100px", cursor: "pointer" }}
+              <div className="d-flex gap-2 mt-2">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
                   onClick={() => coverInputRef.current.click()}
+                  disabled={isUploading.coverImage}
                 >
-                  {formData.coverImage ? (
-                    <img
-                      src={formData.coverImage}
-                      alt="Cover preview"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "8px",
-                      }}
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
-                      <i className="fas fa-camera fa-2x"></i>
-                      <small>Upload</small>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <input
-                    type="file"
-                    ref={coverInputRef}
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={(e) => handleFileChange(e, "coverImage")}
-                  />
+                  {isUploading.coverImage ? "Uploading..." : "Upload Cover"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => logoInputRef.current.click()}
+                  disabled={isUploading.logo}
+                >
+                  {isUploading.logo ? "Uploading..." : "Upload Logo"}
+                </button>
+                {(formData.coverImage || formData.logo) && (
                   <button
                     type="button"
-                    className="btn btn-outline-secondary btn-sm mb-1"
-                    onClick={() => coverInputRef.current.click()}
-                    disabled={isUploading.coverImage}
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        logo: null,
+                        coverImage: null,
+                      }));
+                      if (logoInputRef.current) logoInputRef.current.value = "";
+                      if (coverInputRef.current)
+                        coverInputRef.current.value = "";
+                    }}
                   >
-                    {isUploading.coverImage ? "Uploading..." : "Choose Image"}
+                    <i className="fas fa-trash"></i> Reset
                   </button>
-                  <UploadProgress
-                    progress={uploadProgress.coverImage}
-                    label="Uploading cover..."
-                  />
-                  {formData.coverImage && (
+                )}
+              </div>
+              <UploadProgress
+                progress={uploadProgress.coverImage}
+                label="Uploading cover..."
+              />
+              <UploadProgress
+                progress={uploadProgress.logo}
+                label="Uploading logo..."
+              />
+            </div>
+
+            {/* inputهای مخفی برای آپلود */}
+            <input
+              type="file"
+              ref={coverInputRef}
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => handleFileChange(e, "coverImage")}
+            />
+            <input
+              type="file"
+              ref={logoInputRef}
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => handleFileChange(e, "logo")}
+            />
+
+            {/* ====== گالری تصاویر ====== */}
+            <div className="form-group mb-3">
+              <label className="form-label fw-semibold">Gallery Images</label>
+              <div
+                className="image-upload-area"
+                onClick={() => galleryInputRef.current.click()}
+              >
+                <i className="fas fa-images fa-2x text-muted"></i>
+                <p className="mt-2">Click or drag to upload multiple images</p>
+                <button type="button" className="btn btn-secondary btn-sm">
+                  Choose Images
+                </button>
+              </div>
+              <input
+                type="file"
+                ref={galleryInputRef}
+                accept="image/*"
+                multiple
+                style={{ display: "none" }}
+                onChange={(e) => handleFileChange(e, "galleryImages")}
+              />
+              <UploadProgress
+                progress={uploadProgress.gallery}
+                label="Uploading gallery..."
+              />
+
+              {/* پیش‌نمایش تصاویر گالری */}
+              <div className="d-flex flex-wrap gap-2 mt-2">
+                {formData.galleryImages.map((img, index) => (
+                  <div key={index} className="position-relative">
+                    <img
+                      src={img}
+                      alt={`Gallery ${index + 1}`}
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid var(--gray-light)",
+                      }}
+                    />
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-danger mt-1"
-                      onClick={() => removeImage("coverImage")}
+                      className="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle"
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        fontSize: "10px",
+                        padding: 0,
+                      }}
+                      onClick={() => removeImage("galleryImages", index)}
                     >
-                      <i className="fas fa-trash"></i> Remove
+                      ×
                     </button>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -605,7 +821,12 @@ export default function EditProfilePage() {
                 borderColor: "var(--color-primary, #e85d3a)",
                 borderRadius: "50px",
               }}
-              disabled={loading || isUploading.logo || isUploading.coverImage}
+              disabled={
+                loading ||
+                isUploading.logo ||
+                isUploading.coverImage ||
+                isUploading.gallery
+              }
             >
               {loading ? "Submitting..." : "Complete Registration"}
             </button>

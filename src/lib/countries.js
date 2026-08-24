@@ -255,3 +255,11 @@ export const countries = [
 export function getCountryByCode(code) {
   return countries.find((c) => c.code === code);
 }
+export function getCountryName(code) {
+  const found = countries.find((c) => c.code === code);
+  return found ? found.name : code; // اگر پیدا نشد، خود کد را برگردان
+}
+export function getCountryViaCode(name) {
+  const found = countries.find((c) => c.name === name);
+  return found ? found.code : name; // اگر پیدا نشد، خود کد را برگردان
+}

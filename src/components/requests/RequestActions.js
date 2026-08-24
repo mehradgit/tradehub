@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import ShareModal from "@/components/ui/ShareModal";
 import LoginModal from "@/components/ui/LoginModal";
-import ConnectModal from "@/components/ui/ConnectModal";
+import SubmitQuoteModal from "./SubmitQuoteModal"; // ✅ مودال جدید
 
 export default function RequestActions({ request, buyer }) {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function RequestActions({ request, buyer }) {
   const [checking, setChecking] = useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
   // ====== بررسی وضعیت ذخیره ======
   useEffect(() => {
@@ -80,20 +80,13 @@ export default function RequestActions({ request, buyer }) {
     }
   };
 
-  // ====== دکمه Contact Buyer ======
-  const handleContact = () => {
+  // ====== دکمه Submit Quote ======
+  const handleSubmitQuote = () => {
     if (!session) {
       setIsLoginModalOpen(true);
       return;
     }
-    setIsConnectModalOpen(true);
-  };
-
-  // ====== پس از لاگین موفق، ادامه عملیات ======
-  const handleLoginSuccess = () => {
-    // اگر کاربر پس از لاگین بخواهد ذخیره کند، دوباره فراخوانی می‌شود
-    // اما ما از طریق مودال لاگین، پس از بسته شدن، عملیات را ادامه نمی‌دهیم.
-    // در عوض، کاربر دوباره روی دکمه کلیک می‌کند.
+    setIsQuoteModalOpen(true);
   };
 
   return (
@@ -101,6 +94,7 @@ export default function RequestActions({ request, buyer }) {
       <div className="d-flex gap-2 flex-wrap mt-3">
         {/* دکمه Save */}
         <button
+          suppressHydrationWarning
           className={`btn ${isSaved ? "btn-primary" : "btn-outline-secondary"}`}
           onClick={handleSaveToggle}
           disabled={loading || checking}
@@ -123,12 +117,9 @@ export default function RequestActions({ request, buyer }) {
           <i className="fas fa-share-alt me-2"></i> Share
         </button>
 
-        {/* دکمه Contact Buyer */}
-        <button
-          className="btn btn-primary"
-          onClick={handleContact}
-        >
-          <i className="fas fa-envelope me-2"></i> Contact Buyer
+        {/* ✅ دکمه Submit Quote (جایگزین Contact Buyer) */}
+        <button className="btn btn-primary" onClick={handleSubmitQuote}>
+          <i className="fas fa-paper-plane me-2"></i> Submit Quote
         </button>
       </div>
 
@@ -136,7 +127,7 @@ export default function RequestActions({ request, buyer }) {
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        product={request} // از آنجا که ShareModal برای محصول طراحی شده، نام فیلدها را تطبیق دهید
+        product={request} // ShareModal با همان ساختار کار می‌کند
       />
 
       <LoginModal
@@ -145,12 +136,13 @@ export default function RequestActions({ request, buyer }) {
         redirectUrl={pathname}
       />
 
-      <ConnectModal
-        isOpen={isConnectModalOpen}
-        onClose={() => setIsConnectModalOpen(false)}
-        supplierId={buyer.id} // در درخواست، خریدار همان طرف مقابل است
-        supplierName={buyer.name}
-        productId={request.productId} // اگر درخواست به محصول خاصی مرتبط است
+      {/* ✅ مودال ارسال پیشنهاد (با فیلدهای کامل) */}
+      <SubmitQuoteModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
+        requestId={request.id}
+        buyerId={buyer.id}
+        requestTitle={request.title}
       />
     </>
   );

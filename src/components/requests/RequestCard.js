@@ -2,42 +2,52 @@
 import Link from "next/link";
 import CountryFlag from "@/components/ui/CountryFlag";
 import { getCountryCode } from "@/utils/countryHelpers";
+import { getCountryViaCode } from "@/lib/countries";
 
 export default function RequestCard({ request }) {
-  const isUrgent = request.isUrgent;
-  const budget = request.budgetRange || "Negotiable";
-  const date = new Date(request.createdAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  if (!request) {
+    return null;
+  }
 
-  // کشور مورد نمایش (اولویت با deliveryCountry، سپس country کاربر)
-  const displayCountry = request.deliveryCountry || request.user?.country || null;
+  const displayCountry = request.buyerCountry || request.deliveryCountry || null;
   const countryCode = getCountryCode(displayCountry);
 
+  const formattedDate = request.createdAt
+    ? new Date(request.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
+
   return (
-    <Link href={`/requests/${request.id}`} className="text-decoration-none">
-      <div className={`request-card ${isUrgent ? "wanted" : ""}`}>
+    <Link href={`/requests/${request.requestNumber}/${request.slug}`} className="text-decoration-none">
+      <div className={`request-card ${request.isUrgent ? "wanted" : ""}`}>
+        {/* دسته‌بندی */}
+        <div className="request-category">
+          {request.category || "Uncategorized"}
+          {request.subCategory && ` • ${request.subCategory}`}
+        </div>
+
         <div className="request-header">
           <h3 className="request-title">{request.title}</h3>
-          <span className={`request-badge ${isUrgent ? "urgent" : "verified"}`}>
-            {isUrgent ? "Urgent" : "Verified"}
-          </span>
+          {request.isUrgent && (
+            <span className="request-badge wanted-badge">Urgent</span>
+          )}
         </div>
+
+        {/* ✅ خط نارنجی زیر عنوان */}
+        <div className="request-underline" />
+
         <p className="request-description">{request.description}</p>
-        <div className="request-meta">
+
+        <div className="request-footer">
           <span className="meta-item">
-            <i className="fas fa-tag"></i>
-            <span className="budget">{budget}</span>
+            <i className="far fa-calendar-alt"></i> {formattedDate}
           </span>
           <span className="meta-item">
-            <CountryFlag countryCode={countryCode} size="14px" />
+            <CountryFlag countryCode={getCountryViaCode(displayCountry)} size="14px" />
             <span style={{ marginLeft: "4px" }}>{displayCountry || "—"}</span>
-          </span>
-          <span className="meta-item">
-            <i className="far fa-calendar-alt"></i>
-            {date}
           </span>
         </div>
       </div>

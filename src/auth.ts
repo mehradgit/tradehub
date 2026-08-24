@@ -5,14 +5,45 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { generateNumber, generateSlug } from "@/utils/generate";
+
+// ====== آداپتر سفارشی با createUser جدید ======
+const prismaAdapter = PrismaAdapter(prisma);
+
+const customAdapter = {
+  ...prismaAdapter,
+  createUser: async (data) => {
+    // تولید شماره یکتا (با حلقه برای تضمین یکتایی)
+    let profileNumber;
+    let isUnique = false;
+    while (!isUnique) {
+      profileNumber = generateNumber();
+      const existing = await prisma.user.findUnique({
+        where: { profileNumber },
+      });
+      if (!existing) isUnique = true;
+    }
+
+    const slug = generateSlug(data.name || data.email || "user");
+
+    return prisma.user.create({
+      data: {
+        ...data,
+        profileNumber,
+        slug,
+        registrationComplete: false, // کاربر گوگل باید بعداً ثبت‌نام را کامل کند
+      },
+    });
+  },
+};
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: customAdapter, // ✅ استفاده از آداپتر سفارشی
   session: { strategy: "jwt" },
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     Credentials({
       name: "credentials",

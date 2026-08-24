@@ -1,12 +1,40 @@
 // src/components/requests/FilterBar.js
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { categories } from "@/lib/categories";
 
-export default function FilterBar({ categories, currentCategory, currentSearch, currentFilter }) {
+export default function FilterBar({
+  currentCategory,
+  currentSubCategory,
+  currentSearch,
+  currentFilter,
+}) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(currentSearch || "");
+
+  // ====== ساخت لیست سلسله‌مراتبی برای دراپ‌داون ======
+  const categoryOptions = useMemo(() => {
+    const options = [{ value: "", label: "All Categories", isParent: false }];
+    const parents = categories.filter((c) => c.parent === 0);
+    parents.forEach((parent) => {
+      options.push({
+        value: parent.name,
+        label: parent.name,
+        isParent: true,
+      });
+      const children = categories.filter((c) => c.parent === parent.id);
+      children.forEach((child) => {
+        options.push({
+          value: `${parent.name}|${child.name}`,
+          label: `    ${child.name}`,
+          isParent: false,
+        });
+      });
+    });
+    return options;
+  }, []);
 
   const updateUrl = (params) => {
     const url = new URL(window.location.href);
@@ -18,23 +46,40 @@ export default function FilterBar({ categories, currentCategory, currentSearch, 
         url.searchParams.delete(key);
       }
     });
-    // Reset page to 1 when filters change
     url.searchParams.set("page", "1");
     router.push(url.toString());
   };
 
   const handleCategoryChange = (e) => {
-    updateUrl({ category: e.target.value });
+    const selected = e.target.value;
+    if (selected === "") {
+      updateUrl({ category: "", subCategory: "" });
+    } else if (selected.includes("|")) {
+      const [cat, sub] = selected.split("|");
+      updateUrl({ category: cat, subCategory: sub });
+    } else {
+      updateUrl({ category: selected, subCategory: "" });
+    }
   };
 
-  const handleFilterClick = (filter) => {
-    updateUrl({ filter });
+  const handleFilterChange = (e) => {
+    updateUrl({ filter: e.target.value });
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     updateUrl({ search: searchInput });
   };
+
+  const selectedValue = useMemo(() => {
+    if (currentCategory && currentSubCategory) {
+      return `${currentCategory}|${currentSubCategory}`;
+    } else if (currentCategory) {
+      return currentCategory;
+    } else {
+      return "";
+    }
+  }, [currentCategory, currentSubCategory]);
 
   return (
     <div className="filter-bar">
@@ -51,44 +96,37 @@ export default function FilterBar({ categories, currentCategory, currentSearch, 
         </button>
       </form>
       <div className="filter-group">
+        {/* ====== دراپ‌داون واحد دسته‌ها ====== */}
         <select
           name="category"
           onChange={handleCategoryChange}
-          defaultValue={currentCategory || ""}
+          value={selectedValue}
+          style={{ minWidth: "180px" }}
         >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat.category} value={cat.category}>
-              {cat.category}
+          {categoryOptions.map((opt, idx) => (
+            <option
+              key={idx}
+              value={opt.value}
+              style={
+                opt.isParent
+                  ? { fontWeight: "bold", backgroundColor: "#f5f5f5" }
+                  : {}
+              }
+            >
+              {opt.label}
             </option>
           ))}
         </select>
+
+        {/* ====== فیلتر وضعیت (فقط Urgent / All) ====== */}
         <select
-          name="sort"
-          onChange={(e) => updateUrl({ sort: e.target.value })}
-          defaultValue="newest"
+          name="filter"
+          onChange={handleFilterChange}
+          defaultValue={currentFilter || "all"}
         >
-          <option value="newest">Sort By: Newest</option>
-          <option value="oldest">Oldest</option>
+          <option value="all">All Requests</option>
+          <option value="urgent">Urgent Only</option>
         </select>
-        <button
-          className={`btn-filter ${currentFilter === "all" || !currentFilter ? "active" : ""}`}
-          onClick={() => handleFilterClick("all")}
-        >
-          All
-        </button>
-        <button
-          className={`btn-filter ${currentFilter === "urgent" ? "active" : ""}`}
-          onClick={() => handleFilterClick("urgent")}
-        >
-          Urgent
-        </button>
-        <button
-          className={`btn-filter ${currentFilter === "verified" ? "active" : ""}`}
-          onClick={() => handleFilterClick("verified")}
-        >
-          Verified
-        </button>
       </div>
     </div>
   );

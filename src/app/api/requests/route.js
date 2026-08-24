@@ -2,20 +2,17 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { generateNumber, generateSlug } from "@/utils/generate";
 
 export async function POST(request) {
   try {
     const session = await auth();
     if (!session) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
     const body = await request.json();
-
     const {
       title,
       category,
@@ -34,12 +31,14 @@ export async function POST(request) {
       isUrgent,
       isVisible,
     } = body;
+    const requestNumber = generateNumber();
+    const slug = generateSlug(title);
 
     // اعتبارسنجی اولیه
     if (!title || !category || !description || !quantity || !deliveryCountry) {
       return NextResponse.json(
         { message: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,18 +69,25 @@ export async function POST(request) {
         isVisible: isVisible !== undefined ? isVisible : true,
         buyerCountry: user?.country || null,
         userId,
+        requestNumber,
+        slug,
       },
     });
 
     return NextResponse.json(
-      { message: "Buying request created successfully", id: buyingRequest.id },
-      { status: 201 }
+      {
+        message: "Buying request created successfully",
+        id: buyingRequest.id,
+        requestNumber: buyingRequest.requestNumber,
+        slug: buyingRequest.slug,
+      },
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating buying request:", error);
     return NextResponse.json(
       { message: "Failed to create buying request" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

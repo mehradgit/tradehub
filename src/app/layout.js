@@ -1,7 +1,7 @@
 // src/app/layout.js
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
-import "flag-icons/css/flag-icons.min.css";  
+import "flag-icons/css/flag-icons.min.css";
 import { Providers } from "./providers";
 import Script from "next/script";
 import { ToastContainer } from "react-toastify";
@@ -23,6 +23,10 @@ export default function RootLayout({ children }) {
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
         />
       </head>
       <body>

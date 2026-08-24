@@ -1,31 +1,23 @@
 // src/components/ui/ConnectModal.js
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 
-export default function ConnectModal({ isOpen, onClose, supplierId, supplierName, productId }) {
+export default function ConnectModal({
+  isOpen,
+  onClose,
+  supplierId,     // برای حالت محصول
+  supplierName,
+  productId,      // برای حالت محصول
+  targetUserId,   // برای حالت پروفایل
+  targetName,     // برای حالت پروفایل
+  mode = "product", // "product" یا "profile"
+}) {
   const { data: session } = useSession();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [existingMessages, setExistingMessages] = useState([]);
-
-  // دریافت پیام‌های قبلی (اختیاری)
-  useEffect(() => {
-    if (isOpen && session?.user && supplierId) {
-      fetch(`/api/messages?userId=${supplierId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.messages) {
-            setExistingMessages(data.messages);
-          }
-        })
-        .catch(console.error);
-    }
-  }, [isOpen, session, supplierId]);
-
-  if (!isOpen) return null;
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -36,29 +28,39 @@ export default function ConnectModal({ isOpen, onClose, supplierId, supplierName
 
     setLoading(true);
     try {
-      const res = await fetch("/api/messages", {
+      let url, payload;
+
+      if (mode === "product") {
+        // ارسال درخواست محصول
+        url = "/api/product-inquiries";
+        payload = {
+          productId,
+          supplierId,
+          message: message.trim(),
+        };
+      } else {
+        // ارسال پیام مستقیم به کاربر
+        url = "/api/messages";
+        payload = {
+          receiverId: targetUserId,
+          content: message.trim(),
+        };
+      }
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          receiverId: supplierId,
-          content: message.trim(),
-          productId: productId || null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to send message");
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to send message");
+      }
 
       toast.success("Message sent successfully!");
       setMessage("");
-      // اضافه کردن پیام به لیست موجود
-      setExistingMessages((prev) => [
-        ...prev,
-        {
-          ...data.data,
-          sender: { name: session.user.name, image: session.user.image },
-        },
-      ]);
+      onClose();
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -66,9 +68,11 @@ export default function ConnectModal({ isOpen, onClose, supplierId, supplierName
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div
-      className="connect-modal-overlay"
+      className="modal-overlay"
       onClick={onClose}
       style={{
         position: "fixed",
@@ -76,7 +80,7 @@ export default function ConnectModal({ isOpen, onClose, supplierId, supplierName
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0, 0, 0, 0.6)",
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
         backdropFilter: "blur(6px)",
         zIndex: 9999,
         display: "flex",
@@ -86,17 +90,14 @@ export default function ConnectModal({ isOpen, onClose, supplierId, supplierName
       }}
     >
       <div
-        className="connect-modal"
+        className="modal-content"
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#fff",
+          backgroundColor: "white",
           borderRadius: "24px",
           padding: "32px",
           maxWidth: "500px",
           width: "100%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          boxShadow: "0 30px 80px rgba(0,0,0,0.25)",
           position: "relative",
         }}
       >
@@ -109,87 +110,38 @@ export default function ConnectModal({ isOpen, onClose, supplierId, supplierName
             fontSize: "20px",
             background: "none",
             border: "none",
-            color: "#7a6e64",
+            color: "var(--gray)",
             cursor: "pointer",
-            padding: "4px 8px",
-            borderRadius: "8px",
           }}
         >
           <i className="fas fa-times"></i>
         </button>
 
         <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px" }}>
-          Connect with {supplierName || "Supplier"}
+          {mode === "product"
+            ? `Send Request to ${supplierName || "Supplier"}`
+            : `Send Message to ${targetName || "User"}`}
         </h3>
-        <p style={{ color: "#7a6e64", fontSize: "14px", marginBottom: "20px" }}>
-          Send a message to the supplier to discuss this product.
+        <p style={{ fontSize: "14px", color: "var(--gray)", marginBottom: "20px" }}>
+          {mode === "product"
+            ? "Ask about product details, pricing, or availability."
+            : "Write a direct message to this company."}
         </p>
-
-        {/* نمایش پیام‌های قبلی */}
-        {existingMessages.length > 0 && (
-          <div
-            style={{
-              maxHeight: "200px",
-              overflowY: "auto",
-              marginBottom: "16px",
-              border: "1px solid #e8e2da",
-              borderRadius: "12px",
-              padding: "12px",
-              background: "#f9f7f4",
-            }}
-          >
-            {existingMessages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  display: "flex",
-                  justifyContent: msg.senderId === supplierId ? "flex-start" : "flex-end",
-                  marginBottom: "8px",
-                }}
-              >
-                <div
-                  style={{
-                    maxWidth: "80%",
-                    padding: "8px 14px",
-                    borderRadius: "12px",
-                    background: msg.senderId === supplierId ? "#fff" : "#e85d3a",
-                    color: msg.senderId === supplierId ? "#1e1916" : "#fff",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                    fontSize: "14px",
-                    wordWrap: "break-word",
-                  }}
-                >
-                  {msg.content}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
         <form onSubmit={handleSend}>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Write your message here..."
+            placeholder="Your message..."
             rows="4"
             style={{
               width: "100%",
               padding: "12px 16px",
-              border: "1.5px solid #e8e2da",
+              border: "1px solid var(--gray-light)",
               borderRadius: "12px",
               fontSize: "14px",
-              fontFamily: "Inter, sans-serif",
+              fontFamily: "inherit",
               resize: "vertical",
-              outline: "none",
-              transition: "all 0.3s ease",
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = "#e85d3a";
-              e.target.style.boxShadow = "0 0 0 3px rgba(232, 93, 58, 0.1)";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "#e8e2da";
-              e.target.style.boxShadow = "none";
             }}
           />
           <button
@@ -198,16 +150,14 @@ export default function ConnectModal({ isOpen, onClose, supplierId, supplierName
             style={{
               width: "100%",
               padding: "12px",
-              background: "#e85d3a",
+              marginTop: "16px",
+              background: "var(--primary)",
               color: "white",
               border: "none",
               borderRadius: "12px",
-              fontSize: "16px",
               fontWeight: 600,
+              fontSize: "16px",
               cursor: "pointer",
-              marginTop: "12px",
-              transition: "all 0.3s ease",
-              opacity: loading ? 0.6 : 1,
             }}
           >
             {loading ? "Sending..." : "Send Message"}

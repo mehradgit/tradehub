@@ -71,6 +71,7 @@ export default function ProductList({ products: initialProducts }) {
               <th>Price</th>
               <th>Stock</th>
               <th>Status</th>
+              <th>Views</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -98,6 +99,7 @@ export default function ProductList({ products: initialProducts }) {
                   </td>
                   <td>{product.stock ?? "—"}</td>
                   <td>{getStatusBadge(product)}</td>
+                  <td>{product.views || 0}</td>
                   <td>
                     <div className="d-flex gap-2">
                       <Link

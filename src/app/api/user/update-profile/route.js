@@ -19,6 +19,7 @@ export async function PUT(request) {
       name,
       companyName,
       country,
+      countryCode,
       businessType,
       phone,
       bio,
@@ -28,6 +29,8 @@ export async function PUT(request) {
       employeeCount,
       logo,
       coverImage,
+      primaryCategory,      // ✅ اضافه شد
+      primarySubCategory,   // ✅ اضافه شد
     } = body;
 
     // اعتبارسنجی
@@ -38,11 +41,11 @@ export async function PUT(request) {
       );
     }
 
-    // آماده‌سازی داده‌ها
     const updateData = {
       name,
       companyName,
       country,
+      countryCode,
       businessType: businessType || null,
       phone: phone || null,
       bio: bio || null,
@@ -50,6 +53,8 @@ export async function PUT(request) {
       website: website || null,
       companyEmail: companyEmail || null,
       employeeCount: employeeCount || null,
+      primaryCategory: primaryCategory || null,      // ✅ ذخیره
+      primarySubCategory: primarySubCategory || null, // ✅ ذخیره
     };
 
     // تصاویر
@@ -61,7 +66,6 @@ export async function PUT(request) {
       updateData.coverImage = coverImage;
     }
 
-    // به‌روزرسانی کاربر
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: updateData,

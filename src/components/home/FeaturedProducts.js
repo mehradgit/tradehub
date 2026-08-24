@@ -86,44 +86,85 @@
 // }
 
 // src/components/home/FeaturedProductsModern.js
+// "use client";
+
+// import { useState } from "react";
+// import ProductCard from "./ProductCard";
+
+// export default function FeaturedProductsModern({ products }) {
+//   const [activeTab, setActiveTab] = useState("all");
+
+//   const tabs = ["All", "Newest", "Organic", "Best Sellers"];
+
+//   // فیلتر محصولات (در صورت نیاز)
+//   const filteredProducts = products || [];
+
+//   return (
+//     <div className="featured-products-modern">
+//       {/* عنوان */}
+//       <div className="featured-products-modern-header">
+//         <h2>
+//           Discover nature's <span>newest products</span>
+//         </h2>
+//       </div>
+
+//       {/* تب‌ها */}
+//       <div className="featured-products-modern-tabs">
+//         {tabs.map((tab) => (
+//           <button
+//             key={tab}
+//             className={`tab-btn ${activeTab === tab.toLowerCase() ? "active" : ""}`}
+//             onClick={() => setActiveTab(tab.toLowerCase())}
+//           >
+//             {tab}
+//           </button>
+//         ))}
+//       </div>
+
+//       {/* گرید محصولات */}
+//       <div className="featured-products-modern-grid">
+//         {filteredProducts.slice(0, 8).map((product) => (
+//           <ProductCard key={product.id} product={product} />
+//         ))}
+//       </div>
+//     </div>
+//   );
+// }
+
+// src/components/home/FeaturedProducts.js
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import ProductCard from "./ProductCard";
 
-export default function FeaturedProductsModern({ products }) {
+export default function FeaturedProducts({ products }) {
   const [activeTab, setActiveTab] = useState("all");
 
-  const tabs = ["All", "Newest", "Organic", "Best Sellers"];
+  const tabs = ["All", "Best Sellers", "New", "Organic", "Bulk"];
 
-  // فیلتر محصولات (در صورت نیاز)
   const filteredProducts = products || [];
 
   return (
-    <div className="featured-products-modern">
-      {/* عنوان */}
-      <div className="featured-products-modern-header">
-        <h2>
-          Discover nature's <span>newest products</span>
-        </h2>
-      </div>
-
-      {/* تب‌ها */}
-      <div className="featured-products-modern-tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            className={`tab-btn ${activeTab === tab.toLowerCase() ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.toLowerCase())}
-          >
-            {tab}
-          </button>
-        ))}
+    <div className="featured-products-section">
+      {/* ====== هدر با عنوان، زیرنویس و لینک ====== */}
+      <div className="section-header">
+        <div>
+          <h2 className="section-title">
+            <i className="fas fa-star"></i> Featured Products
+          </h2>
+          <p className="section-subtitle">
+            Popular wholesale products from verified suppliers.
+          </p>
+        </div>
+        <Link href="/products" className="section-more">
+          View All <i className="fas fa-arrow-right"></i>
+        </Link>
       </div>
 
       {/* گرید محصولات */}
-      <div className="featured-products-modern-grid">
-        {filteredProducts.slice(0, 8).map((product) => (
+      <div className="compact-products-grid">
+        {filteredProducts.slice(0, 6).map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>

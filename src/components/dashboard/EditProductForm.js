@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import RichTextEditor from "@/components/ui/RichTextEditor";
+import CategorySelect from "@/components/ui/CategorySelect";
+import CountrySelect from "@/components/ui/CountrySelect";
+import UploadProgress from "@/components/ui/UploadProgress";
+import { uploadFileWithProgress } from "@/utils/uploadHelpers";
+import { getCountryName } from "@/lib/countries";
 
 export default function EditProductForm({ product }) {
   const router = useRouter();
@@ -30,14 +35,15 @@ export default function EditProductForm({ product }) {
     packaging: product.packaging || "",
     certifications: product.certifications || "",
     origin: product.origin || "",
+    countryCode: product.countryCode || "",
     isVisible: product.isVisible !== undefined ? product.isVisible : true,
   });
 
   // ====== State تصاویر ======
   const [images, setImages] = useState(product.images || []);
-  const [newImages, setNewImages] = useState([]); // تصاویر جدید آپلود شده
+  const [newImages, setNewImages] = useState([]);
 
-  // ====== تغییرات فیلدها ======
+  // ====== تغییرات فیلدهای عادی ======
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -47,7 +53,21 @@ export default function EditProductForm({ product }) {
     setFormData((prev) => ({ ...prev, fullDesc: value }));
   };
 
-  // ====== آپلود تصاویر جدید ======
+  // ====== تغییرات دسته‌بندی ======
+  const handleCategoryChange = (category, subCategory) => {
+    setFormData((prev) => ({
+      ...prev,
+      category: category,
+      subCategory: subCategory || "",
+    }));
+  };
+
+  // ====== تغییرات کشور ======
+  // const handleCountryChange = (countryCode) => {
+  //   setFormData((prev) => ({ ...prev, origin: countryCode }));
+  // };
+
+  // ====== آپلود تصاویر ======
   const handleImageUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -84,18 +104,17 @@ export default function EditProductForm({ product }) {
     }
   };
 
-  // ====== حذف تصویر موجود ======
+  // ====== حذف تصاویر ======
   const removeExistingImage = (index) => {
     const newImages = [...images];
     newImages.splice(index, 1);
     setImages(newImages);
   };
 
-  // ====== حذف تصویر جدید ======
   const removeNewImage = (index) => {
-    const newImages = [...newImages];
-    newImages.splice(index, 1);
-    setNewImages(newImages);
+    const newAtts = [...newImages];
+    newAtts.splice(index, 1);
+    setNewImages(newAtts);
   };
 
   // ====== ارسال فرم ======
@@ -104,7 +123,6 @@ export default function EditProductForm({ product }) {
     setLoading(true);
 
     try {
-      // ترکیب تصاویر موجود و جدید
       const allImages = [...images, ...newImages];
 
       const payload = {
@@ -164,26 +182,33 @@ export default function EditProductForm({ product }) {
         <div className="row g-3">
           <div className="col-md-6">
             <label className="form-label fw-semibold">Category</label>
-            <input
-              type="text"
-              className="form-control"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
+            <CategorySelect
+              categoryValue={formData.category}
+              subCategoryValue={formData.subCategory}
+              onCategoryChange={(cat) => handleCategoryChange(cat, "")}
+              onSubCategoryChange={(sub) =>
+                handleCategoryChange(formData.category, sub)
+              }
+              categoryRequired={true}
             />
           </div>
           <div className="col-md-6">
-            <label className="form-label fw-semibold">Sub-Category</label>
-            <input
-              type="text"
-              className="form-control"
-              name="subCategory"
-              value={formData.subCategory}
-              onChange={handleChange}
+            <label className="form-label fw-semibold">Country of Origin</label>
+            <CountrySelect
+              value={formData.countryCode}
+              onChange={(code) => {
+                const name = getCountryName(code);
+                setFormData((prev) => ({
+                  ...prev,
+                  origin: name,
+                  countryCode: code,
+                }));
+              }}
+              placeholder="Select country of origin"
             />
           </div>
         </div>
+
         <div className="form-group mt-3">
           <label className="form-label fw-semibold">
             Short Description
@@ -222,6 +247,7 @@ export default function EditProductForm({ product }) {
             {formData.fullDesc?.length || 0}/5000
           </div>
         </div>
+
         {/* ====== قیمت و موجودی ====== */}
         <h5 className="fw-bold mt-4 mb-3">
           <i
@@ -346,16 +372,6 @@ export default function EditProductForm({ product }) {
               onChange={handleChange}
             />
           </div>
-          <div className="col-md-6">
-            <label className="form-label fw-semibold">Country of Origin</label>
-            <input
-              type="text"
-              className="form-control"
-              name="origin"
-              value={formData.origin}
-              onChange={handleChange}
-            />
-          </div>
         </div>
 
         {/* ====== تصاویر ====== */}
@@ -367,7 +383,6 @@ export default function EditProductForm({ product }) {
           Product Images
         </h5>
 
-        {/* نمایش تصاویر موجود */}
         {images.length > 0 && (
           <div className="mb-3">
             <label className="form-label fw-semibold">Current Images</label>
@@ -399,7 +414,6 @@ export default function EditProductForm({ product }) {
           </div>
         )}
 
-        {/* نمایش تصاویر جدید آپلود شده */}
         {newImages.length > 0 && (
           <div className="mb-3">
             <label className="form-label fw-semibold">New Images</label>
@@ -431,7 +445,6 @@ export default function EditProductForm({ product }) {
           </div>
         )}
 
-        {/* دکمه آپلود */}
         <div className="form-group mb-3">
           <label className="form-label fw-semibold">Upload New Images</label>
           <div className="d-flex align-items-center gap-3">

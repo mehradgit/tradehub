@@ -3,445 +3,372 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Layout from "@/components/layout/Layout";
-import StatsCard from "@/components/dashboard/StatsCard";
-import RecentActivity from "@/components/dashboard/RecentActivity";
-import MembershipCard from "@/components/dashboard/MembershipCard";
-import QuickActions from "@/components/dashboard/QuickActions";
-import RecentMessages from "@/components/dashboard/RecentMessages";
+import PerformanceChart from "@/components/dashboard/PerformanceChart";
+import ProductTable from "@/components/dashboard/ProductTable";
+
+// تابع کمکی برای استخراج داده‌های ماهانه
+async function getMonthlyStats(userId) {
+  // بازدیدهای ماهانه محصولات (7 ماه اخیر)
+  const productViewsRaw = await prisma.$queryRaw`
+    SELECT 
+      DATE_FORMAT(createdAt, '%Y-%m') as month,
+      SUM(views) as totalViews
+    FROM Product
+    WHERE userId = ${userId}
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL 7 MONTH)
+    GROUP BY DATE_FORMAT(createdAt, '%Y-%m')
+    ORDER BY month ASC
+  `;
+  
+  // بازدیدهای ماهانه درخواست‌های خرید
+  const requestViewsRaw = await prisma.$queryRaw`
+    SELECT 
+      DATE_FORMAT(createdAt, '%Y-%m') as month,
+      SUM(views) as totalViews
+    FROM BuyingRequest
+    WHERE userId = ${userId}
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL 7 MONTH)
+    GROUP BY DATE_FORMAT(createdAt, '%Y-%m')
+    ORDER BY month ASC
+  `;
+
+  // درخواست‌های دریافتی ماهانه (به‌عنوان تأمین‌کننده)
+  const inquiriesRaw = await prisma.$queryRaw`
+    SELECT 
+      DATE_FORMAT(createdAt, '%Y-%m') as month,
+      COUNT(*) as totalInquiries
+    FROM ProductInquiry
+    WHERE supplierId = ${userId}
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL 7 MONTH)
+    GROUP BY DATE_FORMAT(createdAt, '%Y-%m')
+    ORDER BY month ASC
+  `;
+
+  // ترکیب داده‌ها برای ۷ ماه اخیر
+  const months = [];
+  const viewsData = [];
+  const inquiriesData = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthKey = d.toISOString().slice(0, 7); // 'YYYY-MM'
+    months.push(d.toLocaleString('en-US', { month: 'short' }));
+
+    // پیدا کردن مجموع بازدیدها برای این ماه
+    const productView = productViewsRaw.find(row => row.month === monthKey);
+    const requestView = requestViewsRaw.find(row => row.month === monthKey);
+    const totalViews = (productView?.totalViews || 0) + (requestView?.totalViews || 0);
+    viewsData.push(totalViews);
+
+    // پیدا کردن تعداد درخواست‌ها برای این ماه
+    const inquiry = inquiriesRaw.find(row => row.month === monthKey);
+    inquiriesData.push(inquiry?.totalInquiries || 0);
+  }
+
+  return { viewsData, inquiriesData };
+}
 
 export default async function DashboardPage() {
-  // ====== احراز هویت ======
   const session = await auth();
-  if (!session) {
-    redirect("/login");
-  }
+  if (!session) redirect("/login");
 
   const userId = session.user.id;
 
-  // ====== دریافت اطلاعات کامل کاربر از دیتابیس ======
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      logo: true,
-      coverImage: true,
-      bio: true,
-      address: true,
-      phone: true,
-      website: true,
-      companyEmail: true,
-      employeeCount: true,
-      companyName: true,
-      country: true,
-      role: true,
-      plan: true,
-      createdAt: true,
-      registrationComplete: true,
-      _count: {
-        select: {
-          products: { where: { isVisible: true } },
-          buyingRequests: { where: { isVisible: true } },
-        },
-      },
-    },
-  });
+  // ====== کوئری‌های هم‌زمان ======
+  const [
+    productCount,
+    requestCount,
+    totalProductViews,
+    totalRequestViews,
+    totalIncomingInquiries,
+    recentInquiries,
+    recentProducts,
+    recentRequests,
+    products,
+    buyingRequests,
+    monthlyStats,
+  ] = await Promise.all([
+    // 1. تعداد محصولات فعال
+    prisma.product.count({ where: { userId, isVisible: true } }),
 
-  if (!user || !user.registrationComplete) {
-    redirect("/complete-registration");
-  }
+    // 2. تعداد درخواست‌های خرید
+    prisma.buyingRequest.count({ where: { userId } }),
 
-  // ====== آمار ======
-  const stats = {
-    products: user._count.products || 0,
-    requests: user._count.buyingRequests || 0,
-    orders: 12, // نمونه
-    messages: 18, // نمونه
+    // 3. مجموع بازدید محصولات
+    prisma.product.aggregate({ where: { userId }, _sum: { views: true } }),
+
+    // 4. مجموع بازدید درخواست‌ها
+    prisma.buyingRequest.aggregate({ where: { userId }, _sum: { views: true } }),
+
+    // 5. تعداد کل درخواست‌های دریافتی (به عنوان تامین‌کننده)
+    prisma.productInquiry.count({ where: { supplierId: userId } }),
+
+    // 6. درخواست‌های جدید (برای فعالیت‌های اخیر - ۴ مورد)
+    prisma.productInquiry.findMany({
+      where: { supplierId: userId },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+      include: { product: { select: { name: true } }, user: { select: { name: true } } },
+    }),
+
+    // 7. محصولات جدید
+    prisma.product.findMany({
+      where: { userId },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+      select: { name: true, createdAt: true },
+    }),
+
+    // 8. درخواست‌های خرید جدید
+    prisma.buyingRequest.findMany({
+      where: { userId },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+      select: { title: true, createdAt: true },
+    }),
+
+    // 9. لیست محصولات برای جدول (۱۰ مورد)
+    prisma.product.findMany({
+      where: { userId },
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { inquiries: true } } },
+    }),
+
+    // 10. لیست درخواست‌های خرید
+    prisma.buyingRequest.findMany({
+      where: { userId },
+      take: 3,
+      orderBy: { createdAt: "desc" },
+    }),
+
+    // 11. داده‌های ماهانه برای نمودار
+    getMonthlyStats(userId),
+  ]);
+
+  // ====== ترکیب و مرتب‌سازی فعالیت‌های اخیر (حداکثر ۴ مورد) ======
+  const activities = [
+    ...recentInquiries.map((inq) => ({
+      type: "inquiry",
+      icon: "fa-message",
+      bgClass: "primary-bg",
+      title: `New inquiry for "${inq.product.name}" from ${inq.user.name}`,
+      time: new Date(inq.createdAt),
+    })),
+    ...recentProducts.map((prod) => ({
+      type: "product",
+      icon: "fa-box",
+      bgClass: "gray-bg",
+      title: `New product "${prod.name}" published`,
+      time: new Date(prod.createdAt),
+    })),
+    ...recentRequests.map((req) => ({
+      type: "request",
+      icon: "fa-cart-shopping",
+      bgClass: "secondary-bg",
+      title: `New buying request "${req.title}" posted`,
+      time: new Date(req.createdAt),
+    })),
+  ]
+    .sort((a, b) => b.time - a.time)
+    .slice(0, 4);
+
+  const formatTime = (date) => {
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
-  // ====== فعالیت‌های اخیر (نمونه) ======
-  const recentActivities = [
-    {
-      id: 1,
-      activity: "New order: Organic Coffee Beans (500kg)",
-      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      status: "processing",
-    },
-    {
-      id: 2,
-      activity: "Quote received for Raw Honey",
-      date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      status: "pending",
-    },
-    {
-      id: 3,
-      activity: "Product added: Premium Saffron",
-      date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-      status: "completed",
-    },
-    {
-      id: 4,
-      activity: "Order #1042 shipped: Olive Oil",
-      date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      status: "completed",
-    },
-    {
-      id: 5,
-      activity: "Buying request expired: Organic Quinoa",
-      date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-      status: "cancelled",
-    },
-  ];
-
-  // ====== پیام‌های اخیر (نمونه) ======
-  const recentMessages = [
-    {
-      id: 1,
-      sender: "James Davis",
-      initials: "JD",
-      preview: "Hi, I'm interested in your organic coffee beans...",
-      time: "2 hours ago",
-    },
-    {
-      id: 2,
-      sender: "Sarah Mitchell",
-      initials: "SM",
-      preview: "Can you provide a quote for 500kg of honey?",
-      time: "5 hours ago",
-    },
-    {
-      id: 3,
-      sender: "Robert King",
-      initials: "RK",
-      preview: "Order #1042 has been shipped. Tracking:...",
-      time: "Yesterday",
-    },
-  ];
-
-  // ====== اطلاعات پلن ======
-  const planInfo = {
-    FREE: {
-      badge: "Free",
-      price: "$0",
-      period: "forever",
-      features: ["5 products", "3 requests/month", "Standard support"],
-    },
-    BRONZE: {
-      badge: "Bronze",
-      price: "$19",
-      period: "/ month",
-      features: [
-        "25 products",
-        "10 requests/month",
-        "Priority support",
-        "Basic analytics",
-      ],
-    },
-    SILVER: {
-      badge: "Popular",
-      price: "$39",
-      period: "/ month",
-      features: [
-        "100 products",
-        "25 requests/month",
-        "24/7 priority support",
-        "Advanced analytics",
-        "Verified badge",
-      ],
-    },
-    GOLD: {
-      badge: "Gold",
-      price: "$79",
-      period: "/ month",
-      features: [
-        "Unlimited products",
-        "Unlimited requests",
-        "Premium support",
-        "Advanced analytics + API",
-        "Gold badge",
-        "Free trade assurance",
-      ],
-    },
-  };
-
-  const currentPlan = user.plan || "FREE";
-  const plan = planInfo[currentPlan] || planInfo.FREE;
-
-  // ====== اطلاعات نمایشی ======
-  const displayName = user.companyName || user.name || "User";
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  const coverImage = user.coverImage || null;
-  const logo = user.logo || user.image || null;
-  const isVerified = user.plan === "GOLD" || user.plan === "SILVER";
-  const isPremium = user.plan === "GOLD";
-  const roleLabel = user.role === "SUPPLIER" ? "Supplier" : "Buyer";
-  const memberSince = new Date(user.createdAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const totalViews = (totalProductViews._sum.views || 0) + (totalRequestViews._sum.views || 0);
 
   return (
-    <Layout>
-      <div className="container py-4">
-        {/* ====== هدر شرکت ====== */}
-        <div className="dashboard-company-header">
-          {/* تصویر کاور */}
-          <div className="company-cover">
-            {coverImage ? (
-              <img src={coverImage} alt={`${displayName} cover`} />
+    <>
+      {/* ====== WELCOME ====== */}
+      <div className="welcome-box">
+        <div>
+          <div className="welcome-title">Welcome back, {session.user.name || "User"} 👋</div>
+          <div className="welcome-text">
+            You have {productCount} active products and {requestCount} buying requests today.
+          </div>
+        </div>
+        <div className="welcome-actions">
+          <Link href="/products/new" className="btn-white">
+            <i className="fa-solid fa-plus"></i> Add Product
+          </Link>
+          <Link href="/requests/new" className="btn-outline-white">
+            <i className="fa-solid fa-cart-plus"></i> Post Buying Request
+          </Link>
+        </div>
+      </div>
+
+      {/* ====== STATS (لینک‌دار) ====== */}
+      <div className="stats-grid">
+        <Link href="/dashboard/products" className="stat-card" style={{ textDecoration: "none" }}>
+          <div className="stat-icon primary-bg"><i className="fa-solid fa-box"></i></div>
+          <div>
+            <div className="stat-number">{productCount}</div>
+            <div className="stat-label">Active Products</div>
+            <div className="stat-change"><i className="fa-solid fa-arrow-up"></i> Active</div>
+          </div>
+        </Link>
+        <Link href="/dashboard/requests" className="stat-card" style={{ textDecoration: "none" }}>
+          <div className="stat-icon secondary-bg"><i className="fa-solid fa-cart-shopping"></i></div>
+          <div>
+            <div className="stat-number">{requestCount}</div>
+            <div className="stat-label">Buying Requests</div>
+            <div className="stat-change">{requestCount > 0 ? "Active" : "No active"}</div>
+          </div>
+        </Link>
+        <Link href="/dashboard/inquiries" className="stat-card" style={{ textDecoration: "none" }}>
+          <div className="stat-icon accent-bg"><i className="fa-solid fa-eye"></i></div>
+          <div>
+            <div className="stat-number">{totalViews.toLocaleString()}</div>
+            <div className="stat-label">Total Views</div>
+            <div className="stat-change">↑ Across all listings</div>
+          </div>
+        </Link>
+        <Link href="/dashboard/inquiries" className="stat-card" style={{ textDecoration: "none" }}>
+          <div className="stat-icon gray-bg"><i className="fa-solid fa-envelope"></i></div>
+          <div>
+            <div className="stat-number">{totalIncomingInquiries}</div>
+            <div className="stat-label">Total Inquiries</div>
+            <div className="stat-change">Incoming requests</div>
+          </div>
+        </Link>
+      </div>
+
+      {/* ====== CHART + ACTIVITY ====== */}
+      <div className="dashboard-grid">
+        <div className="card-box">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Business Performance</div>
+              <div className="card-subtitle">Product views and inquiries over the last 7 months</div>
+            </div>
+          </div>
+          {/* پاس‌دادن داده‌های واقعی */}
+          <PerformanceChart
+            viewsData={monthlyStats.viewsData}
+            inquiriesData={monthlyStats.inquiriesData}
+          />
+        </div>
+
+        {/* ====== RECENT ACTIVITY (حداکثر ۴ مورد) ====== */}
+        <div className="card-box">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Recent Activity</div>
+              <div className="card-subtitle">Latest activity on your account</div>
+            </div>
+            <Link href="/dashboard/activity" className="view-all">View All</Link>
+          </div>
+          <div className="activity">
+            {activities.length > 0 ? (
+              activities.map((act, i) => (
+                <div key={i} className="activity-item">
+                  <div className={`activity-icon ${act.bgClass}`}>
+                    <i className={`fa-solid ${act.icon}`}></i>
+                  </div>
+                  <div>
+                    <div className="activity-title">{act.title}</div>
+                    <div className="activity-time">{formatTime(act.time)}</div>
+                  </div>
+                </div>
+              ))
             ) : (
-              <div className="default-cover">
-                <i className="fas fa-building"></i>
+              <div className="activity-item">
+                <div className="activity-time">No recent activity</div>
               </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* اطلاعات شرکت */}
-          <div className="company-info-wrapper">
-            <div className="company-logo">
-              {logo ? (
-                <img src={logo} alt={displayName} />
-              ) : (
-                <span className="initials">{initials}</span>
-              )}
+      {/* ====== PRODUCTS (با دکمه View All) ====== */}
+      <ProductTable products={products} />
+
+      {/* ====== BUYING REQUESTS + QUICK ACTIONS ====== */}
+      <div className="bottom-grid">
+        <div className="card-box">
+          <div className="card-header">
+            <div>
+              <div className="card-title">My Buying Requests</div>
+              <div className="card-subtitle">Latest purchasing requirements</div>
             </div>
-            <div className="company-details">
-              <div className="d-flex align-items-center gap-3 flex-wrap">
-                <h2 className="company-name">{displayName}</h2>
-                {isVerified && (
-                  <span className="badge bg-success px-3 py-2">✓ Verified</span>
-                )}
-                {isPremium && (
-                  <span
-                    className="badge px-3 py-2"
-                    style={{
-                      background: "var(--secondary)",
-                      color: "var(--black)",
-                    }}
-                  >
-                    ★ Premium
-                  </span>
-                )}
+            <Link href="/dashboard/requests" className="view-all">View All</Link>
+          </div>
+          <div className="requests-list">
+            {buyingRequests.length > 0 ? (
+              buyingRequests.map((req) => (
+                <div key={req.id} className="request-item">
+                  <div className="request-info">
+                    <div className="request-icon">
+                      <i className="fa-solid fa-basket-shopping"></i>
+                    </div>
+                    <div className="request-content">
+                      <div className="request-title">
+                        {req.title || "Untitled Request"}
+                      </div>
+                      <div className="request-meta">
+                        {req.category || "Uncategorized"} • Posted{" "}
+                        {new Date(req.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="request-extra">
+                    <div className="quantity">
+                      {req.quantity} {req.unit}
+                    </div>
+                    <span
+                      className={`status ${req.isUrgent ? "urgent" : "active"}`}
+                    >
+                      {req.isUrgent ? "Urgent" : "Active"}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-muted" style={{ fontSize: "12px", padding: "10px 0" }}>
+                No buying requests yet.
               </div>
-              <div className="company-meta">
-                <span>
-                  <i className="fas fa-tag"></i> {roleLabel}
-                </span>
-                {user.businessType && (
-                  <span>
-                    <i className="fas fa-briefcase"></i> {user.businessType}
-                  </span>
-                )}
-                {user.country && (
-                  <span>
-                    <i className="fas fa-map-pin"></i> {user.country}
-                  </span>
-                )}
-                {user.employeeCount && (
-                  <span>
-                    <i className="fas fa-users"></i> {user.employeeCount}{" "}
-                    employees
-                  </span>
-                )}
-                <span>
-                  <i className="fas fa-calendar-alt"></i> Member since{" "}
-                  {new Date(user.createdAt).getFullYear()}
-                </span>
-              </div>
-              {user.bio && (
-                <p className="company-bio">{user.bio}</p>
-              )}
-              <div className="company-contact">
-                {user.phone && (
-                  <a href={`tel:${user.phone}`} className="contact-link">
-                    <i className="fas fa-phone"></i> {user.phone}
-                  </a>
-                )}
-                {(user.companyEmail || user.email) && (
-                  <a
-                    href={`mailto:${user.companyEmail || user.email}`}
-                    className="contact-link"
-                  >
-                    <i className="fas fa-envelope"></i>{" "}
-                    {user.companyEmail || user.email}
-                  </a>
-                )}
-                {user.website && (
-                  <a
-                    href={user.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="contact-link"
-                  >
-                    <i className="fas fa-globe"></i> {user.website.replace(/^https?:\/\//, "")}
-                  </a>
-                )}
-                {user.address && (
-                  <span className="contact-link">
-                    <i className="fas fa-location-dot"></i> {user.address}
-                  </span>
-                )}
-              </div>
-              <div className="company-actions">
-                <Link href="/dashboard/edit-profile" className="btn btn-primary btn-sm">
-                  <i className="fas fa-user-edit me-1"></i> Edit Profile
-                </Link>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
-
-        {/* ====== Stats Grid ====== */}
-        <StatsCard stats={stats} />
-
-        {/* ====== Dashboard Grid ====== */}
-        <div className="dashboard-grid">
-          {/* ====== LEFT COLUMN ====== */}
-          <div>
-            {/* Recent Activity */}
-            <RecentActivity activities={recentActivities} />
-
-            {/* Membership Benefits Preview */}
-            <div className="activity-section" style={{ marginBottom: 0 }}>
-              <div className="section-header" style={{ marginBottom: "16px" }}>
-                <h3 style={{ fontSize: "16px" }}>
-                  <i className="fas fa-rocket"></i> Your Membership Benefits
-                </h3>
-                <Link href="/plans" style={{ fontSize: "13px" }}>
-                  Upgrade
-                </Link>
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: "12px",
-                }}
-              >
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "12px",
-                    background: "var(--light)",
-                    borderRadius: "var(--radius)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "20px",
-                      fontWeight: 800,
-                      color: "var(--accent)",
-                    }}
-                  >
-                    {currentPlan === "FREE"
-                      ? "5"
-                      : currentPlan === "BRONZE"
-                      ? "25"
-                      : currentPlan === "SILVER"
-                      ? "100"
-                      : "∞"}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--gray)" }}>
-                    Product Listings
-                  </div>
-                </div>
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "12px",
-                    background: "var(--light)",
-                    borderRadius: "var(--radius)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "20px",
-                      fontWeight: 800,
-                      color: "var(--secondary)",
-                    }}
-                  >
-                    {currentPlan === "FREE"
-                      ? "3"
-                      : currentPlan === "BRONZE"
-                      ? "10"
-                      : currentPlan === "SILVER"
-                      ? "25"
-                      : "∞"}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--gray)" }}>
-                    Requests / Month
-                  </div>
-                </div>
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "12px",
-                    background: "var(--light)",
-                    borderRadius: "var(--radius)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "20px",
-                      fontWeight: 800,
-                      color: "var(--primary)",
-                    }}
-                  >
-                    ∞
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--gray)" }}>
-                    Messages
-                  </div>
-                </div>
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "12px",
-                    background: "var(--light)",
-                    borderRadius: "var(--radius)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "20px",
-                      fontWeight: 800,
-                      color: "var(--primary-dark)",
-                    }}
-                  >
-                    {currentPlan === "GOLD" ? "✓" : "—"}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--gray)" }}>
-                    Verified Badge
-                  </div>
-                </div>
-              </div>
+        <div className="card-box">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Quick Actions</div>
+              <div className="card-subtitle">Frequently used actions</div>
             </div>
           </div>
-
-          {/* ====== RIGHT SIDEBAR ====== */}
-          <div className="sidebar">
-            {/* Membership Card */}
-            <MembershipCard plan={plan} currentPlan={currentPlan} />
-
-            {/* Quick Actions */}
-            <QuickActions />
-
-            {/* Recent Messages */}
-            <RecentMessages messages={recentMessages} />
+          <div className="quick-actions">
+            <Link href="/products/new" className="quick-action">
+              <i className="fa-solid fa-plus"></i>
+              <span>Add Product</span>
+            </Link>
+            <Link href="/requests/new" className="quick-action">
+              <i className="fa-solid fa-cart-plus"></i>
+              <span>Post Request</span>
+            </Link>
+            <Link href="/dashboard/analytics" className="quick-action">
+              <i className="fa-solid fa-chart-column"></i>
+              <span>View Analytics</span>
+            </Link>
+            <Link href="/dashboard/profile" className="quick-action">
+              <i className="fa-solid fa-building"></i>
+              <span>Company Profile</span>
+            </Link>
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

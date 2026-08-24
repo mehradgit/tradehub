@@ -17,7 +17,9 @@ export default auth(function proxy(req) {
     "/requests",
     "/suppliers",
   ];
-  const isPublicPath = publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const isPublicPath = publicPaths.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
   if (isPublicPath) {
     return NextResponse.next();
@@ -27,7 +29,10 @@ export default auth(function proxy(req) {
     return NextResponse.next();
   }
 
-  if (session.user?.registrationComplete === false && pathname !== "/complete-registration") {
+  if (
+    session.user?.registrationComplete === false &&
+    pathname !== "/complete-registration"
+  ) {
     return NextResponse.redirect(new URL("/complete-registration", req.url));
   }
 
@@ -37,6 +42,6 @@ export default auth(function proxy(req) {
 // ✅ The config object remains the same
 export const config = {
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|login|register|complete-registration).*)",
+    "/((?!api|uploads|_next/static|_next/image|favicon.ico|login|register|complete-registration).*)",
   ],
 };

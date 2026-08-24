@@ -13,18 +13,17 @@ export default function Header() {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  // لیست لینک‌های منو
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/products", label: "Products" },
-    { href: "/suppliers", label: "Suppliers" },
-    { href: "/buyers", label: "Buyers" },
+    { href: "/profiles", label: "profiles" },
     { href: "/requests", label: "Requests" },
     { href: "/about", label: "About" },
   ];
 
   return (
-    <header className="bg-white shadow-sm border-bottom">
+    // ✅ کلاس sticky-top اضافه شد
+    <header className="bg-white shadow-sm border-bottom sticky-top">
       <div className="container">
         <nav className="navbar navbar-expand-lg navbar-light py-2">
           {/* Logo */}

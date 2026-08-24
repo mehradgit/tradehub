@@ -1,24 +1,30 @@
 // src/components/home/BuyingRequests.js
+import Link from "next/link";
 import RequestCard from "./RequestCard";
 
 export default function BuyingRequests({ requests }) {
+  console.log(requests)
   return (
-    <div className="mb-5">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3 className="fw-bold">
-          <i className="fas fa-shopping-cart me-2" style={{ color: "var(--color-primary, #e85d3a)" }}></i>
-          Buying Requests
-        </h3>
-        <a href="/requests" className="text-decoration-none fw-semibold">
-          View All <i className="fas fa-arrow-right ms-1"></i>
-        </a>
+    <div className="featured-products-section">
+      {/* ====== هدر با عنوان، زیرنویس و لینک ====== */}
+      <div className="section-header">
+        <div>
+          <h2 className="section-title">
+            <i className="fas fa-shopping-cart"></i> Buying Requests
+          </h2>
+          <p className="section-subtitle">
+            Connect with buyers actively looking for food products.
+          </p>
+        </div>
+        <Link href="/requests" className="section-more">
+          View All <i className="fas fa-arrow-right"></i>
+        </Link>
       </div>
 
-      <div className="row g-3">
+      {/* گرید درخواست‌ها */}
+      <div className="requests-grid">
         {requests.map((request) => (
-          <div key={request.id} className="col-md-6 col-lg-3">
-            <RequestCard request={request} />
-          </div>
+          <RequestCard key={request.id} request={request} />
         ))}
       </div>
     </div>

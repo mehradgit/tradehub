@@ -3,91 +3,55 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="mt-5" style={{ background: "#1e1916", color: "white" }}>
-      <div className="container py-5">
-        <div className="row g-4">
-          <div className="col-md-3">
-            <h4 className="fw-bold mb-3">
-              Food<span style={{ color: "var(--color-secondary, #f4b942)" }}>Hub</span>
-            </h4>
-            <p className="text-white-50" style={{ fontSize: "14px" }}>
-              The global B2B food marketplace. Connect, trade, grow.
+    <footer className="footer">
+      <div className="container">
+        <div className="footer-grid">
+          <div>
+            <Link href="/" className="logo" style={{ color: "white", textDecoration: "none" }}>
+              <div className="logo-icon">
+                <i className="fa-solid fa-leaf"></i>
+              </div>
+              Food<span>TradeHub</span>
+            </Link>
+            <p style={{ marginTop: "18px", color: "rgba(255,255,255,0.67)", fontSize: "14px", maxWidth: "360px" }}>
+              A global B2B marketplace connecting food suppliers, manufacturers, exporters, wholesalers and buyers.
             </p>
           </div>
-          <div className="col-md-3">
-            <h5 className="fw-bold mb-3">For Suppliers</h5>
-            <ul className="list-unstyled">
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Sell on Platform
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Memberships
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Marketing Solutions
-                </Link>
-              </li>
+
+          <div>
+            <h3>For Suppliers</h3>
+            <ul className="footer-links">
+              <li><Link href="#">Sell Products</Link></li>
+              <li><Link href="#">Supplier Membership</Link></li>
+              <li><Link href="#">Business Verification</Link></li>
+              <li><Link href="#">Marketing Solutions</Link></li>
             </ul>
           </div>
-          <div className="col-md-3">
-            <h5 className="fw-bold mb-3">For Buyers</h5>
-            <ul className="list-unstyled">
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Post Request
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Find Suppliers
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Quality Inspection
-                </Link>
-              </li>
+
+          <div>
+            <h3>For Buyers</h3>
+            <ul className="footer-links">
+              <li><Link href="#">Post Buying Request</Link></li>
+              <li><Link href="#">Find Suppliers</Link></li>
+              <li><Link href="#">Request Quotations</Link></li>
+              <li><Link href="#">Trade Services</Link></li>
             </ul>
           </div>
-          <div className="col-md-3">
-            <h5 className="fw-bold mb-3">Support</h5>
-            <ul className="list-unstyled">
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Help Center
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Contact Us
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link href="#" className="text-white-50 text-decoration-none">
-                  <i className="fas fa-chevron-right me-2" style={{ color: "var(--color-secondary, #f4b942)", fontSize: "10px" }}></i>
-                  Privacy Policy
-                </Link>
-              </li>
+
+          <div>
+            <h3>Support</h3>
+            <ul className="footer-links">
+              <li><Link href="#">Help Center</Link></li>
+              <li><Link href="#">Contact Us</Link></li>
+              <li><Link href="#">Privacy Policy</Link></li>
+              <li><Link href="#">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
-        <div className="border-top border-secondary border-opacity-25 pt-3 mt-3 text-center">
-          <p className="text-white-50 small">
-            © 2026 FoodHub. All rights reserved. | B2B Food Marketplace
-          </p>
+
+        <div className="footer-bottom">
+          <span>© 2026 FoodTradeHub. All rights reserved.</span>
+          <span>Global B2B Food Marketplace</span>
         </div>
       </div>
     </footer>

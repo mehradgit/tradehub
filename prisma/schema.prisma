@@ -10,6 +10,8 @@ datasource db {
 
 model User {
   id            String   @id @default(cuid())
+  profileNumber Int      @unique
+  slug          String
   name          String?
   email         String   @unique
   emailVerified DateTime?
@@ -31,13 +33,15 @@ model User {
   coverImage    String?
   logo          String?
   registrationComplete Boolean @default(false)
-
+  galleryImages Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   accounts Account[]
   sessions Session[]
   products Product[]
+  primaryCategory   String?
+  primarySubCategory String?
   buyingRequests BuyingRequest[]
   savedProducts SavedProduct[] // ✅ اضافه شد (رابطه با SavedProduct)
   productInquiriesAsBuyer    ProductInquiry[] @relation("buyerInquiries")
@@ -45,10 +49,16 @@ model User {
   sentMessages     Message[] @relation("sentMessages")
   receivedMessages Message[] @relation("receivedMessages")
   savedRequests SavedRequest[] 
+  supplierQuotes Quote[] @relation("QuoteSupplier")
+  buyerQuotes    Quote[] @relation("QuoteBuyer")
+  savedProfiles  SavedProfile[] @relation("UserSavedProfiles")  
+  savedBy        SavedProfile[] @relation("UserSavedBy") 
 }
 
 model Product {
   id             String   @id @default(cuid())
+  productNumber Int      @unique
+  slug          String
   name           String
   category       String
   subCategory    String?
@@ -68,6 +78,7 @@ model Product {
   certifications String?
   packaging      String?
   shippingTerms  String?
+  views      Int      @default(0)
   isVisible      Boolean  @default(true)
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -81,8 +92,11 @@ model Product {
 
 model BuyingRequest {
   id              String   @id @default(cuid())
+  requestNumber Int      @unique
+  slug          String
   title           String
   category        String
+  views      Int      @default(0)
   subCategory     String?
   description     String
   quantity        Int
@@ -101,6 +115,8 @@ model BuyingRequest {
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   savedBy SavedRequest[] 
+  quotes Quote[] 
+  messages Message[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -153,6 +169,19 @@ model SavedProduct {
   @@unique([userId, productId])
 }
 
+
+model SavedProfile {
+  id        String   @id @default(cuid())
+  userId    String
+  targetId  String
+  createdAt DateTime @default(now())
+
+  user   User @relation("UserSavedProfiles", fields: [userId], references: [id], onDelete: Cascade)
+  target User @relation("UserSavedBy", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetId])
+}
+
 // ====== مدل درخواست محصول (خریدار -> تأمین‌کننده) ======
 model ProductInquiry {
   id             String   @id @default(cuid())
@@ -169,7 +198,7 @@ model ProductInquiry {
   product  Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   user     User    @relation(fields: [userId], references: [id], onDelete: Cascade, name: "buyerInquiries")
   supplier User    @relation(fields: [supplierId], references: [id], onDelete: Cascade, name: "supplierInquiries")
-
+  read           Boolean  @default(false) 
   @@index([productId])
   @@index([userId])
   @@index([supplierId])
@@ -179,7 +208,8 @@ model Message {
   id          String   @id @default(cuid())
   senderId    String
   receiverId  String
-  productId   String?  // مرتبط با محصول (اختیاری)
+  productId   String?
+  requestId   String?  
   content     String   @db.Text
   read        Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -188,6 +218,7 @@ model Message {
   sender   User   @relation(fields: [senderId], references: [id], name: "sentMessages")
   receiver User   @relation(fields: [receiverId], references: [id], name: "receivedMessages")
   product  Product? @relation(fields: [productId], references: [id])
+ request  BuyingRequest? @relation(fields: [requestId], references: [id]) 
 
   @@index([senderId])
   @@index([receiverId])
@@ -203,4 +234,21 @@ model SavedRequest {
   request BuyingRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@unique([userId, requestId])
+}
+
+model Quote {
+  id           String   @id @default(cuid())
+  requestId    String
+  supplierId   String
+  buyerId      String
+  message      String   @db.Text
+  quantity     Int?
+  offeredPrice Float?
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  request  BuyingRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  supplier User          @relation("QuoteSupplier", fields: [supplierId], references: [id], onDelete: Cascade)
+  buyer    User          @relation("QuoteBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
 }

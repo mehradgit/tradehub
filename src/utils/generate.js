@@ -1,0 +1,14 @@
+// src/utils/generate.js
+export function generateNumber() {
+  // عددی تصادفی بین 1,000,000 و 9,999,999
+  return Math.floor(Math.random() * 9000000) + 1000000;
+}
+
+export function generateSlug(text) {
+  if (!text) return 'user';
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '_')
+    .slice(0, 50);
+}

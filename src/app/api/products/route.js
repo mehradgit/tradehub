@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { generateNumber, generateSlug } from "@/utils/generate";
 
 // ====== تابع ذخیره تصویر Base64 ======
 async function saveBase64Image(base64String, folder = "products") {
@@ -36,15 +37,11 @@ export async function POST(request) {
   try {
     const session = await auth();
     if (!session) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
     const body = await request.json();
-
     const {
       name,
       category,
@@ -59,7 +56,6 @@ export async function POST(request) {
       leadTime,
       images = [], // آرایه‌ای از Base64 یا مسیرها
       badge,
-      country,
       countryCode,
       origin,
       certifications,
@@ -68,12 +64,14 @@ export async function POST(request) {
       isVisible,
       specs,
     } = body;
+    const productNumber = generateNumber();
+    const slug = generateSlug(name);
 
     // اعتبارسنجی اولیه
     if (!name || !category || !shortDesc || !price || !moq) {
       return NextResponse.json(
         { message: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -91,7 +89,6 @@ export async function POST(request) {
         imagePaths.push(img);
       }
     }
-
     // ایجاد محصول
     const product = await prisma.product.create({
       data: {
@@ -108,7 +105,7 @@ export async function POST(request) {
         leadTime: leadTime ? parseInt(leadTime) : null,
         images: imagePaths,
         badge: badge || null,
-        country: country || null,
+        country: origin || null,
         countryCode: countryCode || null,
         origin: origin || null,
         certifications: certifications || null,
@@ -116,18 +113,25 @@ export async function POST(request) {
         shippingTerms: shippingTerms || null,
         isVisible: isVisible !== undefined ? isVisible : true,
         userId,
+        productNumber,
+        slug,
       },
     });
 
     return NextResponse.json(
-      { message: "Product created successfully", id: product.id },
-      { status: 201 }
+      {
+        message: "Product created successfully",
+        id: product.id,
+        productNumber: product.productNumber,
+        slug: product.slug,
+      },
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating product:", error);
     return NextResponse.json(
       { message: "Failed to create product", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -149,7 +153,10 @@ export async function DELETE(request, { params }) {
     });
 
     if (!product) {
-      return NextResponse.json({ message: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "Product not found" },
+        { status: 404 },
+      );
     }
 
     if (product.userId !== userId) {
@@ -158,10 +165,16 @@ export async function DELETE(request, { params }) {
 
     await prisma.product.delete({ where: { id } });
 
-    return NextResponse.json({ message: "Product deleted successfully" }, { status: 200 });
+    return NextResponse.json(
+      { message: "Product deleted successfully" },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error deleting product:", error);
-    return NextResponse.json({ message: "Failed to delete product" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to delete product" },
+      { status: 500 },
+    );
   }
 }
 
@@ -184,7 +197,10 @@ export async function PATCH(request, { params }) {
     });
 
     if (!product) {
-      return NextResponse.json({ message: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "Product not found" },
+        { status: 404 },
+      );
     }
 
     if (product.userId !== userId) {
@@ -198,10 +214,13 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json(
       { message: "Product updated successfully", product: updated },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error updating product:", error);
-    return NextResponse.json({ message: "Failed to update product" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to update product" },
+      { status: 500 },
+    );
   }
 }

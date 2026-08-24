@@ -1,17 +1,43 @@
-// src/components/products/ProductFilterBar.js
+// src/components/product/ProductFilterBar.js
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { categories } from "@/lib/categories"; // ✅ داده‌های سلسله‌مراتبی
 
 export default function ProductFilterBar({
-  categories,
   currentCategory,
+  currentSubCategory,
   currentSearch,
   currentSort,
 }) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(currentSearch || "");
+
+  // ====== ساخت لیست مسطح از گزینه‌ها با تورفتگی ======
+  const categoryOptions = useMemo(() => {
+    const options = [{ value: "", label: "All Categories", isParent: false }];
+    const parents = categories.filter((c) => c.parent === 0);
+    parents.forEach((parent) => {
+      // گزینه دسته‌ی اصلی (بولد)
+      options.push({
+        value: parent.name,
+        label: parent.name,
+        isParent: true,
+      });
+      // زیردسته‌ها
+      const children = categories.filter((c) => c.parent === parent.id);
+      children.forEach((child) => {
+        // مقدار ترکیبی: دسته|زیردسته
+        options.push({
+          value: `${parent.name}|${child.name}`,
+          label: `    ${child.name}`, // تورفتگی با فاصله
+          isParent: false,
+        });
+      });
+    });
+    return options;
+  }, []);
 
   const updateUrl = (params) => {
     const url = new URL(window.location.href);
@@ -28,7 +54,18 @@ export default function ProductFilterBar({
   };
 
   const handleCategoryChange = (e) => {
-    updateUrl({ category: e.target.value });
+    const selected = e.target.value;
+    if (selected === "") {
+      // همه
+      updateUrl({ category: "", subCategory: "" });
+    } else if (selected.includes("|")) {
+      // زیردسته
+      const [cat, sub] = selected.split("|");
+      updateUrl({ category: cat, subCategory: sub });
+    } else {
+      // دسته‌ی اصلی
+      updateUrl({ category: selected, subCategory: "" });
+    }
   };
 
   const handleSortChange = (e) => {
@@ -39,6 +76,17 @@ export default function ProductFilterBar({
     e.preventDefault();
     updateUrl({ search: searchInput });
   };
+
+  // ====== تعیین مقدار انتخابی برای نمایش ======
+  const selectedValue = useMemo(() => {
+    if (currentCategory && currentSubCategory) {
+      return `${currentCategory}|${currentSubCategory}`;
+    } else if (currentCategory) {
+      return currentCategory;
+    } else {
+      return "";
+    }
+  }, [currentCategory, currentSubCategory]);
 
   return (
     <div className="filter-bar">
@@ -55,18 +103,29 @@ export default function ProductFilterBar({
         </button>
       </form>
       <div className="filter-group">
+        {/* ====== دراپ‌داون واحد ====== */}
         <select
           name="category"
           onChange={handleCategoryChange}
-          defaultValue={currentCategory || ""}
+          value={selectedValue}
+          style={{ minWidth: "180px" }}
         >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat.category} value={cat.category}>
-              {cat.category}
+          {categoryOptions.map((opt, idx) => (
+            <option
+              key={idx}
+              value={opt.value}
+              style={
+                opt.isParent
+                  ? { fontWeight: "bold", backgroundColor: "#f5f5f5" }
+                  : {}
+              }
+            >
+              {opt.label}
             </option>
           ))}
         </select>
+
+        {/* ====== فیلتر مرتب‌سازی ====== */}
         <select
           name="sort"
           onChange={handleSortChange}

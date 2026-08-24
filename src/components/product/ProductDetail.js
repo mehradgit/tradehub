@@ -370,7 +370,7 @@ export default function ProductDetail({ product, supplier }) {
             </div>
             <div className="supplier-actions">
               <Link
-                href={`/profile/${supplierData.id}`}
+                href={`/profiles/${supplierData.profileNumber}/${supplierData.slug}`}
                 className="company-info-link"
               >
                 Company information
@@ -756,28 +756,12 @@ export default function ProductDetail({ product, supplier }) {
         }
 
         .supplier-cover {
-          width: 100%;
+          // width: 100%;
           height: 80px;
           object-fit: cover;
           box-shadow: 0px 4px 6.8px rgba(0, 0, 0, 0.15);
         }
-
-        .supplier-logo-wrapper {
-          width: 65px;
-          height: 65px;
-          border-radius: 74px;
-          background: #080f3b;
-          box-shadow: 0px 7.667px 18.145px rgba(0, 0, 0, 0.15);
-          border: 1.28px solid rgba(255, 255, 255, 0.3);
-          overflow: hidden;
-          margin: -32px auto 0;
-          position: relative;
-          z-index: 2;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
+          
         .supplier-logo-wrapper img {
           width: 55px;
           height: 50px;
