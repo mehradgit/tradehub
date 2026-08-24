@@ -1163,7 +1163,8 @@ a:hover {
 /* ====== REQUEST DETAIL PAGE ====== */
 .request-detail {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* قبلاً: 1fr 1fr */
+  grid-template-columns: minmax(280px, 400px) 1fr;
   gap: 40px;
   margin: 20px 0 40px;
   background: var(--white);
@@ -1180,7 +1181,7 @@ a:hover {
 }
 .request-image {
   width: 100%;
-  aspect-ratio: 1/1;
+  aspect-ratio: 3 / 2; /* قبلاً 1/1 بود */
   background-size: cover;
   background-position: center;
   border-radius: var(--radius);
@@ -4425,7 +4426,7 @@ a:hover {
   font-weight: 600;
   color: #052311;
   font-family: "Poppins", sans-serif;
-  line-height: 43.20px;
+  line-height: 43.2px;
   margin: 0;
   padding: 0;
 }
@@ -4440,7 +4441,7 @@ a:hover {
 
 /* ====== تاریخ ====== */
 .product-date {
-  color: rgba(5, 35, 17, 0.60);
+  color: rgba(5, 35, 17, 0.6);
   font-size: 14px;
   font-weight: 400;
   font-family: "Poppins", sans-serif;
@@ -4451,7 +4452,7 @@ a:hover {
 .product-divider {
   width: 1px;
   height: 20px;
-  background: rgba(0, 0, 0, 0.30);
+  background: rgba(0, 0, 0, 0.3);
   display: inline-block;
 }
 
@@ -4462,7 +4463,7 @@ a:hover {
   gap: 6px;
   background: none;
   border: none;
-  color: rgba(5, 35, 17, 0.60);
+  color: rgba(5, 35, 17, 0.6);
   font-size: 14px;
   font-weight: 400;
   font-family: "Poppins", sans-serif;
@@ -4472,7 +4473,7 @@ a:hover {
 }
 
 .product-share-btn:hover {
-  color: #EA6A18;
+  color: #ea6a18;
 }
 
 .product-share-btn svg {
@@ -4519,7 +4520,7 @@ a:hover {
   width: 64px;
   height: 64px;
   border-radius: 12px;
-  border: 1.16px solid #F7C3A3;
+  border: 1.16px solid #f7c3a3;
   box-shadow: 0px 5.806px 11.612px rgba(0, 0, 0, 0.15);
   object-fit: cover;
   opacity: 0.5;
@@ -4529,7 +4530,7 @@ a:hover {
 
 .product-thumbnail.active {
   opacity: 1;
-  border-color: #EA6A18;
+  border-color: #ea6a18;
   box-shadow: 0px 5.806px 11.612px rgba(234, 106, 24, 0.3);
 }
 
@@ -4651,7 +4652,7 @@ a:hover {
   width: 64px;
   height: 64px;
   border-radius: 12px;
-  border: 1.16px solid #F7C3A3;
+  border: 1.16px solid #f7c3a3;
   box-shadow: 0px 5.806px 11.612px rgba(0, 0, 0, 0.15);
   object-fit: cover;
   opacity: 0.5;
@@ -4662,7 +4663,7 @@ a:hover {
 
 .product-thumbnail.active {
   opacity: 1;
-  border-color: #EA6A18;
+  border-color: #ea6a18;
   box-shadow: 0px 5.806px 11.612px rgba(234, 106, 24, 0.3);
 }
 
@@ -4676,14 +4677,14 @@ a:hover {
   width: 64px;
   height: 64px;
   border-radius: 12px;
-  border: 1.16px dashed #F7C3A3;
+  border: 1.16px dashed #f7c3a3;
   background: rgba(247, 195, 163, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
   font-weight: 700;
-  color: #EA6A18;
+  color: #ea6a18;
   flex-shrink: 0;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -4691,7 +4692,7 @@ a:hover {
 
 .product-thumbnail-more:hover {
   background: rgba(234, 106, 24, 0.1);
-  border-color: #EA6A18;
+  border-color: #ea6a18;
   transform: scale(1.05);
 }
 
@@ -4771,7 +4772,7 @@ a:hover {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   border: 1px solid var(--gray-light);
-  border-left: 4px solid #EA6A18;
+  border-left: 4px solid #ea6a18;
 }
 
 .product-description-short h3 {
@@ -4786,10 +4787,10 @@ a:hover {
 }
 
 .product-description-short h3::before {
-  content: '\f0eb';
-  font-family: 'Font Awesome 6 Free';
+  content: "\f0eb";
+  font-family: "Font Awesome 6 Free";
   font-weight: 900;
-  color: #EA6A18;
+  color: #ea6a18;
   font-size: 20px;
 }
 
@@ -5039,4 +5040,36 @@ a:hover {
   max-width: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+/* ====== Placeholder برای تصویر درخواست ====== */
+.request-image-placeholder {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  background-color: var(--light);
+  border: 2px dashed var(--gray-light);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: var(--gray);
+}
+.request-image-placeholder .placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.request-image-placeholder .placeholder-content i {
+  opacity: 0.4;
+  font-size: 48px;
+}
+
+.request-image-placeholder .placeholder-content p {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  color: var(--gray);
 }

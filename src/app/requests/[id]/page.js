@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Layout from "@/components/layout/Layout";
 import RequestGallery from "@/components/requests/RequestGallery";
-import RequestTabs from "@/components/requests/RequestTabs";
 import CountryFlag from "@/components/ui/CountryFlag";
+import RequestActions from "@/components/requests/RequestActions";
 
-// ====== تابع دریافت داده‌های درخواست ======
+// ====== دریافت داده‌ها با مدیریت صحیح JSON ======
 async function getRequest(id) {
   const request = await prisma.buyingRequest.findUnique({
     where: { id },
@@ -26,8 +26,20 @@ async function getRequest(id) {
     },
   });
 
-  if (!request) {
-    notFound();
+  if (!request) notFound();
+
+  // ✅ تبدیل ایمن attachments (چون در اسکیما از نوع Json است)
+  let attachments = [];
+  if (request.attachments) {
+    if (Array.isArray(request.attachments)) {
+      attachments = request.attachments;
+    } else if (typeof request.attachments === "string") {
+      try {
+        attachments = JSON.parse(request.attachments);
+      } catch {
+        attachments = [];
+      }
+    }
   }
 
   // درخواست‌های مشابه (همان دسته‌بندی)
@@ -49,30 +61,57 @@ async function getRequest(id) {
     orderBy: { createdAt: "desc" },
   });
 
-  return { request, relatedRequests };
+  return { request, relatedRequests, attachments };
+}
+
+// ====== متادیتا ======
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const request = await prisma.buyingRequest.findUnique({
+    where: { id },
+    select: { title: true, category: true },
+  });
+  if (!request) return { title: "Request Not Found" };
+  return {
+    title: `${request.title} | B2B Food Hub`,
+    description: `View buying request details for ${request.title}`,
+  };
 }
 
 // ====== صفحه اصلی ======
 export default async function RequestPage({ params }) {
   const { id } = await params;
-  const { request, relatedRequests } = await getRequest(id);
+  const { request, relatedRequests, attachments } = await getRequest(id);
+  const hasImages = attachments.length > 0;
 
-  // تصویر اصلی (از attachments یا placeholder)
-  const mainImage =
-    request.attachments?.[0] ||
-    "https://images.unsplash.com/photo-1587049352851-8d4e8913397e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+  const buyer = {
+    id: request.user.id,
+    name: request.user.companyName || request.user.name || "Anonymous Buyer",
+    // سایر فیلدهای مورد نیاز برای ConnectModal
+  };
+  // تاریخ‌ها را در سرور فرمت می‌کنیم تا روی کلاینت دچار هیدریشن نشویم
+  const postedDate = new Date(request.createdAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const deadlineDate = request.deadline
+    ? new Date(request.deadline).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "Flexible";
 
-  const thumbnails = request.attachments?.slice(1) || [];
-  const formattedDate = new Date(request.createdAt).toLocaleDateString(
-    "en-US",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    },
-  );
   const buyerName =
     request.user.companyName || request.user.name || "Anonymous Buyer";
+
+  // تصویر اصلی از attachments یا فال‌بک
+  const mainImage =
+    attachments.length > 0
+      ? attachments[0]
+      : "https://images.unsplash.com/photo-1587049352851-8d4e8913397e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+  const thumbnails = attachments.slice(1);
 
   return (
     <Layout>
@@ -90,6 +129,7 @@ export default async function RequestPage({ params }) {
                 Requests
               </Link>
             </li>
+            {/* ✅ دسته‌بندی محصول */}
             <li className="breadcrumb-item">
               <Link
                 href={`/requests?category=${encodeURIComponent(request.category)}`}
@@ -98,15 +138,36 @@ export default async function RequestPage({ params }) {
                 {request.category}
               </Link>
             </li>
-            <li className="breadcrumb-item active text-muted">
+            {/* ✅ زیردسته محصول (در صورت وجود) */}
+            {request.subCategory && (
+              <li className="breadcrumb-item">
+                <Link
+                  href={`/requests?category=${encodeURIComponent(request.category)}`}
+                  style={{ color: "var(--primary)" }}
+                >
+                  {request.subCategory}
+                </Link>
+              </li>
+            )}
+            <li
+              className="breadcrumb-item active text-muted"
+              aria-current="page"
+            >
               {request.title}
             </li>
           </ol>
         </nav>
 
-        {/* Request Detail */}
+        {/* Request Detail Grid */}
         <div className="request-detail">
-          <RequestGallery mainImage={mainImage} thumbnails={thumbnails} />
+          {/* گالری تصاویر */}
+          <RequestGallery
+            mainImage={mainImage}
+            thumbnails={thumbnails}
+            hasImages={hasImages}
+          />
+
+          {/* اطلاعات درخواست */}
           <div className="request-info">
             <div className="request-header-info">
               <span
@@ -119,24 +180,18 @@ export default async function RequestPage({ params }) {
               </span>
             </div>
             <h1>{request.title}</h1>
+
+            {/* اطلاعات متا */}
             <div className="request-meta-grid">
               <div className="meta-item">
-                <span className="label">Budget Range</span>
+                <span className="label">Budget</span>
                 <span className="value">
                   {request.budgetRange || "Negotiable"}
                 </span>
               </div>
               <div className="meta-item">
                 <span className="label">Deadline</span>
-                <span className="value">
-                  {request.deadline
-                    ? new Date(request.deadline).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })
-                    : "Flexible"}
-                </span>
+                <span className="value">{deadlineDate}</span>
               </div>
               <div className="meta-item">
                 <span className="label">Quantity</span>
@@ -146,14 +201,16 @@ export default async function RequestPage({ params }) {
               </div>
               <div className="meta-item">
                 <span className="label">Posted</span>
-                <span className="value">{formattedDate}</span>
+                <span className="value">{postedDate}</span>
               </div>
             </div>
+
+            {/* توضیحات */}
             <div className="request-description">
               <p>{request.description}</p>
             </div>
 
-            {/* Specifications Table */}
+            {/* جدول مشخصات */}
             <table className="request-specs-table">
               <tbody>
                 <tr>
@@ -197,7 +254,7 @@ export default async function RequestPage({ params }) {
               </tbody>
             </table>
 
-            {/* Buyer Card */}
+            {/* کارت خریدار */}
             <div className="buyer-card">
               <div className="buyer-avatar">
                 {request.user.image ? (
@@ -223,7 +280,6 @@ export default async function RequestPage({ params }) {
                   </span>
                 </h4>
                 <div className="sub">
-                  {" "}
                   <CountryFlag
                     countryCode={request.user.countryCode}
                     size="16px"
@@ -233,36 +289,22 @@ export default async function RequestPage({ params }) {
                   {new Date(request.user.createdAt).getFullYear()}
                 </div>
               </div>
-              <button
+              {/* ✅ لینک به پروفایل خریدار */}
+              <Link
+                href={`/profile/${request.user.id}`}
                 className="btn btn-secondary"
                 style={{ whiteSpace: "nowrap" }}
               >
-                Contact Buyer
-              </button>
+                Company Information
+              </Link>
             </div>
 
-            {/* Actions */}
-            <div className="request-actions">
-              <button className="btn btn-primary">
-                <i className="fas fa-paper-plane"></i> Submit Quote
-              </button>
-              <button className="btn btn-outline-secondary">
-                <i className="fas fa-bookmark"></i> Save Request
-              </button>
-              <button
-                className="btn btn-outline-secondary"
-                style={{ borderColor: "var(--secondary)" }}
-              >
-                <i className="fas fa-share-alt"></i> Share
-              </button>
-            </div>
+            {/* دکمه‌های اقدام */}
+            <RequestActions request={request} buyer={buyer} />
           </div>
         </div>
 
-        {/* Tabs */}
-        <RequestTabs request={request} />
-
-        {/* ====== SIMILAR BUYING REQUESTS ====== */}
+        {/* ====== درخواست‌های مشابه ====== */}
         {relatedRequests.length > 0 && (
           <div className="mt-5">
             <div className="section-header">
@@ -274,35 +316,33 @@ export default async function RequestPage({ params }) {
               </Link>
             </div>
             <div className="compact-requests-grid">
-              {relatedRequests.map((relatedRequest) => (
+              {relatedRequests.map((rel) => (
                 <Link
-                  key={relatedRequest.id}
-                  href={`/requests/${relatedRequest.id}`}
+                  key={rel.id}
+                  href={`/requests/${rel.id}`}
                   className="text-decoration-none"
                 >
                   <div
-                    className={`compact-request-card ${relatedRequest.isUrgent ? "wanted" : ""}`}
+                    className={`compact-request-card ${rel.isUrgent ? "wanted" : ""}`}
                   >
                     <span
-                      className={`request-badge-sm ${relatedRequest.isUrgent ? "urgent" : "verified"}`}
+                      className={`request-badge-sm ${rel.isUrgent ? "urgent" : "verified"}`}
                     >
-                      {relatedRequest.isUrgent ? "Urgent" : "Verified"}
+                      {rel.isUrgent ? "Urgent" : "Verified"}
                     </span>
-                    <div className="request-title">{relatedRequest.title}</div>
-                    <div className="request-desc">
-                      {relatedRequest.description}
-                    </div>
+                    <div className="request-title">{rel.title}</div>
+                    <div className="request-desc">{rel.description}</div>
                     <div className="request-footer">
                       <span>
                         <i className="far fa-calendar-alt"></i>{" "}
-                        {new Date(relatedRequest.createdAt).toLocaleDateString(
-                          "en-US",
-                          { year: "numeric", month: "short", day: "numeric" },
-                        )}
+                        {new Date(rel.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </span>
                       <span>
-                        <i className="fas fa-user"></i>{" "}
-                        {relatedRequest.buyerCountry}
+                        <i className="fas fa-user"></i> {rel.buyerCountry}
                       </span>
                     </div>
                   </div>

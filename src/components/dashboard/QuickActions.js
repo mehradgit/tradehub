@@ -47,6 +47,12 @@ export default function QuickActions() {
       sub: "View your product inquiries",
       href: "/dashboard/inquiries",
     },
+    {
+      icon: "fa-envelope",
+      text: "Messages",
+      sub: "View your conversations",
+      href: "/dashboard/messages",
+    },
   ];
 
   return (

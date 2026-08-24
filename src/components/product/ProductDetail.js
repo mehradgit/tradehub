@@ -11,6 +11,7 @@ import ProductTabs from "./ProductTabs";
 import ImageGallery from "./ImageGallery";
 import ShareModal from "@/components/ui/ShareModal";
 import LoginModal from "@/components/ui/LoginModal";
+import ConnectModal from "@/components/ui/ConnectModal";
 
 export default function ProductDetail({ product, supplier }) {
   const pathname = usePathname();
@@ -19,6 +20,7 @@ export default function ProductDetail({ product, supplier }) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const formRef = useRef(null);
   const [requestForm, setRequestForm] = useState({
     name: "",
@@ -367,15 +369,19 @@ export default function ProductDetail({ product, supplier }) {
               </div>
             </div>
             <div className="supplier-actions">
-              {/* ✅ تبدیل به لینک به جای span */}
               <Link
                 href={`/profile/${supplierData.id}`}
                 className="company-info-link"
               >
                 Company information
               </Link>
-              <button className="connect-btn">Connect with Us</button>
-            </div>
+              <button
+                className="connect-btn"
+                onClick={() => setIsConnectModalOpen(true)}
+              >
+                Connect with Us
+              </button>
+            </div>{" "}
           </div>
         </div>
 
@@ -507,6 +513,13 @@ export default function ProductDetail({ product, supplier }) {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         redirectUrl={pathname}
+      />
+      <ConnectModal
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+        supplierId={supplierData.id}
+        supplierName={supplierData.name}
+        productId={product?.id}
       />
       {/* ====== Styles ====== */}
       <style jsx>{`

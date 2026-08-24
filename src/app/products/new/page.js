@@ -1,12 +1,13 @@
 // src/app/products/new/page.js
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Layout from "@/components/layout/Layout";
 import RichTextEditor from "@/components/ui/RichTextEditor";
+import CountrySelect from "@/components/ui/CountrySelect";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -43,11 +44,11 @@ export default function NewProductPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-    // ====== تغییرات Full Description (Rich Text) ======
-  const handleFullDescChange = (value) => {
+  // ====== تغییرات Full Description (Rich Text) ======
+  const handleFullDescChange = useCallback((value) => {
     setFormData((prev) => ({ ...prev, fullDesc: value }));
-  };
-  
+  }, []);
+
   const handleSpecChange = (index, field, value) => {
     const newSpecs = [...formData.specs];
     newSpecs[index][field] = value;
@@ -632,18 +633,13 @@ export default function NewProductPage() {
                   </div>
                   <div className="form-group">
                     <label>Country of Origin</label>
-                    <select
-                      className="form-select"
-                      name="origin"
+                    <CountrySelect
                       value={formData.origin}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select country</option>
-                      <option>United States</option>
-                      <option>Colombia</option>
-                      <option>Ethiopia</option>
-                      <option>Brazil</option>
-                    </select>
+                      onChange={(code) =>
+                        setFormData((prev) => ({ ...prev, origin: code }))
+                      }
+                      placeholder="Select country of origin"
+                    />
                   </div>
                 </div>
 

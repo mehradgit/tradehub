@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// ====== POST: ایجاد درخواست جدید ======
+// ====== POST: ثبت درخواست جدید و ایجاد پیام ======
 export async function POST(request) {
   try {
     const session = await auth();
@@ -24,14 +24,14 @@ export async function POST(request) {
     // بررسی وجود محصول
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, userId: true },
+      select: { id: true, name: true, userId: true },
     });
 
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 });
     }
 
-    // ایجاد درخواست
+    // ====== ۱. ذخیره درخواست در ProductInquiry ======
     const inquiry = await prisma.productInquiry.create({
       data: {
         productId,
@@ -44,8 +44,25 @@ export async function POST(request) {
       },
     });
 
+    // ====== ۲. ایجاد پیام در سیستم پیام‌رسانی ======
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const productLink = `${baseUrl}/products/${productId}`;
+    const messageContent = `📦 **Product:** ${product.name}\n🔗 ${productLink}\n\n📝 **Request:** ${message}`;
+
+    await prisma.message.create({
+      data: {
+        senderId: session.user.id,
+        receiverId: supplierId,
+        productId: productId,
+        content: messageContent,
+      },
+    });
+
     return NextResponse.json(
-      { message: "Request sent successfully", inquiry },
+      {
+        message: "Request sent successfully",
+        inquiry,
+      },
       { status: 201 }
     );
   } catch (error) {

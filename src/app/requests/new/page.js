@@ -5,7 +5,11 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { toast } from "react-toastify"; // ✅ ایمپورت توست
 import Layout from "@/components/layout/Layout";
+import UploadProgress from "@/components/ui/UploadProgress";
+import { uploadFileWithProgress } from "@/utils/uploadHelpers";
+import CountrySelect from "@/components/ui/CountrySelect";
 
 export default function NewRequestPage() {
   const router = useRouter();
@@ -29,7 +33,7 @@ export default function NewRequestPage() {
     shippingTerms: "",
     packagingReq: "",
     certifications: "",
-    attachments: [],
+    attachments: [], // آرایه‌ای از مسیرهای فایل (URL)
     isUrgent: false,
     isVisible: true,
   });
@@ -41,33 +45,60 @@ export default function NewRequestPage() {
     if (error) setError("");
   };
 
-  // ====== پیوست‌ها (فایل‌ها) ======
+  // ====== آپلود تصاویر با پیشرفت (دقیقاً مثل فرم محصول) ======
   const fileInputRef = useRef(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = e.target.files;
-    if (!files) return;
-    const newAttachments = [...formData.attachments];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        newAttachments.push({
-          name: file.name,
-          data: ev.target.result,
-          type: file.type,
-        });
-        setFormData((prev) => ({ ...prev, attachments: newAttachments }));
-      };
-      reader.readAsDataURL(file);
+    if (!files || files.length === 0) return;
+
+    if (isUploading) return; // جلوگیری از آپلود همزمان
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setError("");
+
+    try {
+      const uploadedPaths = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const result = await uploadFileWithProgress(
+          file,
+          "requests",
+          (percent) => {
+            setUploadProgress(percent);
+          },
+        );
+        uploadedPaths.push(result.path);
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        attachments: [...prev.attachments, ...uploadedPaths],
+      }));
+
+      toast.success(`${uploadedPaths.length} file(s) uploaded successfully!`); // ✅ توست موفقیت
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error(err.message || "Failed to upload file(s)"); // ✅ توست خطا
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
-    fileInputRef.current.value = "";
   };
 
+  // ====== حذف تصویر آپلود شده ======
   const removeAttachment = (index) => {
-    const newAttachments = [...formData.attachments];
-    newAttachments.splice(index, 1);
-    setFormData((prev) => ({ ...prev, attachments: newAttachments }));
+    setFormData((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index),
+    }));
   };
 
   // ====== Toggle ======
@@ -100,7 +131,7 @@ export default function NewRequestPage() {
     }
 
     if (errors.length > 0) {
-      setError(errors.join(". "));
+      toast.warning(errors.join(". ")); // ✅ توست هشدار
       return;
     }
 
@@ -119,8 +150,6 @@ export default function NewRequestPage() {
     setError("");
 
     try {
-      const attachments = formData.attachments.map((att) => att.name);
-
       const payload = {
         title: formData.title.trim(),
         category: formData.category,
@@ -135,7 +164,7 @@ export default function NewRequestPage() {
         shippingTerms: formData.shippingTerms || undefined,
         packagingReq: formData.packagingReq || undefined,
         certifications: formData.certifications || undefined,
-        attachments: attachments,
+        attachments: formData.attachments,
         isUrgent: formData.isUrgent,
         isVisible: formData.isVisible,
       };
@@ -151,9 +180,10 @@ export default function NewRequestPage() {
         throw new Error(data.message || "Failed to create buying request");
       }
 
+      toast.success("Buying request published successfully!"); // ✅ توست موفقیت
       router.push(`/requests/${data.id}`);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message); // ✅ توست خطا
     } finally {
       setLoading(false);
     }
@@ -187,7 +217,9 @@ export default function NewRequestPage() {
             </h1>
             <div className="step-indicator">
               <span className="step-label">Step {step} of 2</span>
-              <span className={`step-dot ${step === 1 ? "active" : "done"}`}></span>
+              <span
+                className={`step-dot ${step === 1 ? "active" : "done"}`}
+              ></span>
               <span className={`step-dot ${step === 2 ? "active" : ""}`}></span>
             </div>
           </div>
@@ -203,7 +235,10 @@ export default function NewRequestPage() {
             {step === 1 && (
               <>
                 <h3 className="fw-bold mb-3">
-                  <i className="fas fa-info-circle me-2" style={{ color: "var(--primary)" }}></i>
+                  <i
+                    className="fas fa-info-circle me-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   Request Details
                 </h3>
 
@@ -220,7 +255,9 @@ export default function NewRequestPage() {
                     onChange={handleChange}
                     required
                   />
-                  <div className="help-text">Clear and specific title helps suppliers find your request.</div>
+                  <div className="help-text">
+                    Clear and specific title helps suppliers find your request.
+                  </div>
                 </div>
 
                 <div className="form-row">
@@ -276,11 +313,17 @@ export default function NewRequestPage() {
                     onChange={handleChange}
                     required
                   ></textarea>
-                  <div className="help-text">Provide as much detail as possible to attract the right suppliers.</div>
+                  <div className="help-text">
+                    Provide as much detail as possible to attract the right
+                    suppliers.
+                  </div>
                 </div>
 
                 <h3 className="fw-bold mt-4 mb-3">
-                  <i className="fas fa-tag me-2" style={{ color: "var(--primary)" }}></i>
+                  <i
+                    className="fas fa-tag me-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   Quantity &amp; Budget
                 </h3>
 
@@ -301,7 +344,9 @@ export default function NewRequestPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Unit <span className="required">*</span></label>
+                    <label>
+                      Unit <span className="required">*</span>
+                    </label>
                     <select
                       className="form-select"
                       name="unit"
@@ -370,24 +415,20 @@ export default function NewRequestPage() {
                   <label>
                     Delivery Location <span className="required">*</span>
                   </label>
-                  <select
-                    className="form-select"
-                    name="deliveryCountry"
+                  <CountrySelect
                     value={formData.deliveryCountry}
-                    onChange={handleChange}
+                    onChange={(code) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        deliveryCountry: code,
+                      }))
+                    }
+                    placeholder="Select delivery country"
                     required
-                  >
-                    <option value="">Select country</option>
-                    <option>United States</option>
-                    <option>United Kingdom</option>
-                    <option>Germany</option>
-                    <option>France</option>
-                    <option>Canada</option>
-                    <option>Australia</option>
-                    <option>UAE</option>
-                    <option>Japan</option>
-                  </select>
-                  <div className="help-text">Where do you need the products delivered?</div>
+                  />
+                  <div className="help-text">
+                    Where do you need the products delivered?
+                  </div>
                 </div>
 
                 <div className="form-actions">
@@ -401,7 +442,7 @@ export default function NewRequestPage() {
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => alert("Draft saved!")}
+                    onClick={() => toast.success("Draft saved successfully!")} // ✅ به جای alert
                   >
                     <i className="fas fa-save"></i> Save as Draft
                   </button>
@@ -416,7 +457,10 @@ export default function NewRequestPage() {
             {step === 2 && (
               <>
                 <h3 className="fw-bold mb-3">
-                  <i className="fas fa-ship me-2" style={{ color: "var(--primary)" }}></i>
+                  <i
+                    className="fas fa-ship me-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   Shipping &amp; Additional Info
                 </h3>
 
@@ -450,7 +494,10 @@ export default function NewRequestPage() {
                 </div>
 
                 <h3 className="fw-bold mt-4 mb-3">
-                  <i className="fas fa-certificate me-2" style={{ color: "var(--primary)" }}></i>
+                  <i
+                    className="fas fa-certificate me-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   Certifications &amp; Requirements
                 </h3>
 
@@ -468,7 +515,10 @@ export default function NewRequestPage() {
                 </div>
 
                 <h3 className="fw-bold mt-4 mb-3">
-                  <i className="fas fa-paperclip me-2" style={{ color: "var(--primary)" }}></i>
+                  <i
+                    className="fas fa-paperclip me-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   Attachments (Optional)
                 </h3>
 
@@ -488,30 +538,50 @@ export default function NewRequestPage() {
                       ref={fileInputRef}
                       style={{ display: "none" }}
                       multiple
-                      accept=".pdf,.doc,.docx,.jpg,.png"
+                      accept="image/*"
                       onChange={handleFileUpload}
                     />
-                    <div className="help-text">Accepted formats: PDF, DOC, DOCX, JPG, PNG. Max 10MB each.</div>
+                    <div className="help-text">
+                      Accepted formats: JPG, PNG, WEBP. Max 5MB each.
+                    </div>
                   </div>
-                  <div className="attachment-list d-flex flex-wrap gap-2 mt-2">
-                    {formData.attachments.map((att, index) => (
+
+                  {/* ✅ نمایش پیشرفت آپلود */}
+                  <UploadProgress
+                    progress={uploadProgress}
+                    label="Uploading images..."
+                  />
+
+                  {/* ✅ نمایش و حذف تصاویر آپلود شده */}
+                  <div className="image-preview d-flex flex-wrap gap-2 mt-2">
+                    {formData.attachments.map((img, index) => (
                       <div
                         key={index}
-                        className="d-flex align-items-center gap-2 bg-light rounded-pill px-3 py-1 border"
+                        className="position-relative"
+                        style={{ width: "80px", height: "80px" }}
                       >
-                        <i className={`fas ${
-                          att.type?.includes("pdf") ? "fa-file-pdf" :
-                          att.type?.includes("image") ? "fa-file-image" :
-                          att.type?.includes("word") ? "fa-file-word" :
-                          "fa-file"
-                        }`}></i>
-                        <span className="small">{att.name}</span>
+                        <img
+                          src={img}
+                          alt={`Attachment ${index + 1}`}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: "1px solid var(--gray-light)",
+                          }}
+                        />
                         <button
                           type="button"
-                          className="btn btn-sm text-danger border-0 bg-transparent p-0"
+                          className="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle p-1"
+                          style={{
+                            width: "24px",
+                            height: "24px",
+                            fontSize: "12px",
+                          }}
                           onClick={() => removeAttachment(index)}
                         >
-                          <i className="fas fa-times"></i>
+                          ×
                         </button>
                       </div>
                     ))}
@@ -519,7 +589,10 @@ export default function NewRequestPage() {
                 </div>
 
                 <h3 className="fw-bold mt-4 mb-3">
-                  <i className="fas fa-sliders-h me-2" style={{ color: "var(--primary)" }}></i>
+                  <i
+                    className="fas fa-sliders-h me-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   Settings
                 </h3>
 
@@ -535,7 +608,10 @@ export default function NewRequestPage() {
                       {formData.isUrgent ? "Mark as Urgent" : "Normal"}
                     </span>
                   </div>
-                  <div className="help-text">Urgent requests get highlighted and priority attention from suppliers.</div>
+                  <div className="help-text">
+                    Urgent requests get highlighted and priority attention from
+                    suppliers.
+                  </div>
                 </div>
 
                 <div className="form-group">
@@ -547,10 +623,14 @@ export default function NewRequestPage() {
                       <div className="toggle-knob"></div>
                     </div>
                     <span className="toggle-label">
-                      {formData.isVisible ? "Request visible to suppliers" : "Request hidden (draft)"}
+                      {formData.isVisible
+                        ? "Request visible to suppliers"
+                        : "Request hidden (draft)"}
                     </span>
                   </div>
-                  <div className="help-text">Toggle off to save as draft (hidden from marketplace).</div>
+                  <div className="help-text">
+                    Toggle off to save as draft (hidden from marketplace).
+                  </div>
                 </div>
 
                 <div className="form-actions">
@@ -564,7 +644,7 @@ export default function NewRequestPage() {
                   <button
                     type="submit"
                     className="btn btn-success"
-                    disabled={loading}
+                    disabled={loading || isUploading}
                   >
                     {loading ? "Publishing..." : "Publish Request"}
                     <i className="fas fa-paper-plane ms-2"></i>
@@ -572,7 +652,7 @@ export default function NewRequestPage() {
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => alert("Draft saved!")}
+                    onClick={() => toast.success("Draft saved successfully!")} // ✅ به جای alert
                   >
                     <i className="fas fa-save"></i> Save as Draft
                   </button>
