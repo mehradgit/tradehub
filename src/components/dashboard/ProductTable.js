@@ -20,10 +20,67 @@ export default function ProductTable({ products }) {
     }
   };
 
-  const getStatus = (product) => {
-    if (!product.isVisible) return { label: "Suspended", className: "sold" };
-    if (product.stock === 0) return { label: "Sold Out", className: "sold" };
-    return { label: "Active", className: "active" };
+  // ====== تعیین وضعیت محصول با استایل مدرن ======
+  const getStatusInfo = (product) => {
+    if (product.status === "PENDING") {
+      return {
+        type: "pending",
+        label: "Pending Review",
+        icon: "fa-clock",
+        bg: "#fff7e6",
+        color: "#b45309",
+        border: "#fde68a",
+      };
+    }
+    if (product.status === "REJECTED") {
+      return {
+        type: "rejected",
+        label: "Rejected",
+        icon: "fa-times-circle",
+        bg: "#fef2f2",
+        color: "#b91c1c",
+        border: "#fecaca",
+      };
+    }
+    if (product.status === "APPROVED") {
+      if (!product.isVisible) {
+        return {
+          type: "hidden",
+          label: "Hidden",
+          icon: "fa-eye-slash",
+          bg: "#f1f5f9",
+          color: "#475569",
+          border: "#cbd5e1",
+        };
+      }
+      if (product.stock === 0) {
+        return {
+          type: "soldout",
+          label: "Sold Out",
+          icon: "fa-box-open",
+          bg: "#fff7e6",
+          color: "#92400e",
+          border: "#fde68a",
+        };
+      }
+      return {
+        type: "active",
+        label: "Active",
+        icon: "fa-check-circle",
+        bg: "#ecfdf5",
+        color: "#047857",
+        border: "#a7f3d0",
+      };
+    }
+    // Fallback
+    return {
+      type: "active",
+      label: "Active",
+      icon: "fa-check-circle",
+      bg: "#ecfdf5",
+      color: "#047857",
+      border: "#a7f3d0",
+    };
   };
 
   return (
@@ -36,9 +93,6 @@ export default function ProductTable({ products }) {
           </div>
         </div>
         <div className="d-flex gap-2">
-          {/* <Link href="/products/new" className="view-all">
-            Add New Product <i className="fa-solid fa-arrow-right"></i>
-          </Link> */}
           <Link href="/dashboard/products" className="view-all">
             View All <i className="fa-solid fa-arrow-right"></i>
           </Link>
@@ -59,7 +113,7 @@ export default function ProductTable({ products }) {
           </thead>
           <tbody>
             {products.map((product) => {
-              const status = getStatus(product);
+              const status = getStatusInfo(product);
               const imageUrl =
                 product.images?.[0] || "https://placehold.co/42x42";
               const inquiryCount = product._count?.inquiries || 0;
@@ -86,30 +140,71 @@ export default function ProductTable({ products }) {
                     <span className="unit">/ {product.unit}</span>
                   </td>
                   <td>
-                    <span className={`status ${status.className}`}>
-                      <span className="status-dot"></span> {status.label}
+                    {/* ✅ بج وضعیت مدرن */}
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        padding: "5px 11px",
+                        borderRadius: 50,
+                        background: status.bg,
+                        color: status.color,
+                        border: `1px solid ${status.border}`,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <i
+                        className={`fas ${status.icon}`}
+                        style={{ fontSize: 10 }}
+                      ></i>
+                      {status.label}
                     </span>
+
+                    {/* ✅ دلیل رد شدن در صورت وجود */}
+                    {status.type === "rejected" && product.rejectionNote && (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          fontSize: 10,
+                          color: "#991b1b",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 4,
+                          maxWidth: 200,
+                        }}
+                        title={product.rejectionNote}
+                      >
+                        <i
+                          className="fas fa-info-circle"
+                          style={{ marginTop: 2, flexShrink: 0 }}
+                        ></i>
+                        <span
+                          style={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {product.rejectionNote}
+                        </span>
+                      </div>
+                    )}
                   </td>
                   <td>
                     <i className="fa-regular fa-eye"></i> {product.views || 0}
                   </td>
                   <td>
-                    {/* ✅ لینک به صفحه درخواست‌ها با فیلتر productId */}
                     <Link
                       href={`/dashboard/inquiries?productId=${product.id}`}
                       className="view-all"
                       style={{ fontSize: "13px", fontWeight: "600" }}
                     >
                       <i className="fa-regular fa-envelope"></i> {inquiryCount}
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          marginLeft: "4px",
-                          color: "var(--gray)",
-                        }}
-                      >
-                        (View Details)
-                      </span>
                     </Link>
                   </td>
                   <td>

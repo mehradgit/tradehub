@@ -11,6 +11,7 @@ datasource db {
 model User {
   id            String   @id @default(cuid())
   profileNumber Int      @unique
+  isAdmin Boolean @default(false)
   slug          String
   name          String?
   email         String   @unique
@@ -53,6 +54,19 @@ model User {
   buyerQuotes    Quote[] @relation("QuoteBuyer")
   savedProfiles  SavedProfile[] @relation("UserSavedProfiles")  
   savedBy        SavedProfile[] @relation("UserSavedBy") 
+  subscriptions UserSubscription[]
+  usageCounters UsageCounter[]
+  revealedBuyerInfos RevealedBuyerInfo[]
+  revealedSupplierInfos RevealedSupplierInfo[]
+  tickets         Ticket[]        @relation("UserTickets")
+  assignedTickets Ticket[]        @relation("AssignedTickets")
+  ticketMessages  TicketMessage[] @relation("UserTicketMessages")
+  notifications Notification[]
+  pushSubscriptions PushSubscription[]
+  payments         Payment[]      @relation("UserPayments")
+  createdPayments  Payment[]      @relation("CreatedPayments")
+  createdCoupons   Coupon[]       @relation("CreatedCoupons")
+  couponUsages     CouponUsage[]
 }
 
 model Product {
@@ -83,11 +97,16 @@ model Product {
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages Message[] 
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED, DRAFT
+  rejectionNote String?  
+  approvedAt    DateTime?
+  approvedBy    String?  // id 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   savedBy SavedProduct[] // ✅ اضافه شد (رابطه با SavedProduct)
   inquiries ProductInquiry[]
+  revealedByUsers RevealedSupplierInfo[]
 }
 
 model BuyingRequest {
@@ -98,7 +117,7 @@ model BuyingRequest {
   category        String
   views      Int      @default(0)
   subCategory     String?
-  description     String
+  description     String @db.Text
   quantity        Int
   unit            String   @default("kg")
   budgetRange     String?
@@ -114,9 +133,18 @@ model BuyingRequest {
   buyerCountry    String?
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paymentTerms       String?  // FOB, CIF, EXW, DDP, T/T, L/C, ...
+  targetPrice        Float?   
+  isPriceNegotiable  Boolean  @default(true) 
+  supplierCountries  Json?
   savedBy SavedRequest[] 
   quotes Quote[] 
   messages Message[]
+  status        String   @default("PENDING")
+  rejectionNote String?
+  revealedByUsers RevealedBuyerInfo[]
+  approvedAt    DateTime?
+  approvedBy    String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -251,4 +279,287 @@ model Quote {
   request  BuyingRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   supplier User          @relation("QuoteSupplier", fields: [supplierId], references: [id], onDelete: Cascade)
   buyer    User          @relation("QuoteBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+}
+
+// ====== مدل‌های سیستم اشتراک ======
+
+model Plan {
+  id            String   @id @default(cuid())
+  name          String   @unique  
+  description   String?
+  isActive      Boolean  @default(true)
+
+  // محدودیت‌ها (مقادیر پیش‌فرض - توسط ادمین تغییر می‌کنند)
+  maxProducts        Int // -1 برای نامحدود
+  maxImagesPerProduct Int
+  maxRequestsPerMonth Int // -1 برای نامحدود
+  maxImagesPerRequest  Int
+  maxProfileImages     Int
+  maxInquiriesPerMonth Int
+  maxQuotesPerMonth    Int
+
+  prices        PlanPrice[]
+  subscriptions UserSubscription[]
+  payments Payment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlanPrice {
+  id       String  @id @default(cuid())
+  planId   String
+  duration Int     // تعداد روزها (مثلاً 180 یا 360)
+  price    Decimal // قیمت
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, duration])
+}
+
+model UserSubscription {
+  id           String   @id @default(cuid())
+  userId       String
+  planId       String
+  startDate    DateTime
+  endDate      DateTime
+  status       String   @default("active") // active, ended, reserved, cancelled
+  cancelReason String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([planId])
+}
+
+model UsageCounter {
+  id     String @id @default(cuid())
+  userId String
+  type   String // "request", "inquiry", "quote"
+  month  Int    // شماره ماه از شروع اشتراک (0, 1, 2, ...)
+  used   Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, month])
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json
+}
+
+// ====== مدل ثبت Reveal اطلاعات خریدار ======
+model RevealedBuyerInfo {
+  id        String   @id @default(cuid())
+  userId    String
+  requestId String
+  createdAt DateTime @default(now())
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  request BuyingRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, requestId])
+  @@index([userId])
+  @@index([requestId])
+}
+
+// ====== مدل ثبت Reveal اطلاعات تأمین‌کننده ======
+model RevealedSupplierInfo {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+}
+
+// ====== سیستم تیکت و پشتیبانی ======
+model Ticket {
+  id               String    @id @default(cuid())
+  ticketNumber     Int       @unique
+  subject          String
+  category         String
+  priority         String    @default("medium")
+  status           String    @default("open")
+  userId           String
+  assignedToId     String?
+  relatedProductId String?
+  relatedRequestId String?
+  lastReplyAt      DateTime?
+  lastReplyById    String?
+  unreadByUser     Boolean   @default(false)
+  unreadByAdmin    Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  closedAt         DateTime?
+
+  user       User            @relation("UserTickets", fields: [userId], references: [id], onDelete: Cascade)
+  assignedTo User?           @relation("AssignedTickets", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages   TicketMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([category])
+  @@index([priority])
+}
+
+model TicketMessage {
+  id         String   @id @default(cuid())
+  ticketId   String
+  senderId   String
+  message    String   @db.Text
+  isInternal Boolean  @default(false) // فقط ادمین‌ها می‌بینند
+  createdAt  DateTime @default(now())
+
+  ticket      Ticket             @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender      User               @relation("UserTicketMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments TicketAttachment[]
+
+  @@index([ticketId])
+  @@index([senderId])
+}
+
+model TicketAttachment {
+  id              String   @id @default(cuid())
+  ticketMessageId String
+  fileName        String
+  filePath        String
+  fileSize        Int
+  fileType        String
+  createdAt       DateTime @default(now())
+
+  ticketMessage TicketMessage @relation(fields: [ticketMessageId], references: [id], onDelete: Cascade)
+
+  @@index([ticketMessageId])
+}
+
+// ====== سیستم نوتیفیکیشن ======
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    // product_approved, ticket_reply, admin_announcement, ...
+  title     String
+  body      String?   @db.Text
+  link      String?   // مسیر URL (مثلاً /dashboard/tickets/1001)
+  icon      String?   // Font Awesome icon name (اختیاری)
+  metadata  Json?     // اطلاعات اضافی مثل ticketId, productId
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+  @@index([type])
+}
+
+// ====== Web Push Subscription ======
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique @db.VarChar(500) 
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  userAgent String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ====== سیستم پرداخت ======
+model Payment {
+  id               String    @id @default(cuid())
+  invoiceNumber    String    @unique
+  userId           String
+  planId           String
+  subscriptionId   String?
+  amount           Decimal   @db.Decimal(10, 2)
+  originalAmount   Decimal   @db.Decimal(10, 2)
+  discountAmount   Decimal   @default(0) @db.Decimal(10, 2)
+  couponId         String?
+  currency         String    @default("USD")
+  duration         Int
+  status           String    @default("pending") // pending, paid, failed, refunded, cancelled
+  method           String    @default("simulated") // simulated, manual, coupon_free, gateway
+  gatewayName      String?
+  transactionId    String?
+  referenceNumber  String?   @unique
+  description      String?
+  metadata         Json?
+  paidAt           DateTime?
+  refundedAt       DateTime?
+  refundReason     String?
+  createdById      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user      User          @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  plan      Plan          @relation(fields: [planId], references: [id])
+  coupon    Coupon?       @relation(fields: [couponId], references: [id])
+  createdBy User?         @relation("CreatedPayments", fields: [createdById], references: [id], onDelete: SetNull)
+  usages    CouponUsage[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([planId])
+  @@index([createdAt])
+}
+
+// ====== کد تخفیف ======
+model Coupon {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  type           String    // percentage, fixed
+  value          Decimal   @db.Decimal(10, 2)
+  maxUses        Int?      // null = unlimited
+  usedCount      Int       @default(0)
+  minAmount      Decimal?  @db.Decimal(10, 2)
+  maxDiscount    Decimal?  @db.Decimal(10, 2)
+  appliesToPlans Json?     // ["Basic", "Silver"] or null = all
+  validFrom      DateTime  @default(now())
+  validUntil     DateTime?
+  isActive       Boolean   @default(true)
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  createdBy User?         @relation("CreatedCoupons", fields: [createdById], references: [id], onDelete: SetNull)
+  payments  Payment[]
+  usages    CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+// ====== استفاده از کد تخفیف ======
+model CouponUsage {
+  id             String   @id @default(cuid())
+  couponId       String
+  userId         String
+  paymentId      String
+  discountAmount Decimal  @db.Decimal(10, 2)
+  createdAt      DateTime @default(now())
+
+  coupon  Coupon  @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([userId])
 }

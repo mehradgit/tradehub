@@ -1,15 +1,17 @@
-// src/app/requests/new/page.js
+// src/app/(public)/requests/new/page.js
 "use client";
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { toast } from "react-toastify"; // ✅ ایمپورت توست
+import { toast } from "react-toastify";
 import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import CountrySelect from "@/components/ui/CountrySelect";
 import CategorySelect from "@/components/ui/CategorySelect";
+import SupplierCountrySelect from "@/components/ui/SupplierCountrySelect";
+import { getCountryName } from "@/lib/countries";
 
 export default function NewRequestPage() {
   const router = useRouter();
@@ -30,10 +32,15 @@ export default function NewRequestPage() {
     currency: "USD",
     deadline: "",
     deliveryCountry: "",
+    deliveryCountryCode: "",
     shippingTerms: "",
     packagingReq: "",
     certifications: "",
-    attachments: [], // آرایه‌ای از مسیرهای فایل (URL)
+    paymentTerms: "",
+    targetPrice: "",
+    isPriceNegotiable: true,
+    supplierCountries: ["WORLDWIDE"],
+    attachments: [],
     isUrgent: false,
     isVisible: true,
   });
@@ -45,7 +52,22 @@ export default function NewRequestPage() {
     if (error) setError("");
   };
 
-  // ====== آپلود تصاویر با پیشرفت (دقیقاً مثل فرم محصول) ======
+  // ====== تغییرات دستهبندی ======
+  const handleCategoryChange = (category, subCategory) => {
+    setFormData((prev) => ({
+      ...prev,
+      category,
+      subCategory: subCategory || "",
+    }));
+    if (error) setError("");
+  };
+
+  // ====== تغییرات کشور تأمینکننده ======
+  const handleSupplierCountriesChange = (countries) => {
+    setFormData((prev) => ({ ...prev, supplierCountries: countries }));
+  };
+
+  // ====== آپلود تصاویر با پیشرفت ======
   const fileInputRef = useRef(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -53,8 +75,7 @@ export default function NewRequestPage() {
   const handleFileUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
-    if (isUploading) return; // جلوگیری از آپلود همزمان
+    if (isUploading) return;
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -62,38 +83,30 @@ export default function NewRequestPage() {
 
     try {
       const uploadedPaths = [];
-
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const result = await uploadFileWithProgress(
           file,
           "requests",
-          (percent) => {
-            setUploadProgress(percent);
-          },
+          (percent) => setUploadProgress(percent),
         );
         uploadedPaths.push(result.path);
       }
-
       setFormData((prev) => ({
         ...prev,
         attachments: [...prev.attachments, ...uploadedPaths],
       }));
-
-      toast.success(`${uploadedPaths.length} file(s) uploaded successfully!`); // ✅ توست موفقیت
+      toast.success(`${uploadedPaths.length} file(s) uploaded successfully!`);
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error(err.message || "Failed to upload file(s)"); // ✅ توست خطا
+      toast.error(err.message || "Failed to upload file(s)");
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  // ====== حذف تصویر آپلود شده ======
   const removeAttachment = (index) => {
     setFormData((prev) => ({
       ...prev,
@@ -113,41 +126,24 @@ export default function NewRequestPage() {
   // ====== مرحله بعد ======
   const handleNextStep = () => {
     const errors = [];
-
-    if (!formData.title || formData.title.trim() === "") {
-      errors.push("Please enter a request title");
-    }
-    if (!formData.category || formData.category === "") {
-      errors.push("Please select a category");
-    }
-    if (!formData.description || formData.description.trim() === "") {
-      errors.push("Please enter a description");
-    }
-    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
+    if (!formData.title?.trim()) errors.push("Please enter a request title");
+    if (!formData.category) errors.push("Please select a category");
+    if (!formData.description?.trim()) errors.push("Please enter a description");
+    if (!formData.quantity || parseInt(formData.quantity) <= 0)
       errors.push("Please enter a valid quantity (greater than 0)");
-    }
-    if (!formData.deliveryCountry || formData.deliveryCountry === "") {
+    if (!formData.deliveryCountry)
       errors.push("Please select a delivery location (country)");
-    }
 
     if (errors.length > 0) {
-      toast.warning(errors.join(". ")); // ✅ توست هشدار
+      toast.warning(errors.join(". "));
       return;
     }
-
     setError("");
     setStep(2);
   };
 
-  const handlePrevStep = () => {
-    setStep(1);
-  };
-  const handleCategoryChange = (value) => {
-    setFormData((prev) => ({ ...prev, category: value, subCategory: "" }));
-  };
-  const handleSubCategoryChange = (value) => {
-    setFormData((prev) => ({ ...prev, subCategory: value }));
-  };
+  const handlePrevStep = () => setStep(1);
+
   // ====== ارسال فرم ======
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -169,6 +165,12 @@ export default function NewRequestPage() {
         shippingTerms: formData.shippingTerms || undefined,
         packagingReq: formData.packagingReq || undefined,
         certifications: formData.certifications || undefined,
+        paymentTerms: formData.paymentTerms || undefined,
+        targetPrice: formData.isPriceNegotiable
+          ? null
+          : parseFloat(formData.targetPrice) || null,
+        isPriceNegotiable: formData.isPriceNegotiable,
+        supplierCountries: formData.supplierCountries,
         attachments: formData.attachments,
         isUrgent: formData.isUrgent,
         isVisible: formData.isVisible,
@@ -185,10 +187,12 @@ export default function NewRequestPage() {
         throw new Error(data.message || "Failed to create buying request");
       }
 
-      toast.success("Buying request published successfully!"); // ✅ توست موفقیت
-      router.push(`/requests/${data.requestNumber}/${data.slug}`);
+      toast.success(
+        "Request submitted for approval. You will be notified once approved.",
+      );
+      router.push("/dashboard/requests");
     } catch (err) {
-      toast.error(err.message); // ✅ توست خطا
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -219,9 +223,7 @@ export default function NewRequestPage() {
           </h1>
           <div className="step-indicator">
             <span className="step-label">Step {step} of 2</span>
-            <span
-              className={`step-dot ${step === 1 ? "active" : "done"}`}
-            ></span>
+            <span className={`step-dot ${step === 1 ? "active" : "done"}`}></span>
             <span className={`step-dot ${step === 2 ? "active" : ""}`}></span>
           </div>
         </div>
@@ -237,10 +239,7 @@ export default function NewRequestPage() {
           {step === 1 && (
             <>
               <h3 className="fw-bold mb-3">
-                <i
-                  className="fas fa-info-circle me-2"
-                  style={{ color: "var(--primary)" }}
-                ></i>
+                <i className="fas fa-info-circle me-2" style={{ color: "var(--primary)" }}></i>
                 Request Details
               </h3>
 
@@ -267,12 +266,14 @@ export default function NewRequestPage() {
                   categoryValue={formData.category}
                   subCategoryValue={formData.subCategory}
                   onCategoryChange={handleCategoryChange}
-                  onSubCategoryChange={handleSubCategoryChange}
+                  onSubCategoryChange={(sub) =>
+                    setFormData((prev) => ({ ...prev, subCategory: sub }))
+                  }
                   categoryRequired
                 />
               </div>
 
-              <div className="form-group">
+              <div className="form-group mt-3">
                 <label>
                   Description <span className="required">*</span>
                 </label>
@@ -280,25 +281,23 @@ export default function NewRequestPage() {
                   className="form-control"
                   rows="4"
                   name="description"
-                  placeholder="Describe what you are looking for in detail. Include specifications, quality requirements, target use, etc."
+                  maxLength={2000}
+                  placeholder="Describe what you are looking for in detail."
                   value={formData.description}
                   onChange={handleChange}
                   required
                 ></textarea>
                 <div className="help-text">
-                  Provide as much detail as possible to attract the right
-                  suppliers.
+                  Provide as much detail as possible to attract the right suppliers.
                 </div>
               </div>
 
               <h3 className="fw-bold mt-4 mb-3">
-                <i
-                  className="fas fa-tag me-2"
-                  style={{ color: "var(--primary)" }}
-                ></i>
-                Quantity &amp; Budget
+                <i className="fas fa-tag me-2" style={{ color: "var(--primary)" }}></i>
+                Quantity &amp; Pricing
               </h3>
 
+              {/* Quantity + Unit + Currency */}
               <div className="form-row-3">
                 <div className="form-group">
                   <label>
@@ -335,10 +334,74 @@ export default function NewRequestPage() {
                     <option value="boxes">boxes</option>
                     <option value="pallets">pallets</option>
                     <option value="containers">containers</option>
+                    <option value="metric_tons">Metric Tons</option>
+                    <option value="20ft_container">20-Foot Container</option>
+                    <option value="40ft_container">40-Foot Container</option>
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Target Budget</label>
+                  <label>Currency</label>
+                  <select
+                    className="form-select"
+                    name="currency"
+                    value={formData.currency}
+                    onChange={handleChange}
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Target Price + Negotiabl + Budget Range + Deadline */}
+              <div className="form-row-3">
+                <div className="form-group">
+                  <label>Target Price</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    name="targetPrice"
+                    step="0.01"
+                    placeholder={formData.isPriceNegotiable ? "Negotiable" : "e.g. 6.50"}
+                    value={formData.targetPrice}
+                    onChange={handleChange}
+                    disabled={formData.isPriceNegotiable}
+                    style={{
+                      background: formData.isPriceNegotiable ? "#f5f5f5" : "#fff",
+                      color: formData.isPriceNegotiable ? "var(--gray)" : "var(--black)",
+                    }}
+                  />
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginTop: 8,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      fontWeight: 500,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      name="isPriceNegotiable"
+                      checked={formData.isPriceNegotiable}
+                      onChange={(e) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          isPriceNegotiable: e.target.checked,
+                          targetPrice: e.target.checked ? "" : prev.targetPrice,
+                        }));
+                      }}
+                      style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
+                    />
+                    Price is negotiable
+                  </label>
+                </div>
+
+                <div className="form-group">
+                  <label>Budget Range</label>
                   <select
                     className="form-select"
                     name="budgetRange"
@@ -355,22 +418,7 @@ export default function NewRequestPage() {
                     <option>$100,000+</option>
                   </select>
                 </div>
-              </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Currency</label>
-                  <select
-                    className="form-select"
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleChange}
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                  </select>
-                </div>
                 <div className="form-group">
                   <label>Quote Deadline</label>
                   <input
@@ -383,18 +431,56 @@ export default function NewRequestPage() {
                 </div>
               </div>
 
-              <div className="form-group">
+              {/* Payment Terms */}
+              <div className="form-group mt-3">
+                <label>Payment Terms</label>
+                <select
+                  className="form-select"
+                  name="paymentTerms"
+                  value={formData.paymentTerms}
+                  onChange={handleChange}
+                >
+                  <option value="">Select payment terms</option>
+                  <option value="T/T">T/T (Telegraphic Transfer)</option>
+                  <option value="L/C">L/C (Letter of Credit)</option>
+                  <option value="D/P">D/P (Documents against Payment)</option>
+                  <option value="D/A">D/A (Documents against Acceptance)</option>
+                  <option value="PayPal">PayPal</option>
+                  <option value="Western Union">Western Union</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Suppliers From */}
+              <div className="form-group mt-3">
+                <label>
+                  Looking for Suppliers From{" "}
+                  <span className="text-muted fw-normal">
+                    (select multiple, or choose Worldwide)
+                  </span>
+                </label>
+                <SupplierCountrySelect
+                  value={formData.supplierCountries}
+                  onChange={handleSupplierCountriesChange}
+                />
+              </div>
+
+              {/* Delivery Location */}
+              <div className="form-group mt-3">
                 <label>
                   Delivery Location <span className="required">*</span>
                 </label>
                 <CountrySelect
-                  value={formData.deliveryCountry}
-                  onChange={(code) =>
+                  value={formData.deliveryCountryCode}
+                  onChange={(code) => {
+                    const name = getCountryName(code);
                     setFormData((prev) => ({
                       ...prev,
-                      deliveryCountry: code,
-                    }))
-                  }
+                      deliveryCountry: name,
+                      deliveryCountryCode: code,
+                    }));
+                  }}
                   placeholder="Select delivery country"
                   required
                 />
@@ -414,7 +500,7 @@ export default function NewRequestPage() {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => toast.success("Draft saved successfully!")} // ✅ به جای alert
+                  onClick={() => toast.success("Draft saved successfully!")}
                 >
                   <i className="fas fa-save"></i> Save as Draft
                 </button>
@@ -429,10 +515,7 @@ export default function NewRequestPage() {
           {step === 2 && (
             <>
               <h3 className="fw-bold mb-3">
-                <i
-                  className="fas fa-ship me-2"
-                  style={{ color: "var(--primary)" }}
-                ></i>
+                <i className="fas fa-ship me-2" style={{ color: "var(--primary)" }}></i>
                 Shipping &amp; Additional Info
               </h3>
 
@@ -458,7 +541,7 @@ export default function NewRequestPage() {
                     type="text"
                     className="form-control"
                     name="packagingReq"
-                    placeholder="e.g., 250g glass jars, tamper-evident seals"
+                    placeholder="e.g., 250g glass jars"
                     value={formData.packagingReq}
                     onChange={handleChange}
                   />
@@ -466,10 +549,7 @@ export default function NewRequestPage() {
               </div>
 
               <h3 className="fw-bold mt-4 mb-3">
-                <i
-                  className="fas fa-certificate me-2"
-                  style={{ color: "var(--primary)" }}
-                ></i>
+                <i className="fas fa-certificate me-2" style={{ color: "var(--primary)" }}></i>
                 Certifications &amp; Requirements
               </h3>
 
@@ -487,10 +567,7 @@ export default function NewRequestPage() {
               </div>
 
               <h3 className="fw-bold mt-4 mb-3">
-                <i
-                  className="fas fa-paperclip me-2"
-                  style={{ color: "var(--primary)" }}
-                ></i>
+                <i className="fas fa-paperclip me-2" style={{ color: "var(--primary)" }}></i>
                 Attachments (Optional)
               </h3>
 
@@ -518,13 +595,8 @@ export default function NewRequestPage() {
                   </div>
                 </div>
 
-                {/* ✅ نمایش پیشرفت آپلود */}
-                <UploadProgress
-                  progress={uploadProgress}
-                  label="Uploading images..."
-                />
+                <UploadProgress progress={uploadProgress} label="Uploading images..." />
 
-                {/* ✅ نمایش و حذف تصاویر آپلود شده */}
                 <div className="image-preview d-flex flex-wrap gap-2 mt-2">
                   {formData.attachments.map((img, index) => (
                     <div
@@ -546,11 +618,7 @@ export default function NewRequestPage() {
                       <button
                         type="button"
                         className="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle p-1"
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          fontSize: "12px",
-                        }}
+                        style={{ width: "24px", height: "24px", fontSize: "12px" }}
                         onClick={() => removeAttachment(index)}
                       >
                         ×
@@ -561,10 +629,7 @@ export default function NewRequestPage() {
               </div>
 
               <h3 className="fw-bold mt-4 mb-3">
-                <i
-                  className="fas fa-sliders-h me-2"
-                  style={{ color: "var(--primary)" }}
-                ></i>
+                <i className="fas fa-sliders-h me-2" style={{ color: "var(--primary)" }}></i>
                 Settings
               </h3>
 
@@ -581,8 +646,7 @@ export default function NewRequestPage() {
                   </span>
                 </div>
                 <div className="help-text">
-                  Urgent requests get highlighted and priority attention from
-                  suppliers.
+                  Urgent requests get highlighted and priority attention from suppliers.
                 </div>
               </div>
 
@@ -624,7 +688,7 @@ export default function NewRequestPage() {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => toast.success("Draft saved successfully!")} // ✅ به جای alert
+                  onClick={() => toast.success("Draft saved successfully!")}
                 >
                   <i className="fas fa-save"></i> Save as Draft
                 </button>

@@ -4,6 +4,8 @@
 import { useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
+import PushNotificationPrompt from "@/components/dashboard/PushNotificationPrompt";
+import NotificationListener from "@/components/dashboard/NotificationListener";
 
 export default function DashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -13,8 +15,9 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="dashboard-layout">
-      
-      {/* Overlay برای بستن سایدبار با کلیک بیرون */}
+      {/* ✅ Listener */}
+      <NotificationListener />
+
       {isSidebarOpen && (
         <div
           className="sidebar-overlay"
@@ -37,6 +40,9 @@ export default function DashboardLayout({ children }) {
         <Topbar onMenuToggle={toggleSidebar} />
         <section className="content">{children}</section>
       </main>
+
+      {/* ✅ Push Prompt */}
+      <PushNotificationPrompt />
     </div>
   );
 }

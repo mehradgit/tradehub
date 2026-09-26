@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { toast } from "react-toastify";
 import Layout from "@/components/layout/Layout";
 import UploadProgress from "@/components/ui/UploadProgress";
@@ -13,44 +13,83 @@ import CategorySelect from "@/components/ui/CategorySelect";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { getCountryName } from "@/lib/countries";
 
+const STORAGE_KEY = "complete-registration-form";
+
+// ====== Helper: خواندن از sessionStorage ======
+function loadFromStorage() {
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+// ====== Helper: نوشتن در sessionStorage ======
+function saveToStorage(data) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // ignore
+  }
+}
+
 export default function CompleteRegistrationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status, update } = useSession();
+
+  const emailFromUrl = searchParams.get("email");
+  const tokenFromUrl = searchParams.get("token");
+
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
-
-  const emailFromUrl = searchParams.get("email");
   const [hasRedirected, setHasRedirected] = useState(false);
+  const [autoLoggingIn, setAutoLoggingIn] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    companyName: "",
-    country: "",
-    countryCode: "",
-    businessType: "",
-    phone: "",
-    bio: "",
-    address: "",
-    website: "",
-    companyEmail: "",
-    employeeCount: "",
-    role: "BUYER",
-    primaryCategory: "",
-    primarySubCategory: "",
-    logo: null,
-    coverImage: null,
-    galleryImages: [],
+  // ====== State فرم ======
+  const [formData, setFormData] = useState(() => {
+    const saved = loadFromStorage();
+    return (
+      saved?.formData || {
+        name: "",
+        companyName: "",
+        country: "",
+        countryCode: "",
+        businessType: "",
+        phone: "",
+        bio: "",
+        address: "",
+        website: "",
+        companyEmail: "",
+        employeeCount: "",
+        role: "BUYER",
+        primaryCategory: "",
+        primarySubCategory: "",
+        logo: null,
+        coverImage: null,
+        galleryImages: [],
+      }
+    );
   });
 
-  const [existingLogo, setExistingLogo] = useState(null);
-  const [existingCover, setExistingCover] = useState(null);
+  const [existingLogo, setExistingLogo] = useState(() => {
+    const saved = loadFromStorage();
+    return saved?.existingLogo || null;
+  });
+
+  const [existingCover, setExistingCover] = useState(() => {
+    const saved = loadFromStorage();
+    return saved?.existingCover || null;
+  });
+
   const [uploadProgress, setUploadProgress] = useState({
     logo: 0,
     coverImage: 0,
     gallery: 0,
   });
+
   const [isUploading, setIsUploading] = useState({
     logo: false,
     coverImage: false,
@@ -60,44 +99,117 @@ export default function CompleteRegistrationPage() {
   const logoInputRef = useRef(null);
   const coverInputRef = useRef(null);
   const galleryInputRef = useRef(null);
+  const isInitialized = useRef(false);
+  const autoLoginAttempted = useRef(false);
 
-  // ====== هدایت‌های شرطی ======
+  // ============================================================
+  // ۱. Auto-login با توکن تأیید ایمیل
+  // ============================================================
+  useEffect(() => {
+    if (status === "loading") return;
+    if (session) return;
+    if (!tokenFromUrl || !emailFromUrl) return;
+    if (autoLoginAttempted.current) return;
+
+    autoLoginAttempted.current = true;
+    setAutoLoggingIn(true);
+
+    signIn("verify-token", {
+      email: emailFromUrl,
+      token: tokenFromUrl,
+      redirect: false,
+    })
+      .then((result) => {
+        if (result?.error) {
+          toast.error("Session expired. Please login manually.");
+          router.replace(
+            `/login?verified=true&email=${encodeURIComponent(emailFromUrl)}`
+          );
+        } else {
+          // URL رو تمیز کن (توکن رو از آدرس حذف کن)
+          window.history.replaceState({}, "", "/complete-registration");
+          // به NextAuth فرصت بده تا session رو رفرش کنه
+          setTimeout(() => {
+            router.refresh();
+          }, 100);
+        }
+      })
+      .catch(() => {
+        toast.error("Auto-login failed. Please login manually.");
+        router.replace(
+          `/login?verified=true&email=${encodeURIComponent(emailFromUrl)}`
+        );
+      })
+      .finally(() => {
+        setAutoLoggingIn(false);
+      });
+  }, [status, session, tokenFromUrl, emailFromUrl, router]);
+
+  // ============================================================
+  // ۲. هدایت‌های شرطی
+  // ============================================================
   useEffect(() => {
     if (status === "loading" || hasRedirected) return;
 
+    // اگر کاربر قبلاً ثبت‌نامش را تکمیل کرده
     if (session?.user?.registrationComplete === true) {
-      router.push("/dashboard");
+      router.replace("/dashboard");
       setHasRedirected(true);
       return;
     }
 
-    if (!session && !emailFromUrl) {
-      router.push("/login");
+    // اگر هیچ session و هیچ لینکی نیست → برو لاگین
+    if (!session && !emailFromUrl && !tokenFromUrl) {
+      router.replace("/login");
       setHasRedirected(true);
       return;
     }
-  }, [session, status, emailFromUrl, router, hasRedirected]);
 
-  // ====== دریافت اطلاعات کاربر ======
+    // اگر session نداری ولی email/token داری → منتظر auto-login بمون
+    if (!session && (emailFromUrl || tokenFromUrl)) {
+      return;
+    }
+  }, [session, status, emailFromUrl, tokenFromUrl, router, hasRedirected]);
+
+  // ============================================================
+  // ۳. دریافت اطلاعات کاربر (فقط یک‌بار)
+  // ============================================================
   useEffect(() => {
+    if (status === "loading") return;
+    if (isInitialized.current) return;
+
+    // اگر session نداری، صبر کن (auto-login در جریانه)
+    if (!session) return;
+
+    // از sessionStorage اگه چیز ذخیره‌شده داریم
+    const saved = loadFromStorage();
+    if (saved?.formData) {
+      setFormData(saved.formData);
+      setExistingLogo(saved.existingLogo || null);
+      setExistingCover(saved.existingCover || null);
+      setFetching(false);
+      isInitialized.current = true;
+      return;
+    }
+
+    // در غیر این صورت از API دریافت کن
     const fetchUserProfile = async () => {
       try {
         const res = await fetch("/api/user/profile");
+
         if (res.status === 401 || res.status === 403) {
-          router.push("/login");
+          router.replace("/login");
           setHasRedirected(true);
           return;
         }
 
         if (!res.ok) {
-          const text = await res.text();
           throw new Error(`Server error (${res.status})`);
         }
 
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
-          const text = await res.text();
-          throw new Error("Invalid response from server (expected JSON)");
+          throw new Error("Invalid response from server");
         }
 
         const user = await res.json();
@@ -119,11 +231,12 @@ export default function CompleteRegistrationPage() {
           primarySubCategory: user.primarySubCategory || "",
           logo: null,
           coverImage: null,
-          galleryImages: [],
+          galleryImages: user.galleryImages || [],
         });
 
         setExistingLogo(user.logo || user.image || null);
         setExistingCover(user.coverImage || null);
+        isInitialized.current = true;
       } catch (err) {
         toast.error(err.message);
         setError(err.message);
@@ -132,20 +245,31 @@ export default function CompleteRegistrationPage() {
       }
     };
 
-    if (status === "loading") return;
-    if (session || emailFromUrl) {
-      fetchUserProfile();
-    }
-  }, [session, status, emailFromUrl, router]);
+    fetchUserProfile();
+  }, [session, status, router]);
 
-  // ====== تغییرات فیلدها ======
+  // ============================================================
+  // ۴. ذخیره خودکار در sessionStorage
+  // ============================================================
+  useEffect(() => {
+    if (isInitialized.current) {
+      saveToStorage({
+        formData,
+        existingLogo,
+        existingCover,
+      });
+    }
+  }, [formData, existingLogo, existingCover]);
+
+  // ============================================================
+  // ۵. تغییرات فیلدها
+  // ============================================================
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
 
-  // ====== تغییرات دسته‌بندی ======
   const handleCategoryChange = (category, subCategory) => {
     setFormData((prev) => ({
       ...prev,
@@ -155,29 +279,30 @@ export default function CompleteRegistrationPage() {
     if (error) setError("");
   };
 
-  // ====== تغییرات توضیحات (Rich Text) ======
   const handleBioChange = (value) => {
     setFormData((prev) => ({ ...prev, bio: value }));
   };
 
-  // ====== آپلود فایل‌ها ======
+  // ============================================================
+  // ۶. آپلود تصاویر
+  // ============================================================
   const handleFileChange = async (e, fieldName) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // برای فیلدهای تکی (logo, coverImage)
+    // فایل تکی (logo, coverImage)
     if (fieldName !== "galleryImages") {
       const file = files[0];
+
       if (!file.type.startsWith("image/")) {
         toast.warning("Please select a valid image file.");
         e.target.value = "";
         return;
       }
+
       const sizeMB = file.size / (1024 * 1024);
       if (sizeMB > 3) {
-        toast.error(
-          `Image size (${sizeMB.toFixed(1)}MB) exceeds the 3MB limit.`,
-        );
+        toast.error(`Image size (${sizeMB.toFixed(1)}MB) exceeds the 3MB limit.`);
         e.target.value = "";
         return;
       }
@@ -191,16 +316,10 @@ export default function CompleteRegistrationPage() {
           "profiles",
           (percent) => {
             setUploadProgress((prev) => ({ ...prev, [fieldName]: percent }));
-          },
+          }
         );
 
-        console.log(`✅ Uploaded ${fieldName}:`, result.path);
-
-        setFormData((prev) => ({
-          ...prev,
-          [fieldName]: result.path,
-        }));
-
+        setFormData((prev) => ({ ...prev, [fieldName]: result.path }));
         toast.success(`Image uploaded! (${result.saved}% smaller)`);
       } catch (err) {
         toast.error(err.message || "Failed to upload image.");
@@ -213,12 +332,13 @@ export default function CompleteRegistrationPage() {
       return;
     }
 
-    // ====== آپلود گالری (چند فایل) ======
+    // گالری (چند فایل)
     setIsUploading((prev) => ({ ...prev, gallery: true }));
     setUploadProgress((prev) => ({ ...prev, gallery: 0 }));
 
     try {
       const uploadedPaths = [];
+
       for (const file of files) {
         if (!file.type.startsWith("image/")) {
           toast.warning(`Skipping ${file.name}: not an image.`);
@@ -234,7 +354,7 @@ export default function CompleteRegistrationPage() {
           "profiles",
           (percent) => {
             setUploadProgress((prev) => ({ ...prev, gallery: percent }));
-          },
+          }
         );
         uploadedPaths.push(result.path);
       }
@@ -255,7 +375,9 @@ export default function CompleteRegistrationPage() {
     }
   };
 
-  // ====== حذف تصاویر ======
+  // ============================================================
+  // ۷. حذف تصاویر
+  // ============================================================
   const removeImage = (fieldName, index = null, isExisting = false) => {
     if (fieldName === "galleryImages" && index !== null) {
       setFormData((prev) => ({
@@ -279,7 +401,9 @@ export default function CompleteRegistrationPage() {
     }
   };
 
-  // ====== ارسال فرم ======
+  // ============================================================
+  // ۸. ارسال فرم
+  // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -323,38 +447,51 @@ export default function CompleteRegistrationPage() {
         throw new Error(data.message || "Failed to complete registration");
       }
 
+      // پاک کردن draft
+      sessionStorage.removeItem(STORAGE_KEY);
+
+      // ✅ JWT رو آپدیت کن
       await update({ registrationComplete: true });
+
       toast.success("Registration completed successfully!");
-      window.location.href = "/dashboard";
+
+      // ✅ کمی صبر کن تا JWT واقعاً آپدیت بشه، بعد برو داشبورد
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 400);
     } catch (err) {
       setError(err.message);
       toast.error(err.message);
-    } finally {
       setLoading(false);
     }
   };
 
-  // ====== وضعیت بارگذاری ======
-  if (status === "loading") {
+  // ============================================================
+  // ۹. حالت‌های بارگذاری
+  // ============================================================
+  if (status === "loading" || autoLoggingIn || fetching) {
     return (
       <Layout>
         <div className="container text-center py-5">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
+          <p className="text-muted mt-3">
+            {autoLoggingIn
+              ? "Signing you in..."
+              : "Loading your information..."}
+          </p>
         </div>
       </Layout>
     );
   }
 
-  if (hasRedirected) {
-    return null;
-  }
+  if (hasRedirected) return null;
+  if (!session && !emailFromUrl) return null;
 
-  if (!session && !emailFromUrl) {
-    return null;
-  }
-
+  // ============================================================
+  // ۱۰. رندر فرم
+  // ============================================================
   return (
     <Layout>
       <div
@@ -362,13 +499,14 @@ export default function CompleteRegistrationPage() {
         style={{ maxWidth: "800px", marginTop: "40px", marginBottom: "60px" }}
       >
         <div className="card shadow border-0 rounded-4 p-4 p-md-5">
+          {/* ====== هدر ====== */}
           <div className="text-center mb-4">
             <div
               className="mx-auto mb-3 d-flex align-items-center justify-content-center"
               style={{
                 width: "64px",
                 height: "64px",
-                background: "var(--color-primary, #e85d3a)",
+                background: "var(--color-primary, #13795b)",
                 borderRadius: "16px",
               }}
             >
@@ -376,7 +514,7 @@ export default function CompleteRegistrationPage() {
             </div>
             <h2 className="fw-bold">Complete Your Registration</h2>
             <p className="text-muted">
-              Please provide your business information
+              Please provide your business information to continue
             </p>
           </div>
 
@@ -406,7 +544,7 @@ export default function CompleteRegistrationPage() {
               </small>
             </div>
 
-            {/* ====== نام کامل ====== */}
+            {/* ====== نام ====== */}
             <div className="form-group mb-3">
               <label className="form-label fw-semibold">
                 Full Name <span className="text-danger">*</span>
@@ -438,13 +576,14 @@ export default function CompleteRegistrationPage() {
               />
             </div>
 
-            {/* ====== کشور ====== */}
+            {/* ====== کشور + نوع کسب‌وکار ====== */}
             <div className="row g-3">
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
                   Country <span className="text-danger">*</span>
                 </label>
                 <CountrySelect
+                  value={formData.countryCode}
                   onChange={(code) => {
                     const name = getCountryName(code);
                     setFormData((prev) => ({
@@ -477,7 +616,7 @@ export default function CompleteRegistrationPage() {
               </div>
             </div>
 
-            {/* ====== دسته‌بندی محصولات ====== */}
+            {/* ====== دسته‌بندی ====== */}
             <div className="form-group mt-3">
               <label className="form-label fw-semibold">Product Category</label>
               <CategorySelect
@@ -502,7 +641,7 @@ export default function CompleteRegistrationPage() {
               />
             </div>
 
-            {/* ====== تلفن و ایمیل شرکت ====== */}
+            {/* ====== تلفن + ایمیل شرکت ====== */}
             <div className="row g-3 mt-1">
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Phone Number</label>
@@ -541,7 +680,7 @@ export default function CompleteRegistrationPage() {
               />
             </div>
 
-            {/* ====== توضیحات شرکت (Rich Text Editor) ====== */}
+            {/* ====== بیوگرافی ====== */}
             <div className="form-group mt-3">
               <label className="form-label fw-semibold">
                 Company Bio / Description
@@ -554,7 +693,7 @@ export default function CompleteRegistrationPage() {
               />
             </div>
 
-            {/* ====== آدرس و تعداد کارکنان ====== */}
+            {/* ====== آدرس + تعداد کارکنان ====== */}
             <div className="row g-3 mt-1">
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Address</label>
@@ -588,66 +727,84 @@ export default function CompleteRegistrationPage() {
               </div>
             </div>
 
-            {/* ====== بخش تصاویر ====== */}
+            {/* ====== تصاویر ====== */}
             <h5 className="fw-bold mt-4 mb-3">Company Images</h5>
             <p className="text-muted small">
               <i className="fas fa-info-circle me-1"></i>
               Maximum file size: 3MB · Supported formats: JPG, PNG, WEBP
             </p>
 
-            {/* ====== پیش‌نمایش ترکیبی (کاور + لوگو) ====== */}
+            {/* پیش‌نمایش ترکیبی */}
             <div className="mb-3">
               <label className="form-label fw-semibold">Profile Preview</label>
               <div
                 className="border rounded-3 position-relative overflow-hidden"
-                style={{
-                  width: "100%",
-                  height: "120px",
-                  background: "var(--light)",
-                }}
+                style={{ width: "100%", height: "120px", background: "var(--light)" }}
               >
-                {/* کاور */}
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    backgroundImage: formData.coverImage
-                      ? `url(${formData.coverImage})`
-                      : "none",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                />
-                {/* لوگو (دایره‌ای، هم‌پوشانی) */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "-20px",
-                    left: "20px",
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    border: "3px solid white",
-                    background: formData.logo
-                      ? `url(${formData.logo}) center/cover`
-                      : "var(--gray-light)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {!formData.logo && (
-                    <i
-                      className="fas fa-camera text-muted"
-                      style={{ fontSize: "20px" }}
-                    ></i>
-                  )}
-                </div>
+                {formData.coverImage || existingCover ? (
+                  <img
+                    src={formData.coverImage || existingCover}
+                    alt="Cover preview"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={(e) => (e.target.style.display = "none")}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--gray-light)",
+                      color: "var(--gray)",
+                    }}
+                  >
+                    <i className="fas fa-image fa-2x"></i>
+                  </div>
+                )}
+
+                {formData.logo || existingLogo ? (
+                  <img
+                    src={formData.logo || existingLogo}
+                    alt="Logo preview"
+                    style={{
+                      position: "absolute",
+                      bottom: "-20px",
+                      left: "20px",
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      border: "3px solid white",
+                      objectFit: "cover",
+                      background: "var(--gray-light)",
+                    }}
+                    onError={(e) => (e.target.style.display = "none")}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "-20px",
+                      left: "20px",
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      border: "3px solid white",
+                      background: "var(--gray-light)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--gray)",
+                      fontSize: "20px",
+                    }}
+                  >
+                    <i className="fas fa-camera"></i>
+                  </div>
+                )}
               </div>
-              <div className="d-flex gap-2 mt-2">
+
+              <div className="d-flex gap-2 mt-2 flex-wrap">
                 <button
                   type="button"
                   className="btn btn-outline-secondary btn-sm"
@@ -683,6 +840,7 @@ export default function CompleteRegistrationPage() {
                   </button>
                 )}
               </div>
+
               <UploadProgress
                 progress={uploadProgress.coverImage}
                 label="Uploading cover..."
@@ -693,7 +851,6 @@ export default function CompleteRegistrationPage() {
               />
             </div>
 
-            {/* inputهای مخفی برای آپلود */}
             <input
               type="file"
               ref={coverInputRef}
@@ -709,7 +866,7 @@ export default function CompleteRegistrationPage() {
               onChange={(e) => handleFileChange(e, "logo")}
             />
 
-            {/* ====== گالری تصاویر ====== */}
+            {/* گالری */}
             <div className="form-group mb-3">
               <label className="form-label fw-semibold">Gallery Images</label>
               <div
@@ -735,7 +892,6 @@ export default function CompleteRegistrationPage() {
                 label="Uploading gallery..."
               />
 
-              {/* پیش‌نمایش تصاویر گالری */}
               <div className="d-flex flex-wrap gap-2 mt-2">
                 {formData.galleryImages.map((img, index) => (
                   <div key={index} className="position-relative">
@@ -749,16 +905,12 @@ export default function CompleteRegistrationPage() {
                         borderRadius: "8px",
                         border: "1px solid var(--gray-light)",
                       }}
+                      onError={(e) => (e.target.style.display = "none")}
                     />
                     <button
                       type="button"
                       className="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle"
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        fontSize: "10px",
-                        padding: 0,
-                      }}
+                      style={{ width: "20px", height: "20px", fontSize: "10px", padding: 0 }}
                       onClick={() => removeImage("galleryImages", index)}
                     >
                       ×
@@ -794,9 +946,7 @@ export default function CompleteRegistrationPage() {
                 <div className="col-6">
                   <div
                     className={`p-3 text-center border rounded-3 cursor-pointer ${
-                      formData.role === "SUPPLIER"
-                        ? "border-primary bg-light"
-                        : ""
+                      formData.role === "SUPPLIER" ? "border-primary bg-light" : ""
                     }`}
                     onClick={() =>
                       setFormData((prev) => ({ ...prev, role: "SUPPLIER" }))
@@ -813,12 +963,13 @@ export default function CompleteRegistrationPage() {
               </div>
             </div>
 
+            {/* ====== دکمه ارسال ====== */}
             <button
               type="submit"
               className="btn btn-primary btn-lg w-100 mt-4"
               style={{
-                background: "var(--color-primary, #e85d3a)",
-                borderColor: "var(--color-primary, #e85d3a)",
+                background: "var(--color-primary, #13795b)",
+                borderColor: "var(--color-primary, #13795b)",
                 borderRadius: "50px",
               }}
               disabled={

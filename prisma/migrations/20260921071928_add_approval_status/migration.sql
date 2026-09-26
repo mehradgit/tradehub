@@ -1,0 +1,11 @@
+-- AlterTable
+ALTER TABLE `buyingrequest` ADD COLUMN `approvedAt` DATETIME(3) NULL,
+    ADD COLUMN `approvedBy` VARCHAR(191) NULL,
+    ADD COLUMN `rejectionNote` VARCHAR(191) NULL,
+    ADD COLUMN `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING';
+
+-- AlterTable
+ALTER TABLE `product` ADD COLUMN `approvedAt` DATETIME(3) NULL,
+    ADD COLUMN `approvedBy` VARCHAR(191) NULL,
+    ADD COLUMN `rejectionNote` VARCHAR(191) NULL,
+    ADD COLUMN `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING';

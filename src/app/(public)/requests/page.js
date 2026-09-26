@@ -20,6 +20,7 @@ export default async function RequestsPage({ searchParams }) {
 
   const where = {
     isVisible: true,
+    status: "APPROVED", 
   };
 
   if (category) {

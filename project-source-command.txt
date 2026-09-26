@@ -1,0 +1,51 @@
+$projectPath = "D:\barnamenevisi\uidesigns\tradehub"   # ← مسیر پروژه خود را اینجا بگذارید
+$outputFile  = "$projectPath\project-source.txt"        # فایل خروجی
+
+# ====== پوشه‌ها و پسوندهایی که نباید خوانده شوند ======
+$excludeDirs = @(
+    "node_modules", ".next", ".git", "dist", "build",
+    ".vercel", ".idea", ".vscode", ".agents", ".claude", "windsurf"
+)
+
+$excludeExts = @(
+    ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp",
+    ".pdf", ".zip", ".rar", ".7z", ".exe", ".dll", ".lock",
+    ".log", ".woff", ".woff2", ".ttf", ".eot", ".mp4", ".mp3",
+    ".xls", ".xlsx"
+)
+
+# ====== فایل‌هایی که نباید خوانده شوند ======
+$excludeFiles = @("package-lock.json", "project-source.txt")
+
+# ====== پاک کردن فایل خروجی قبلی ======
+if (Test-Path $outputFile) { Remove-Item $outputFile -Force }
+
+# ====== دریافت همه فایل‌ها ======
+$files = Get-ChildItem -Path $projectPath -Recurse -File | Where-Object {
+    # بررسی پوشه‌های مستثنی
+    $dirMatch = $false
+    foreach ($d in $excludeDirs) {
+        if ($_.FullName -match "\\$d\\") { $dirMatch = $true; break }
+    }
+
+    # بررسی پسوندهای مستثنی
+    $extMatch = $excludeExts -contains $_.Extension.ToLower()
+
+    # بررسی نام فایل‌های مستثنی
+    $fileMatch = $excludeFiles -contains $_.Name
+
+    -not $dirMatch -and -not $extMatch -and -not $fileMatch
+}
+
+# ====== نوشتن محتوا در فایل خروجی ======
+foreach ($file in $files) {
+    $relativePath = $file.FullName.Replace($projectPath, "").TrimStart("\")
+    Add-Content -Path $outputFile -Value "`n`n=========================================="
+    Add-Content -Path $outputFile -Value "FILE: $relativePath"
+    Add-Content -Path $outputFile -Value "==========================================`n"
+    try {
+        Get-Content -Path $file.FullName -Raw -ErrorAction Stop | Add-Content -Path $outputFile
+    } catch {
+        Add-Content -Path $outputFile -Value "[خطا در خواندن فایل]"
+    }
+}

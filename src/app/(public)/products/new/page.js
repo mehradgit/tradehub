@@ -10,6 +10,7 @@ import RichTextEditor from "@/components/ui/RichTextEditor";
 import CountrySelect from "@/components/ui/CountrySelect";
 import CategorySelect from "@/components/ui/CategorySelect";
 import { getCountryName } from "@/lib/countries";
+import { toast } from "react-toastify";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -189,7 +190,10 @@ export default function NewProductPage() {
         throw new Error(data.message || "Failed to create product");
       }
 
-      router.push(`/products/${data.productNumber}/${data.slug}`);
+      toast.success(
+        "Product submitted for approval. You will be notified once approved.",
+      );
+      router.push("/dashboard/products");
     } catch (err) {
       setError(err.message);
     } finally {

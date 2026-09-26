@@ -55,6 +55,8 @@ export default async function DashboardProductsPage({ searchParams }) {
         productNumber: true,
         slug: true,
         moq: true,
+        status:true,
+        rejectionNote:true,
         views: true,
         _count: {
           select: {

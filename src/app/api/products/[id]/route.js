@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { getUserActivePlan } from "@/lib/planService";
 
 // ====== GET: دریافت یک محصول ======
 export async function GET(request, { params }) {
@@ -47,7 +48,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id } = await params; // ✅ await params
     const userId = session.user.id;
     const body = await request.json();
 
@@ -67,27 +68,45 @@ export async function PUT(request, { params }) {
       packaging,
       certifications,
       origin,
-      countryCode,
       isVisible,
-      images,
+      images, // آرایه تصاویر پس از ویرایش (موجود + جدید)
     } = body;
 
-    const product = await prisma.product.findUnique({
+    // ====== دریافت پلن فعال کاربر ======
+    const { plan } = await getUserActivePlan(userId);
+
+    // ====== بررسی محدودیت تعداد تصاویر ======
+    if (
+      images &&
+      images.length > plan.maxImagesPerProduct &&
+      plan.maxImagesPerProduct !== -1
+    ) {
+      return NextResponse.json(
+        {
+          message: `You can upload a maximum of ${plan.maxImagesPerProduct} images per product.`,
+        },
+        { status: 403 },
+      );
+    }
+
+    // بررسی مالکیت محصول
+    const existingProduct = await prisma.product.findUnique({
       where: { id },
       select: { userId: true },
     });
 
-    if (!product) {
+    if (!existingProduct) {
       return NextResponse.json(
         { message: "Product not found" },
         { status: 404 },
       );
     }
 
-    if (product.userId !== userId) {
+    if (existingProduct.userId !== userId) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
+    // به‌روزرسانی محصول
     const updated = await prisma.product.update({
       where: { id },
       data: {
@@ -106,10 +125,9 @@ export async function PUT(request, { params }) {
         packaging: packaging || null,
         certifications: certifications || null,
         origin: origin || null,
-        countryCode: countryCode || null,
-        country: origin || null,
-        isVisible: isVisible !== undefined ? isVisible : true,
         images: images || [],
+        status: "PENDING",
+        isVisible: false, // در انتظار تأیید مجدد
       },
     });
 

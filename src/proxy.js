@@ -2,7 +2,6 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// ✅ The function name is now 'proxy'
 export default auth(function proxy(req) {
   const session = req.auth;
   const pathname = req.nextUrl.pathname;
@@ -15,12 +14,25 @@ export default auth(function proxy(req) {
     "/complete-registration",
     "/products",
     "/requests",
-    "/suppliers",
+    "/profiles",
   ];
+
   const isPublicPath = publicPaths.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 
+  // ====== محافظت از مسیرهای ادمین ======
+  if (pathname.startsWith("/admin")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    if (!session.user.isAdmin) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+    return NextResponse.next();
+  }
+
+  // بقیه منطق موجود
   if (isPublicPath) {
     return NextResponse.next();
   }

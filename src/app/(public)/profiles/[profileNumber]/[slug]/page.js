@@ -44,7 +44,7 @@ async function getUserRelatedData(user) {
 
   if (user.role === "SUPPLIER") {
     products = await prisma.product.findMany({
-      where: { userId: user.id, isVisible: true },
+      where: { userId: user.id, isVisible: true, status: "APPROVED" },
       select: {
         id: true,
         name: true,
@@ -94,7 +94,8 @@ export async function generateMetadata({ params }) {
   const roleLabel = user.role === "SUPPLIER" ? "Supplier" : "Buyer";
   return {
     title: `${name} · ${roleLabel} Profile | B2B Food Hub`,
-    description: user.bio?.slice(0, 160) || `View ${name}'s profile on B2B Food Hub.`,
+    description:
+      user.bio?.slice(0, 160) || `View ${name}'s profile on B2B Food Hub.`,
   };
 }
 
@@ -127,10 +128,14 @@ export default async function ProfilePage({ params }) {
       <nav aria-label="breadcrumb" className="mb-4">
         <ol className="breadcrumb">
           <li className="breadcrumb-item">
-            <Link href="/" style={{ color: "var(--primary)" }}>Home</Link>
+            <Link href="/" style={{ color: "var(--primary)" }}>
+              Home
+            </Link>
           </li>
           <li className="breadcrumb-item">
-            <Link href="/profiles" style={{ color: "var(--primary)" }}>Profiles</Link>
+            <Link href="/profiles" style={{ color: "var(--primary)" }}>
+              Profiles
+            </Link>
           </li>
           <li className="breadcrumb-item active text-muted">{displayName}</li>
         </ol>
@@ -168,7 +173,9 @@ export default async function ProfilePage({ params }) {
               color: "rgba(255,255,255,0.3)",
             }}
           >
-            <i className={isSupplier ? "fas fa-store" : "fas fa-shopping-cart"}></i>
+            <i
+              className={isSupplier ? "fas fa-store" : "fas fa-shopping-cart"}
+            ></i>
           </div>
         )}
         <div
@@ -181,18 +188,41 @@ export default async function ProfilePage({ params }) {
             background: "linear-gradient(transparent, rgba(0,0,0,0.5))",
           }}
         >
-          <h1 style={{ color: "white", fontSize: "28px", fontWeight: 800, margin: 0 }}>
+          <h1
+            style={{
+              color: "white",
+              fontSize: "28px",
+              fontWeight: 800,
+              margin: 0,
+            }}
+          >
             {displayName}
           </h1>
-          <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px", marginTop: "4px" }}>
-            {isVerified && <span className="badge bg-success me-2">✓ Verified</span>}
+          <div
+            style={{
+              color: "rgba(255,255,255,0.8)",
+              fontSize: "14px",
+              marginTop: "4px",
+            }}
+          >
+            {isVerified && (
+              <span className="badge bg-success me-2">✓ Verified</span>
+            )}
             {isPremium && (
-              <span className="badge" style={{ background: "var(--secondary)", color: "var(--black)" }}>
+              <span
+                className="badge"
+                style={{
+                  background: "var(--secondary)",
+                  color: "var(--black)",
+                }}
+              >
                 ★ Premium
               </span>
             )}
             <span className="ms-2">{roleLabel}</span>
-            {user.businessType && <span className="ms-2">· {user.businessType}</span>}
+            {user.businessType && (
+              <span className="ms-2">· {user.businessType}</span>
+            )}
           </div>
         </div>
       </div>
@@ -236,14 +266,27 @@ export default async function ProfilePage({ params }) {
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
           ) : (
-            <span style={{ fontSize: "28px", fontWeight: 700, color: "var(--primary)" }}>{initials}</span>
+            <span
+              style={{
+                fontSize: "28px",
+                fontWeight: 700,
+                color: "var(--primary)",
+              }}
+            >
+              {initials}
+            </span>
           )}
         </div>
 
         <div style={{ flex: 1, minWidth: "200px", paddingTop: "60px" }}>
-          <h2 style={{ fontSize: "24px", color: "var(--black)", margin: 0 }}>{displayName}</h2>
-          <div style={{ color: "var(--gray)", fontSize: "14px", marginTop: "4px" }}>
-            <i className="fas fa-map-pin"></i> {user.country || "Location not specified"}
+          <h2 style={{ fontSize: "24px", color: "var(--black)", margin: 0 }}>
+            {displayName}
+          </h2>
+          <div
+            style={{ color: "var(--gray)", fontSize: "14px", marginTop: "4px" }}
+          >
+            <i className="fas fa-map-pin"></i>{" "}
+            {user.country || "Location not specified"}
             {user.employeeCount && (
               <>
                 <span className="mx-2">·</span>
@@ -257,7 +300,8 @@ export default async function ProfilePage({ params }) {
               </>
             )}
             <span className="mx-2">·</span>
-            <i className="fas fa-calendar-alt"></i> Member since {new Date(user.createdAt).getFullYear()}
+            <i className="fas fa-calendar-alt"></i> Member since{" "}
+            {new Date(user.createdAt).getFullYear()}
           </div>
         </div>
 
@@ -266,7 +310,11 @@ export default async function ProfilePage({ params }) {
       </div>
 
       {/* ====== Tabs ====== */}
-      <ProfileTabs user={user} products={products} buyingRequests={buyingRequests} />
+      <ProfileTabs
+        user={user}
+        products={products}
+        buyingRequests={buyingRequests}
+      />
     </div>
   );
 }

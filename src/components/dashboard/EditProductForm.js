@@ -146,7 +146,9 @@ export default function EditProductForm({ product }) {
         throw new Error(error.message || "Failed to update product");
       }
 
-      toast.success("Product updated successfully!");
+      toast.success(
+        "Product updated successfully. Changes are pending approval.",
+      );
       router.push("/dashboard/products");
     } catch (error) {
       toast.error(error.message || "Failed to update product");

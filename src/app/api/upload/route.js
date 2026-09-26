@@ -4,6 +4,13 @@ import path from "path";
 import { randomUUID } from "crypto";
 import sharp from "sharp";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import {
+  getUserActivePlan,
+  canAddProductImage,
+  canAddRequestImage,
+  canAddProfileImage,
+} from "@/lib/planService";
 
 export async function POST(request) {
   try {
@@ -15,9 +22,19 @@ export async function POST(request) {
     const formData = await request.formData();
     const file = formData.get("file");
     const type = formData.get("type") || "profiles";
+    const targetId = formData.get("targetId");
 
     if (!file) {
       return new Response(JSON.stringify({ message: "No file uploaded" }), { status: 400 });
+    }
+
+    // ✅ انواع مجاز
+    const allowedTypes = ["profiles", "products", "requests", "tickets"];
+    if (!allowedTypes.includes(type)) {
+      return new Response(
+        JSON.stringify({ message: "Invalid upload type" }),
+        { status: 400 }
+      );
     }
 
     // ✅ اعتبارسنجی نوع فایل
@@ -25,25 +42,66 @@ export async function POST(request) {
       return new Response(JSON.stringify({ message: "File must be an image" }), { status: 400 });
     }
 
-    // ✅ محدودیت حجم: ۳ مگابایت (قبل از فشرده‌سازی)
-    if (file.size > 3 * 1024 * 1024) {
+    // ✅ محدودیت حجم بر اساس نوع (تیکت‌ها ۵MB، بقیه ۳MB)
+    const maxSize = type === "tickets" ? 5 * 1024 * 1024 : 3 * 1024 * 1024;
+    if (file.size > maxSize) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      const limitMB = (maxSize / (1024 * 1024)).toFixed(0);
       return new Response(
-        JSON.stringify({ message: `File size (${sizeMB}MB) exceeds the 3MB limit` }),
+        JSON.stringify({ message: `File size (${sizeMB}MB) exceeds the ${limitMB}MB limit` }),
         { status: 400 }
       );
     }
 
+    // ====== بررسی محدودیت‌های پلن ======
+    const { plan } = await getUserActivePlan(session.user.id);
+
+    if (type === "products" && targetId) {
+      const canAdd = await canAddProductImage(targetId, plan);
+      if (!canAdd) {
+        return new Response(
+          JSON.stringify({ message: `You have reached the image limit per product (${plan.maxImagesPerProduct}).` }),
+          { status: 403 }
+        );
+      }
+    } else if (type === "requests" && targetId) {
+      const canAdd = await canAddRequestImage(targetId, plan);
+      if (!canAdd) {
+        return new Response(
+          JSON.stringify({ message: `You have reached the image limit per request (${plan.maxImagesPerRequest}).` }),
+          { status: 403 }
+        );
+      }
+    } else if (type === "profiles") {
+      const canAdd = await canAddProfileImage(session.user.id, plan);
+      if (!canAdd) {
+        return new Response(
+          JSON.stringify({ message: `You have reached the profile image limit (${plan.maxProfileImages}).` }),
+          { status: 403 }
+        );
+      }
+    }
+    // ✅ تیکت‌ها محدودیت پلن ندارند (آزاد برای همه)
+
+    // ====== ادامه پردازش تصویر ======
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // فشرده‌سازی با sharp
-    const isProfile = type === "profiles";
-    const maxWidth = isProfile ? 400 : 800;
-    const maxHeight = isProfile ? 400 : 800;
-    const quality = isProfile ? 80 : 75;
+    let maxWidth = 800;
+    let maxHeight = 800;
+    let quality = 75;
 
-    let processedBuffer = await sharp(buffer)
+    if (type === "profiles") {
+      maxWidth = 400;
+      maxHeight = 400;
+      quality = 80;
+    } else if (type === "tickets") {
+      maxWidth = 1200;
+      maxHeight = 1200;
+      quality = 80;
+    }
+
+    const processedBuffer = await sharp(buffer)
       .resize(maxWidth, maxHeight, { fit: "inside", withoutEnlargement: true })
       .jpeg({ quality, progressive: true })
       .toBuffer();

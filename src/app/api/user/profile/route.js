@@ -37,6 +37,7 @@ export async function GET() {
         emailVerified: true,
         primaryCategory: true,      // ✅ اضافه شد
         primarySubCategory: true,   // ✅ اضافه شد
+        galleryImages: true, 
       },
     });
 

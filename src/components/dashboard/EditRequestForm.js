@@ -9,7 +9,8 @@ import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import CategorySelect from "@/components/ui/CategorySelect";
 import CountrySelect from "@/components/ui/CountrySelect";
-import { getCountryName } from "@/lib/countries"; // تابع کمکی برای نام کشور
+import SupplierCountrySelect from "@/components/ui/SupplierCountrySelect"; // ✅ جدید
+import { getCountryName } from "@/lib/countries";
 
 export default function EditRequestForm({ request }) {
   const router = useRouter();
@@ -26,12 +27,21 @@ export default function EditRequestForm({ request }) {
     unit: request.unit || "kg",
     budgetRange: request.budgetRange || "",
     currency: request.currency || "USD",
-    deadline: request.deadline ? new Date(request.deadline).toISOString().split("T")[0] : "",
+    deadline: request.deadline
+      ? new Date(request.deadline).toISOString().split("T")[0]
+      : "",
     deliveryCountry: request.deliveryCountry || "",
-    deliveryCountryCode: request.deliveryCountryCode || "", // فرض بر این که در دیتابیس ذخیره شده
+    deliveryCountryCode: request.deliveryCountryCode || "",
     shippingTerms: request.shippingTerms || "",
     packagingReq: request.packagingReq || "",
     certifications: request.certifications || "",
+    // ✅ فیلدهای جدید
+    paymentTerms: request.paymentTerms || "",
+    targetPrice: request.targetPrice || "",
+    isPriceNegotiable:
+      request.isPriceNegotiable !== undefined ? request.isPriceNegotiable : true,
+    supplierCountries: request.supplierCountries || ["WORLDWIDE"],
+    // =================
     isUrgent: request.isUrgent || false,
     isVisible: request.isVisible !== undefined ? request.isVisible : true,
   });
@@ -42,11 +52,14 @@ export default function EditRequestForm({ request }) {
 
   // ====== تغییرات فیلدها ======
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
-  // ====== تغییرات دسته‌بندی ======
+  // ====== تغییرات دستهبندی ======
   const handleCategoryChange = (category, subCategory) => {
     setFormData((prev) => ({
       ...prev,
@@ -55,7 +68,12 @@ export default function EditRequestForm({ request }) {
     }));
   };
 
-  // ====== تغییرات کشور ======
+  // ====== تغییرات کشور تأمینکننده ======
+  const handleSupplierCountriesChange = (countries) => {
+    setFormData((prev) => ({ ...prev, supplierCountries: countries }));
+  };
+
+  // ====== تغییرات کشور تحویل ======
   const handleCountryChange = (countryCode) => {
     const countryName = getCountryName(countryCode);
     setFormData((prev) => ({
@@ -85,7 +103,7 @@ export default function EditRequestForm({ request }) {
           "requests",
           (percent) => {
             setUploadProgress(percent);
-          }
+          },
         );
         uploadedPaths.push(result.path);
       }
@@ -102,14 +120,13 @@ export default function EditRequestForm({ request }) {
     }
   };
 
-  // ====== حذف تصویر موجود ======
+  // ====== حذف تصاویر ======
   const removeExistingAttachment = (index) => {
     const newAtts = [...attachments];
     newAtts.splice(index, 1);
     setAttachments(newAtts);
   };
 
-  // ====== حذف تصویر جدید ======
   const removeNewAttachment = (index) => {
     const newAtts = [...newAttachments];
     newAtts.splice(index, 1);
@@ -131,11 +148,18 @@ export default function EditRequestForm({ request }) {
     setLoading(true);
 
     try {
-      // ترکیب تصاویر موجود و جدید
       const allAttachments = [...attachments, ...newAttachments];
 
       const payload = {
         ...formData,
+        // ✅ ارسال فیلدهای جدید
+        paymentTerms: formData.paymentTerms || null,
+        targetPrice: formData.isPriceNegotiable
+          ? null
+          : parseFloat(formData.targetPrice) || null,
+        isPriceNegotiable: formData.isPriceNegotiable,
+        supplierCountries: formData.supplierCountries,
+        // =================
         attachments: allAttachments,
         quantity: parseInt(formData.quantity),
         deadline: formData.deadline || undefined,
@@ -152,7 +176,7 @@ export default function EditRequestForm({ request }) {
         throw new Error(error.message || "Failed to update request");
       }
 
-      toast.success("Request updated successfully!");
+      toast.success("Request updated successfully. Changes are pending approval.");
       router.push("/dashboard/requests");
     } catch (error) {
       toast.error(error.message || "Failed to update request");
@@ -215,14 +239,15 @@ export default function EditRequestForm({ request }) {
           />
         </div>
 
-        {/* ====== مقدار و بودجه ====== */}
+        {/* ====== مقدار، قیمت و بودجه ====== */}
         <h5 className="fw-bold mt-4 mb-3">
           <i className="fas fa-tag me-2" style={{ color: "var(--primary)" }}></i>
-          Quantity & Budget
+          Quantity &amp; Pricing
         </h5>
 
+        {/* ردیف اول: Quantity + Unit + Currency */}
         <div className="row g-3">
-          <div className="col-md-3">
+          <div className="col-md-4">
             <label className="form-label fw-semibold">Quantity</label>
             <input
               type="number"
@@ -233,27 +258,29 @@ export default function EditRequestForm({ request }) {
               required
             />
           </div>
-          <div className="col-md-3">
+          <div className="col-md-4">
             <label className="form-label fw-semibold">Unit</label>
-            <input
-              type="text"
-              className="form-control"
+            <select
+              className="form-select"
               name="unit"
               value={formData.unit}
               onChange={handleChange}
-            />
+            >
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="lb">lb</option>
+              <option value="L">L</option>
+              <option value="ml">ml</option>
+              <option value="pieces">pieces</option>
+              <option value="boxes">boxes</option>
+              <option value="pallets">pallets</option>
+              <option value="containers">containers</option>
+              <option value="metric_tons">Metric Tons</option>
+              <option value="20ft_container">20-Foot Container</option>
+              <option value="40ft_container">40-Foot Container</option>
+            </select>
           </div>
-          <div className="col-md-3">
-            <label className="form-label fw-semibold">Budget Range</label>
-            <input
-              type="text"
-              className="form-control"
-              name="budgetRange"
-              value={formData.budgetRange}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="col-md-3">
+          <div className="col-md-4">
             <label className="form-label fw-semibold">Currency</label>
             <select
               className="form-select"
@@ -261,15 +288,79 @@ export default function EditRequestForm({ request }) {
               value={formData.currency}
               onChange={handleChange}
             >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
             </select>
           </div>
         </div>
 
+        {/* ردیف دوم: Target Price + Negotiabl + Budget Range + Deadline */}
         <div className="row g-3 mt-2">
-          <div className="col-md-6">
+          <div className="col-md-4">
+            <label className="form-label fw-semibold">Target Price</label>
+            <input
+              type="number"
+              className="form-control"
+              name="targetPrice"
+              step="0.01"
+              placeholder={formData.isPriceNegotiable ? "Negotiable" : "e.g. 6.50"}
+              value={formData.targetPrice}
+              onChange={handleChange}
+              disabled={formData.isPriceNegotiable}
+              style={{
+                background: formData.isPriceNegotiable ? "#f5f5f5" : "#fff",
+                color: formData.isPriceNegotiable ? "var(--gray)" : "var(--black)",
+              }}
+            />
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 8,
+                fontSize: 13,
+                cursor: "pointer",
+                fontWeight: 500,
+              }}
+            >
+              <input
+                type="checkbox"
+                name="isPriceNegotiable"
+                checked={formData.isPriceNegotiable}
+                onChange={(e) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    isPriceNegotiable: e.target.checked,
+                    targetPrice: e.target.checked ? "" : prev.targetPrice,
+                  }));
+                }}
+                style={{ width: 16, height: 16, accentColor: "var(--primary)" }}
+              />
+              Price is negotiable
+            </label>
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label fw-semibold">Budget Range</label>
+            <select
+              className="form-select"
+              name="budgetRange"
+              value={formData.budgetRange}
+              onChange={handleChange}
+            >
+              <option value="">Select budget range</option>
+              <option>Under $1,000</option>
+              <option>$1,000 – $5,000</option>
+              <option>$5,000 – $10,000</option>
+              <option>$10,000 – $25,000</option>
+              <option>$25,000 – $50,000</option>
+              <option>$50,000 – $100,000</option>
+              <option>$100,000+</option>
+            </select>
+          </div>
+
+          <div className="col-md-4">
             <label className="form-label fw-semibold">Quote Deadline</label>
             <input
               type="date"
@@ -281,22 +372,62 @@ export default function EditRequestForm({ request }) {
           </div>
         </div>
 
-        {/* ====== حمل‌ونقل و اطلاعات تکمیلی ====== */}
+        {/* ✅ Payment Terms */}
+        <div className="form-group mt-3">
+          <label className="form-label fw-semibold">Payment Terms</label>
+          <select
+            className="form-select"
+            name="paymentTerms"
+            value={formData.paymentTerms}
+            onChange={handleChange}
+          >
+            <option value="">Select payment terms</option>
+            <option value="T/T">T/T (Telegraphic Transfer)</option>
+            <option value="L/C">L/C (Letter of Credit)</option>
+            <option value="D/P">D/P (Documents against Payment)</option>
+            <option value="D/A">D/A (Documents against Acceptance)</option>
+            <option value="PayPal">PayPal</option>
+            <option value="Western Union">Western Union</option>
+            <option value="Cash">Cash</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        {/* ✅ Looking for suppliers from */}
+        <div className="form-group mt-3">
+          <label className="form-label fw-semibold">
+            Looking for Suppliers From{" "}
+            <span className="text-muted fw-normal">
+              (select multiple, or choose Worldwide)
+            </span>
+          </label>
+          <SupplierCountrySelect
+            value={formData.supplierCountries}
+            onChange={handleSupplierCountriesChange}
+          />
+        </div>
+
+        {/* ====== حملونقل و اطلاعات تکمیلی ====== */}
         <h5 className="fw-bold mt-4 mb-3">
           <i className="fas fa-ship me-2" style={{ color: "var(--primary)" }}></i>
-          Shipping & Additional Info
+          Shipping &amp; Additional Info
         </h5>
 
         <div className="row g-3">
           <div className="col-md-6">
             <label className="form-label fw-semibold">Shipping Terms</label>
-            <input
-              type="text"
-              className="form-control"
+            <select
+              className="form-select"
               name="shippingTerms"
               value={formData.shippingTerms}
               onChange={handleChange}
-            />
+            >
+              <option value="">Select shipping terms</option>
+              <option>FOB (Free On Board)</option>
+              <option>CIF (Cost, Insurance, Freight)</option>
+              <option>EXW (Ex Works)</option>
+              <option>DDP (Delivered Duty Paid)</option>
+            </select>
           </div>
           <div className="col-md-6">
             <label className="form-label fw-semibold">Packaging Requirements</label>
@@ -329,7 +460,6 @@ export default function EditRequestForm({ request }) {
           Attachments
         </h5>
 
-        {/* نمایش تصاویر موجود */}
         {attachments.length > 0 && (
           <div className="mb-3">
             <label className="form-label fw-semibold">Current Images</label>
@@ -361,7 +491,6 @@ export default function EditRequestForm({ request }) {
           </div>
         )}
 
-        {/* نمایش تصاویر جدید آپلود شده */}
         {newAttachments.length > 0 && (
           <div className="mb-3">
             <label className="form-label fw-semibold">New Images</label>
@@ -393,7 +522,6 @@ export default function EditRequestForm({ request }) {
           </div>
         )}
 
-        {/* دکمه آپلود */}
         <div className="form-group mb-3">
           <label className="form-label fw-semibold">Upload New Images</label>
           <div className="d-flex align-items-center gap-3">
@@ -448,7 +576,7 @@ export default function EditRequestForm({ request }) {
           </div>
         </div>
 
-        {/* ====== دکمه‌ها ====== */}
+        {/* ====== دکمهها ====== */}
         <div className="d-flex gap-3 mt-4">
           <button
             type="submit"

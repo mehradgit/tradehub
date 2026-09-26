@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
-import Layout from "@/components/layout/Layout";
 import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import CountrySelect from "@/components/ui/CountrySelect";
@@ -25,7 +24,7 @@ export default function EditProfilePage() {
     name: "",
     companyName: "",
     country: "",
-    countryCode:"",
+    countryCode: "",
     businessType: "",
     phone: "",
     bio: "",
@@ -295,399 +294,403 @@ export default function EditProfilePage() {
   // ====== وضعیت بارگذاری ======
   if (status === "loading" || fetching) {
     return (
-      <Layout>
-        <div className="container text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
+      <div className="container text-center py-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   if (!session) return null;
-
+  console.log("Gallery Images:", formData.galleryImages);
   return (
-    <Layout>
-      <div
-        className="container"
-        style={{ maxWidth: "800px", marginTop: "40px", marginBottom: "60px" }}
-      >
-        <div className="card shadow border-0 rounded-4 p-4 p-md-5">
-          <div className="text-center mb-4">
-            <h2 className="fw-bold">Edit Profile</h2>
-            <p className="text-muted">
-              Update your personal and business information
-            </p>
+    <div
+      className="container"
+      style={{ maxWidth: "800px", marginTop: "40px", marginBottom: "60px" }}
+    >
+      <div className="card shadow border-0 rounded-4 p-4 p-md-5">
+        <div className="text-center mb-4">
+          <h2 className="fw-bold">Edit Profile</h2>
+          <p className="text-muted">
+            Update your personal and business information
+          </p>
+        </div>
+
+        {error && (
+          <div
+            className="alert alert-danger d-flex align-items-center gap-2"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle"></i>
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          {/* ====== نام کامل ====== */}
+          <div className="form-group mb-3">
+            <label className="form-label fw-semibold">
+              Full Name <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              name="name"
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
           </div>
 
-          {error && (
-            <div
-              className="alert alert-danger d-flex align-items-center gap-2"
-              role="alert"
-            >
-              <i className="fas fa-exclamation-circle"></i>
-              <span>{error}</span>
-            </div>
-          )}
+          {/* ====== نام شرکت ====== */}
+          <div className="form-group mb-3">
+            <label className="form-label fw-semibold">
+              Company Name <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              name="companyName"
+              placeholder="Anderson Foods LLC"
+              value={formData.companyName}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-          <form onSubmit={handleSubmit}>
-            {/* ====== نام کامل ====== */}
-            <div className="form-group mb-3">
+          {/* ====== کشور ====== */}
+          <div className="row g-3">
+            <div className="col-md-6">
               <label className="form-label fw-semibold">
-                Full Name <span className="text-danger">*</span>
+                Country <span className="text-danger">*</span>
               </label>
-              <input
-                type="text"
-                className="form-control"
-                name="name"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* ====== نام شرکت ====== */}
-            <div className="form-group mb-3">
-              <label className="form-label fw-semibold">
-                Company Name <span className="text-danger">*</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                name="companyName"
-                placeholder="Anderson Foods LLC"
-                value={formData.companyName}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* ====== کشور ====== */}
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">
-                  Country <span className="text-danger">*</span>
-                </label>
-                <CountrySelect
-                  value={formData.countryCode}
-                  onChange={(code) => {
-                    const name = getCountryName(code);
-                    setFormData((prev) => ({
-                      ...prev,
-                      countryCode: code,
-                      country: name,
-                    }));
-                  }}
-                  placeholder="Select country"
-                  required
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Business Type</label>
-                <select
-                  className="form-select"
-                  name="businessType"
-                  value={formData.businessType}
-                  onChange={handleChange}
-                >
-                  <option value="">Select business type</option>
-                  <option>Manufacturer</option>
-                  <option>Distributor</option>
-                  <option>Wholesaler</option>
-                  <option>Retailer</option>
-                  <option>Exporter</option>
-                  <option>Importer</option>
-                  <option>Processor</option>
-                </select>
-              </div>
-            </div>
-
-            {/* ====== دسته‌بندی محصولات ====== */}
-            <div className="form-group mt-3">
-              <label className="form-label fw-semibold">Product Category</label>
-              <CategorySelect
-                categoryValue={formData.primaryCategory}
-                subCategoryValue={formData.primarySubCategory}
-                onCategoryChange={(cat) => {
+              <CountrySelect
+                value={formData.countryCode}
+                onChange={(code) => {
+                  const name = getCountryName(code);
                   setFormData((prev) => ({
                     ...prev,
-                    primaryCategory: cat,
-                    primarySubCategory: "",
+                    countryCode: code,
+                    country: name,
                   }));
-                  if (error) setError("");
                 }}
-                onSubCategoryChange={(sub) => {
-                  setFormData((prev) => ({ ...prev, primarySubCategory: sub }));
-                  if (error) setError("");
-                }}
-                categoryRequired={false}
+                placeholder="Select country"
+                required
               />
             </div>
-
-            {/* ====== تلفن و ایمیل شرکت ====== */}
-            <div className="row g-3 mt-1">
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Phone Number</label>
-                <input
-                  type="tel"
-                  className="form-control"
-                  name="phone"
-                  placeholder="+1 234 567 890"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Company Email</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  name="companyEmail"
-                  placeholder="info@company.com"
-                  value={formData.companyEmail}
-                  onChange={handleChange}
-                />
-              </div>
+            <div className="col-md-6">
+              <label className="form-label fw-semibold">Business Type</label>
+              <select
+                className="form-select"
+                name="businessType"
+                value={formData.businessType}
+                onChange={handleChange}
+              >
+                <option value="">Select business type</option>
+                <option>Manufacturer</option>
+                <option>Distributor</option>
+                <option>Wholesaler</option>
+                <option>Retailer</option>
+                <option>Exporter</option>
+                <option>Importer</option>
+                <option>Processor</option>
+              </select>
             </div>
+          </div>
 
-            {/* ====== وب‌سایت ====== */}
-            <div className="form-group mt-3">
-              <label className="form-label fw-semibold">Company Website</label>
+          {/* ====== دسته‌بندی محصولات ====== */}
+          <div className="form-group mt-3">
+            <label className="form-label fw-semibold">Product Category</label>
+            <CategorySelect
+              categoryValue={formData.primaryCategory}
+              subCategoryValue={formData.primarySubCategory}
+              onCategoryChange={(cat) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  primaryCategory: cat,
+                  primarySubCategory: "",
+                }));
+                if (error) setError("");
+              }}
+              onSubCategoryChange={(sub) => {
+                setFormData((prev) => ({ ...prev, primarySubCategory: sub }));
+                if (error) setError("");
+              }}
+              categoryRequired={false}
+            />
+          </div>
+
+          {/* ====== تلفن و ایمیل شرکت ====== */}
+          <div className="row g-3 mt-1">
+            <div className="col-md-6">
+              <label className="form-label fw-semibold">Phone Number</label>
               <input
-                type="url"
+                type="tel"
                 className="form-control"
-                name="website"
-                placeholder="https://www.example.com"
-                value={formData.website}
+                name="phone"
+                placeholder="+1 234 567 890"
+                value={formData.phone}
                 onChange={handleChange}
               />
             </div>
-
-            {/* ====== توضیحات شرکت (Rich Text Editor) ====== */}
-            <div className="form-group mt-3">
-              <label className="form-label fw-semibold">
-                Company Bio / Description
-              </label>
-              <RichTextEditor
-                value={formData.bio}
-                onChange={handleBioChange}
-                placeholder="Tell us about your company..."
-                height={200}
-              />
-            </div>
-
-            {/* ====== آدرس و تعداد کارکنان ====== */}
-            <div className="row g-3 mt-1">
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Address</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="address"
-                  placeholder="123 Main St, City, Country"
-                  value={formData.address}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">
-                  Number of Employees
-                </label>
-                <select
-                  className="form-select"
-                  name="employeeCount"
-                  value={formData.employeeCount}
-                  onChange={handleChange}
-                >
-                  <option value="">Select range</option>
-                  <option>1-10</option>
-                  <option>11-50</option>
-                  <option>51-200</option>
-                  <option>201-500</option>
-                  <option>501-1000</option>
-                  <option>1000+</option>
-                </select>
-              </div>
-            </div>
-
-            {/* ====== بخش تصاویر ====== */}
-            <h5 className="fw-bold mt-4 mb-3">Company Images</h5>
-            <p className="text-muted small">
-              <i className="fas fa-info-circle me-1"></i>
-              Maximum file size: 3MB · Supported formats: JPG, PNG, WEBP
-            </p>
-
-            {/* ====== پیش‌نمایش ترکیبی (کاور + لوگو) ====== */}
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Profile Preview</label>
-              <div
-                className="border rounded-3 position-relative overflow-hidden"
-                style={{
-                  width: "100%",
-                  height: "120px",
-                  background: "var(--light)",
-                }}
-              >
-                {/* کاور */}
-                {formData.coverImage ? (
-                  <img
-                    src={formData.coverImage}
-                    alt="Cover preview"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "var(--gray-light)",
-                      color: "var(--gray)",
-                    }}
-                  >
-                    <i className="fas fa-image fa-2x"></i>
-                  </div>
-                )}
-
-                {/* لوگو */}
-                {formData.logo ? (
-                  <img
-                    src={formData.logo}
-                    alt="Logo preview"
-                    style={{
-                      position: "absolute",
-                      bottom: "-20px",
-                      left: "20px",
-                      width: "60px",
-                      height: "60px",
-                      borderRadius: "50%",
-                      border: "3px solid white",
-                      objectFit: "cover",
-                      background: "var(--gray-light)",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: "-20px",
-                      left: "20px",
-                      width: "60px",
-                      height: "60px",
-                      borderRadius: "50%",
-                      border: "3px solid white",
-                      background: "var(--gray-light)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "var(--gray)",
-                      fontSize: "20px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    <i className="fas fa-camera"></i>
-                  </div>
-                )}
-              </div>
-              <div className="d-flex gap-2 mt-2">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => coverInputRef.current.click()}
-                  disabled={isUploading.coverImage}
-                >
-                  {isUploading.coverImage ? "Uploading..." : "Upload Cover"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => logoInputRef.current.click()}
-                  disabled={isUploading.logo}
-                >
-                  {isUploading.logo ? "Uploading..." : "Upload Logo"}
-                </button>
-                {(formData.coverImage || formData.logo) && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        logo: null,
-                        coverImage: null,
-                      }));
-                      if (logoInputRef.current) logoInputRef.current.value = "";
-                      if (coverInputRef.current)
-                        coverInputRef.current.value = "";
-                    }}
-                  >
-                    <i className="fas fa-trash"></i> Reset
-                  </button>
-                )}
-              </div>
-              <UploadProgress
-                progress={uploadProgress.coverImage}
-                label="Uploading cover..."
-              />
-              <UploadProgress
-                progress={uploadProgress.logo}
-                label="Uploading logo..."
-              />
-            </div>
-
-            {/* inputهای مخفی */}
-            <input
-              type="file"
-              ref={coverInputRef}
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={(e) => handleFileChange(e, "coverImage")}
-            />
-            <input
-              type="file"
-              ref={logoInputRef}
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={(e) => handleFileChange(e, "logo")}
-            />
-
-            {/* ====== گالری تصاویر ====== */}
-            <div className="form-group mb-3">
-              <label className="form-label fw-semibold">Gallery Images</label>
-              <div
-                className="image-upload-area"
-                onClick={() => galleryInputRef.current.click()}
-              >
-                <i className="fas fa-images fa-2x text-muted"></i>
-                <p className="mt-2">Click or drag to upload multiple images</p>
-                <button type="button" className="btn btn-secondary btn-sm">
-                  Choose Images
-                </button>
-              </div>
+            <div className="col-md-6">
+              <label className="form-label fw-semibold">Company Email</label>
               <input
-                type="file"
-                ref={galleryInputRef}
-                accept="image/*"
-                multiple
-                style={{ display: "none" }}
-                onChange={(e) => handleFileChange(e, "galleryImages")}
+                type="email"
+                className="form-control"
+                name="companyEmail"
+                placeholder="info@company.com"
+                value={formData.companyEmail}
+                onChange={handleChange}
               />
-              <UploadProgress
-                progress={uploadProgress.gallery}
-                label="Uploading gallery..."
-              />
+            </div>
+          </div>
 
-              <div className="d-flex flex-wrap gap-2 mt-2">
-                {formData.galleryImages.map((img, index) => (
-                  <div key={index} className="position-relative">
+          {/* ====== وب‌سایت ====== */}
+          <div className="form-group mt-3">
+            <label className="form-label fw-semibold">Company Website</label>
+            <input
+              type="url"
+              className="form-control"
+              name="website"
+              placeholder="https://www.example.com"
+              value={formData.website}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* ====== توضیحات شرکت (Rich Text Editor) ====== */}
+          <div className="form-group mt-3">
+            <label className="form-label fw-semibold">
+              Company Bio / Description
+            </label>
+            <RichTextEditor
+              value={formData.bio}
+              onChange={handleBioChange}
+              placeholder="Tell us about your company..."
+              height={200}
+            />
+          </div>
+
+          {/* ====== آدرس و تعداد کارکنان ====== */}
+          <div className="row g-3 mt-1">
+            <div className="col-md-6">
+              <label className="form-label fw-semibold">Address</label>
+              <input
+                type="text"
+                className="form-control"
+                name="address"
+                placeholder="123 Main St, City, Country"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label fw-semibold">
+                Number of Employees
+              </label>
+              <select
+                className="form-select"
+                name="employeeCount"
+                value={formData.employeeCount}
+                onChange={handleChange}
+              >
+                <option value="">Select range</option>
+                <option>1-10</option>
+                <option>11-50</option>
+                <option>51-200</option>
+                <option>201-500</option>
+                <option>501-1000</option>
+                <option>1000+</option>
+              </select>
+            </div>
+          </div>
+
+          {/* ====== بخش تصاویر ====== */}
+          <h5 className="fw-bold mt-4 mb-3">Company Images</h5>
+          <p className="text-muted small">
+            <i className="fas fa-info-circle me-1"></i>
+            Maximum file size: 3MB · Supported formats: JPG, PNG, WEBP
+          </p>
+
+          {/* ====== پیش‌نمایش ترکیبی (کاور + لوگو) ====== */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Profile Preview</label>
+            <div
+              className="border rounded-3 position-relative overflow-hidden"
+              style={{
+                width: "100%",
+                height: "120px",
+                background: "var(--light)",
+              }}
+            >
+              {/* کاور */}
+              {formData.coverImage || existingCover ? (
+                <img
+                  src={formData.coverImage || existingCover}
+                  alt="Cover preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "var(--gray-light)",
+                    color: "var(--gray)",
+                  }}
+                >
+                  <i className="fas fa-image fa-2x"></i>
+                </div>
+              )}
+
+              {/* لوگو */}
+              {formData.logo || existingLogo ? (
+                <img
+                  src={formData.logo || existingLogo}
+                  alt="Logo preview"
+                  style={{
+                    position: "absolute",
+                    bottom: "-20px",
+                    left: "20px",
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "50%",
+                    border: "3px solid white",
+                    objectFit: "cover",
+                    background: "var(--gray-light)",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "-20px",
+                    left: "20px",
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "50%",
+                    border: "3px solid white",
+                    background: "var(--gray-light)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--gray)",
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  <i className="fas fa-camera"></i>
+                </div>
+              )}
+            </div>{" "}
+            <div className="d-flex gap-2 mt-2">
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => coverInputRef.current.click()}
+                disabled={isUploading.coverImage}
+              >
+                {isUploading.coverImage ? "Uploading..." : "Upload Cover"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => logoInputRef.current.click()}
+                disabled={isUploading.logo}
+              >
+                {isUploading.logo ? "Uploading..." : "Upload Logo"}
+              </button>
+              {(formData.coverImage || formData.logo) && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      logo: null,
+                      coverImage: null,
+                    }));
+                    if (logoInputRef.current) logoInputRef.current.value = "";
+                    if (coverInputRef.current) coverInputRef.current.value = "";
+                  }}
+                >
+                  <i className="fas fa-trash"></i> Reset
+                </button>
+              )}
+            </div>
+            <UploadProgress
+              progress={uploadProgress.coverImage}
+              label="Uploading cover..."
+            />
+            <UploadProgress
+              progress={uploadProgress.logo}
+              label="Uploading logo..."
+            />
+          </div>
+
+          {/* inputهای مخفی */}
+          <input
+            type="file"
+            ref={coverInputRef}
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => handleFileChange(e, "coverImage")}
+          />
+          <input
+            type="file"
+            ref={logoInputRef}
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => handleFileChange(e, "logo")}
+          />
+
+          {/* ====== گالری تصاویر ====== */}
+          <div className="form-group mb-3">
+            <label className="form-label fw-semibold">Gallery Images</label>
+            <div
+              className="image-upload-area"
+              onClick={() => galleryInputRef.current.click()}
+            >
+              <i className="fas fa-images fa-2x text-muted"></i>
+              <p className="mt-2">Click or drag to upload multiple images</p>
+              <button type="button" className="btn btn-secondary btn-sm">
+                Choose Images
+              </button>
+            </div>
+            <input
+              type="file"
+              ref={galleryInputRef}
+              accept="image/*"
+              multiple
+              style={{ display: "none" }}
+              onChange={(e) => handleFileChange(e, "galleryImages")}
+            />
+            <UploadProgress
+              progress={uploadProgress.gallery}
+              label="Uploading gallery..."
+            />
+
+            {/* پیش‌نمایش تصاویر گالری */}
+            <div className="d-flex flex-wrap gap-2 mt-2">
+              {formData.galleryImages.map((img, index) => (
+                <div key={index} className="position-relative">
+                  {img ? (
                     <img
                       src={img}
                       alt={`Gallery ${index + 1}`}
@@ -698,60 +701,68 @@ export default function EditProfilePage() {
                         borderRadius: "8px",
                         border: "1px solid var(--gray-light)",
                       }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle"
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        fontSize: "10px",
-                        padding: 0,
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        // نمایش پل‌هولدر به جای مخفی کردن کامل
+                        e.target.parentElement.innerHTML = `
+              <div style="width:60px;height:60px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-image" style="color:#ccc;"></i>
+              </div>`;
                       }}
-                      onClick={() => removeImage("galleryImages", index)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
+                    />
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle"
+                    style={{
+                      width: "20px",
+                      height: "20px",
+                      fontSize: "10px",
+                      padding: 0,
+                    }}
+                    onClick={() => removeImage("galleryImages", index)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* ====== نقش (غیرقابل تغییر) ====== */}
-            <div className="form-group mt-3">
-              <label className="form-label fw-semibold">Role</label>
-              <input
-                type="text"
-                className="form-control"
-                value={formData.role === "SUPPLIER" ? "Supplier" : "Buyer"}
-                disabled
-                style={{ background: "#f5f5f5" }}
-              />
-              <small className="text-muted">
-                Role cannot be changed after registration
-              </small>
-            </div>
+          {/* ====== نقش (غیرقابل تغییر) ====== */}
+          <div className="form-group mt-3">
+            <label className="form-label fw-semibold">Role</label>
+            <input
+              type="text"
+              className="form-control"
+              value={formData.role === "SUPPLIER" ? "Supplier" : "Buyer"}
+              disabled
+              style={{ background: "#f5f5f5" }}
+            />
+            <small className="text-muted">
+              Role cannot be changed after registration
+            </small>
+          </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg w-100 mt-4"
-              style={{
-                background: "var(--color-primary, #e85d3a)",
-                borderColor: "var(--color-primary, #e85d3a)",
-                borderRadius: "50px",
-              }}
-              disabled={
-                loading ||
-                isUploading.logo ||
-                isUploading.coverImage ||
-                isUploading.gallery
-              }
-            >
-              {loading ? "Saving..." : "Save Changes"}
-            </button>
-          </form>
-        </div>
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg w-100 mt-4"
+            style={{
+              background: "var(--color-primary, #e85d3a)",
+              borderColor: "var(--color-primary, #e85d3a)",
+              borderRadius: "50px",
+            }}
+            disabled={
+              loading ||
+              isUploading.logo ||
+              isUploading.coverImage ||
+              isUploading.gallery
+            }
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+        </form>
       </div>
-    </Layout>
+    </div>
   );
 }

@@ -20,6 +20,7 @@ export default async function ProductsPage({ searchParams }) {
 
   const where = {
     isVisible: true,
+    status: "APPROVED",
   };
 
   if (category) {

@@ -7,13 +7,11 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { generateNumber, generateSlug } from "@/utils/generate";
 
-// ====== آداپتر سفارشی با createUser جدید ======
 const prismaAdapter = PrismaAdapter(prisma);
 
 const customAdapter = {
   ...prismaAdapter,
   createUser: async (data) => {
-    // تولید شماره یکتا (با حلقه برای تضمین یکتایی)
     let profileNumber;
     let isUnique = false;
     while (!isUnique) {
@@ -31,14 +29,14 @@ const customAdapter = {
         ...data,
         profileNumber,
         slug,
-        registrationComplete: false, // کاربر گوگل باید بعداً ثبت‌نام را کامل کند
+        registrationComplete: false,
       },
     });
   },
 };
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-  adapter: customAdapter, // ✅ استفاده از آداپتر سفارشی
+  adapter: customAdapter,
   session: { strategy: "jwt" },
   providers: [
     Google({
@@ -46,61 +44,73 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     Credentials({
-      name: "credentials",
+      id: "verify-token",
+      name: "Verify Token",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        token: { label: "Token", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Please enter email and password");
-        }
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        if (!credentials?.email || !credentials?.token) return null;
+
+        const email = credentials.email.toLowerCase().trim();
+
+        const record = await prisma.verificationToken.findFirst({
+          where: {
+            identifier: email,
+            token: credentials.token,
+            expires: { gt: new Date() },
+          },
         });
-        if (!user || !user.password) {
-          throw new Error("Invalid email or password");
-        }
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) {
-          throw new Error("Invalid email or password");
-        }
-        if (!user.emailVerified && user.registrationComplete === false) {
-          throw new Error("Please verify your email first");
-        }
+
+        if (!record) return null;
+
+        // یک‌بارمصرف: توکن رو پاک کن
+        await prisma.verificationToken.deleteMany({
+          where: { identifier: email, token: credentials.token },
+        });
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !user.emailVerified) return null;
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           registrationComplete: user.registrationComplete,
-          emailVerified: !!user.emailVerified,
+          emailVerified: true,
+          isAdmin: user.isAdmin,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, trigger, session }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.registrationComplete = user.registrationComplete ?? false;
         token.emailVerified = user.emailVerified ?? false;
+        token.isAdmin = user.isAdmin ?? false;
       }
 
-      if (account?.provider === "google" && token.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-          select: { registrationComplete: true, emailVerified: true },
-        });
-        if (dbUser) {
-          token.registrationComplete = dbUser.registrationComplete;
-          token.emailVerified = !!dbUser.emailVerified;
+      // ✅ مهم‌ترین بخش
+      if (trigger === "update" && session) {
+        if (session.registrationComplete !== undefined) {
+          token.registrationComplete = session.registrationComplete;
         }
       }
 
-      if (trigger === "update" && session?.registrationComplete === true) {
-        token.registrationComplete = true;
+      if (!token.isAdmin && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email },
+          select: { isAdmin: true, registrationComplete: true },
+        });
+        if (dbUser) {
+          token.isAdmin = dbUser.isAdmin;
+          token.registrationComplete = dbUser.registrationComplete;
+        }
       }
 
       return token;
@@ -112,11 +122,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.name = token.name;
         session.user.registrationComplete = token.registrationComplete ?? false;
         session.user.emailVerified = token.emailVerified ?? false;
+        session.user.isAdmin = token.isAdmin ?? false;
       }
       return session;
     },
     async redirect({ url, baseUrl, user }) {
-      // اگر کاربر registrationComplete = false، به complete-registration برود
       if (user && user.registrationComplete === false) {
         return `${baseUrl}/complete-registration`;
       }

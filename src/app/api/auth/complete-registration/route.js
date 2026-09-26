@@ -1,16 +1,24 @@
 // src/app/api/auth/complete-registration/route.js
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
+import { NextResponse } from "next/server";
+import { getUserActivePlan } from "@/lib/planService";
 import { generateNumber, generateSlug } from "@/utils/generate";
 
 export async function POST(request) {
   try {
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
     const body = await request.json();
     const {
       email,
       name,
       companyName,
       country,
-      countryCode,
       businessType,
       phone,
       bio,
@@ -22,38 +30,39 @@ export async function POST(request) {
       logo,
       coverImage,
       galleryImages,
+      primaryCategory,
+      primarySubCategory,
     } = body;
 
-    // ====== اعتبارسنجی فیلدهای اجباری ======
-    if (!email || !name || !companyName || !country) {
-      return new Response(
-        JSON.stringify({ message: "Required fields missing" }),
-        { status: 400 },
-      );
-    }
-
-    // ====== پیدا کردن کاربر ======
+    // بررسی وجود کاربر
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return new Response(JSON.stringify({ message: "User not found" }), {
-        status: 404,
-      });
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // ====== اگر کاربر قبلاً ثبت‌نام کامل کرده ======
+    // اگر قبلاً کامل شده، خطا بده
     if (user.registrationComplete === true) {
-      return new Response(
-        JSON.stringify({ message: "Registration already completed" }),
-        { status: 400 },
-      );
+      return NextResponse.json({ message: "Registration already completed" }, { status: 400 });
     }
 
-    // ====== آماده‌سازی داده‌های به‌روزرسانی ======
+    // ====== دریافت پلن فعال کاربر ======
+    const { plan } = await getUserActivePlan(userId);
+
+    // ====== بررسی محدودیت تعداد عکس‌های پروفایل ======
+    if (galleryImages && Array.isArray(galleryImages)) {
+      if (plan.maxProfileImages !== -1 && galleryImages.length > plan.maxProfileImages) {
+        return NextResponse.json(
+          { message: `You can have a maximum of ${plan.maxProfileImages} profile images.` },
+          { status: 403 },
+        );
+      }
+    }
+
+    // ====== به‌روزرسانی کاربر ======
     const updateData = {
       name,
       companyName,
       country,
-      countryCode,
       businessType: businessType || null,
       phone: phone || null,
       bio: bio || null,
@@ -64,27 +73,26 @@ export async function POST(request) {
       role: role || "BUYER",
       registrationComplete: true,
       emailVerified: user.emailVerified || new Date(),
-      galleryImages: galleryImages || [], 
+      galleryImages: galleryImages || [],
+      primaryCategory: primaryCategory || null,
+      primarySubCategory: primarySubCategory || null,
     };
 
-    // ====== تولید profileNumber در صورت عدم وجود ======
+    // تولید profileNumber و slug (اگر وجود ندارند)
     if (!user.profileNumber) {
       let profileNumber;
       let isUnique = false;
       while (!isUnique) {
         profileNumber = generateNumber();
-        const existing = await prisma.user.findUnique({
-          where: { profileNumber },
-        });
+        const existing = await prisma.user.findUnique({ where: { profileNumber } });
         if (!existing) isUnique = true;
       }
       updateData.profileNumber = profileNumber;
     }
+    if (!user.slug) {
+      updateData.slug = generateSlug(companyName || name || "user");
+    }
 
-    // ====== به‌روزرسانی اسلاگ به نام شرکت (همیشه) ======
-    updateData.slug = generateSlug(companyName || name || "user");
-
-    // ====== ذخیره مسیر تصاویر (در صورت وجود) ======
     if (logo) {
       updateData.image = logo;
       updateData.logo = logo;
@@ -93,30 +101,14 @@ export async function POST(request) {
       updateData.coverImage = coverImage;
     }
 
-    // ====== به‌روزرسانی کاربر ======
     const updatedUser = await prisma.user.update({
       where: { email },
       data: updateData,
     });
 
-    // ====== حذف رمز عبور از پاسخ ======
-    const { password, ...userWithoutPassword } = updatedUser;
-
-    return new Response(
-      JSON.stringify({
-        message: "Registration completed successfully",
-        user: userWithoutPassword,
-      }),
-      { status: 200 },
-    );
+    return NextResponse.json({ message: "Registration completed successfully", user: updatedUser });
   } catch (error) {
     console.error("Complete registration error:", error);
-    return new Response(
-      JSON.stringify({
-        message: "Failed to complete registration",
-        error: error.message,
-      }),
-      { status: 500 },
-    );
+    return NextResponse.json({ message: "Failed to complete registration" }, { status: 500 });
   }
 }

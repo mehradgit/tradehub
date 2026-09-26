@@ -1,58 +1,91 @@
+// src/app/api/auth/send-verification/route.js
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+import { NextResponse } from "next/server";
 import { sendVerificationEmail } from "@/lib/email";
+
+function getBaseUrl() {
+  return (
+    process.env.NEXTAUTH_URL ||
+    process.env.AUTH_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "http://localhost:3000"
+  );
+}
 
 export async function POST(request) {
   try {
     const { email } = await request.json();
 
     if (!email) {
-      return new Response(
-        JSON.stringify({ message: "Email is required" }),
+      return NextResponse.json(
+        { message: "Email is required" },
         { status: 400 }
       );
     }
 
-    // تولید کد ۶ رقمی
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // حذف کدهای قبلی برای این ایمیل
-    await prisma.verificationToken.deleteMany({
-      where: { identifier: email },
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
     });
 
-    // ذخیره کد جدید (منقضی شدن بعد از ۱۰ دقیقه)
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email,
-        token: code,
-        expires: new Date(Date.now() + 10 * 60 * 1000),
-      },
-    });
+    if (!user) {
+      // دلایل امنیتی: به کاربر نمی‌گیم ایمیل وجود نداره
+      return NextResponse.json({
+        message:
+          "If an account with this email exists, a verification link has been sent.",
+      });
+    }
 
-    // ارسال ایمیل
-    const result = await sendVerificationEmail(email, code);
-
-    if (!result.success) {
-      console.error('Failed to send email:', result.error);
-      // حتی اگر ایمیل ارسال نشد، به کاربر بگوییم کد ذخیره شده است
-      // اما در واقع خطا رخ داده است - در محیط توسعه، کد را در کنسول لاگ می‌کنیم
-      console.log(`Verification code for ${email}: ${code}`);
-      return new Response(
-        JSON.stringify({ 
-          message: "Verification code sent (check console for development)" 
-        }),
-        { status: 200 }
+    if (user.emailVerified) {
+      return NextResponse.json(
+        {
+          message: "This email is already verified. You can sign in.",
+          reason: "already_verified",
+        },
+        { status: 400 }
       );
     }
 
-    return new Response(
-      JSON.stringify({ message: "Verification code sent successfully" }),
-      { status: 200 }
-    );
+    // حذف توکن‌های قبلی
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: normalizedEmail },
+    });
+
+    // توکن جدید
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: normalizedEmail,
+        token,
+        expires,
+      },
+    });
+
+    const baseUrl = getBaseUrl();
+    const verificationUrl = `${baseUrl}/verify-email?token=${token}&email=${encodeURIComponent(
+      normalizedEmail
+    )}`;
+
+    const result = await sendVerificationEmail(normalizedEmail, verificationUrl);
+
+    if (!result.success && process.env.NODE_ENV === "development") {
+      console.log("\n========================================");
+      console.log("📧 RESEND VERIFICATION LINK:");
+      console.log(verificationUrl);
+      console.log("========================================\n");
+    }
+
+    return NextResponse.json({
+      message: "Verification link sent. Please check your inbox.",
+    });
   } catch (error) {
-    console.error('Send verification error:', error);
-    return new Response(
-      JSON.stringify({ message: "Failed to send verification code" }),
+    console.error("Send verification error:", error);
+    return NextResponse.json(
+      { message: "Failed to send verification email" },
       { status: 500 }
     );
   }

@@ -1,14 +1,16 @@
-// src/app/register/page.js
+// src/app/(public)/register/page.js
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import Layout from "@/components/layout/Layout";
+import Captcha from "@/components/ui/Captcha";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const captchaRef = useRef(null);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,11 +35,24 @@ export default function RegisterPage() {
       return;
     }
 
+    // ✅ بررسی کپچا
+    const { answer, token } = captchaRef.current?.getPayload() || {};
+    if (!answer || !token) {
+      setError("Please answer the security question.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          captchaAnswer: answer,
+          captchaToken: token,
+        }),
       });
 
       const data = await res.json();
@@ -47,13 +62,13 @@ export default function RegisterPage() {
       }
 
       setSuccess(true);
-      // پس از ثبت‌نام موفق، کاربر به صفحه لاگین می‌رود
-      // یا می‌توانیم پیام موفقیت نشان دهیم
       setTimeout(() => {
         router.push("/login?registered=true");
       }, 3000);
     } catch (err) {
       setError(err.message);
+      // ✅ رفرش کپچا در صورت خطا
+      captchaRef.current?.refresh();
     } finally {
       setLoading(false);
     }
@@ -64,8 +79,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <Layout>
-      <div className="container" style={{ maxWidth: "440px", marginTop: "60px", marginBottom: "60px" }}>
+      <div
+        className="container"
+        style={{
+          maxWidth: "440px",
+          marginTop: "60px",
+          marginBottom: "60px",
+        }}
+      >
         <div className="card shadow-lg border-0 rounded-4 p-4">
           <div className="text-center mb-4">
             <div
@@ -73,20 +94,23 @@ export default function RegisterPage() {
               style={{
                 width: "64px",
                 height: "64px",
-                background: "var(--color-primary, #e85d3a)",
+                background: "var(--primary, #13795b)",
                 borderRadius: "16px",
               }}
             >
               <i className="fas fa-user-plus text-white fs-2"></i>
             </div>
             <h2 className="fw-bold">Create Account</h2>
-            <p className="text-muted">Join the largest B2B food marketplace</p>
+            <p className="text-muted">
+              Join the largest B2B food marketplace
+            </p>
           </div>
 
           {success && (
             <div className="alert alert-success py-2" role="alert">
               <i className="fas fa-check-circle me-2"></i>
-              Registration successful! Please check your email to verify your account.
+              Registration successful! Please check your email to verify your
+              account.
               <br />
               <small>Redirecting to login...</small>
             </div>
@@ -100,7 +124,9 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label className="form-label fw-semibold">Email Address <span className="text-danger">*</span></label>
+              <label className="form-label fw-semibold">
+                Email Address <span className="text-danger">*</span>
+              </label>
               <input
                 type="email"
                 className="form-control form-control-lg"
@@ -108,12 +134,14 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={success}
+                disabled={success || loading}
               />
             </div>
 
             <div className="mb-3">
-              <label className="form-label fw-semibold">Password <span className="text-danger">*</span></label>
+              <label className="form-label fw-semibold">
+                Password <span className="text-danger">*</span>
+              </label>
               <input
                 type="password"
                 className="form-control form-control-lg"
@@ -121,12 +149,14 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={success}
+                disabled={success || loading}
               />
             </div>
 
             <div className="mb-3">
-              <label className="form-label fw-semibold">Confirm Password <span className="text-danger">*</span></label>
+              <label className="form-label fw-semibold">
+                Confirm Password <span className="text-danger">*</span>
+              </label>
               <input
                 type="password"
                 className="form-control form-control-lg"
@@ -134,16 +164,19 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                disabled={success}
+                disabled={success || loading}
               />
             </div>
+
+            {/* ✅ کپچا */}
+            <Captcha ref={captchaRef} disabled={success || loading} />
 
             <button
               type="submit"
               className="btn btn-primary btn-lg w-100 fw-semibold"
               style={{
-                background: "var(--color-primary, #e85d3a)",
-                borderColor: "var(--color-primary, #e85d3a)",
+                background: "var(--primary, #13795b)",
+                borderColor: "var(--primary, #13795b)",
                 borderRadius: "50px",
               }}
               disabled={loading || success}
@@ -160,9 +193,10 @@ export default function RegisterPage() {
 
           <button
             onClick={handleGoogleSignIn}
+            type="button"
             className="btn btn-outline-danger btn-lg w-100 fw-semibold"
             style={{ borderRadius: "50px" }}
-            disabled={success}
+            disabled={success || loading}
           >
             <i className="fab fa-google me-2"></i>
             Continue with Google
@@ -174,7 +208,7 @@ export default function RegisterPage() {
               <Link
                 href="/login"
                 className="fw-bold text-decoration-none"
-                style={{ color: "var(--color-primary, #e85d3a)" }}
+                style={{ color: "var(--primary, #13795b)" }}
               >
                 Sign In
               </Link>
@@ -182,6 +216,5 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }

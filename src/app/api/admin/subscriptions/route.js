@@ -1,0 +1,34 @@
+// src/app/api/admin/subscriptions/route.js
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
+import { NextResponse } from "next/server";
+
+export async function GET(request) {
+  try {
+    const session = await auth();
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status") || "all";
+
+    const where = status !== "all" ? { status } : {};
+
+    const subscriptions = await prisma.userSubscription.findMany({
+      where,
+      include: {
+        user: { select: { email: true, name: true } },
+        plan: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // ✅ همیشه آرایه برگردان
+    return NextResponse.json(subscriptions);
+  } catch (error) {
+    console.error("Admin subscriptions error:", error);
+    // ✅ در صورت خطا هم آرایه خالی برگردان تا کامپوننت خطا نده
+    return NextResponse.json([], { status: 200 });
+  }
+}

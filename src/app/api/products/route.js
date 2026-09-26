@@ -6,12 +6,12 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { generateNumber, generateSlug } from "@/utils/generate";
+import { canAddProduct, getUserActivePlan } from "@/lib/planService";
 
 // ====== تابع ذخیره تصویر Base64 ======
 async function saveBase64Image(base64String, folder = "products") {
   if (!base64String) return null;
 
-  // بررسی فرمت Base64
   const matches = base64String.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
   if (!matches) return null;
 
@@ -19,15 +19,11 @@ async function saveBase64Image(base64String, folder = "products") {
   const data = matches[2];
   const buffer = Buffer.from(data, "base64");
 
-  // تولید نام یکتا
   const filename = `${randomUUID()}.${ext}`;
   const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
   const filePath = path.join(uploadDir, filename);
 
-  // ایجاد پوشه در صورت عدم وجود
   await mkdir(uploadDir, { recursive: true });
-
-  // ذخیره فایل
   await writeFile(filePath, buffer);
 
   return `/uploads/${folder}/${filename}`;
@@ -38,6 +34,20 @@ export async function POST(request) {
     const session = await auth();
     if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    // ✅ دریافت پلن و اشتراک فعال
+    const { plan, subscription } = await getUserActivePlan(session.user.id);
+
+    // بررسی محدودیت تعداد محصولات
+    if (!(await canAddProduct(session.user.id, plan))) {
+      return NextResponse.json(
+        {
+          message:
+            "You have reached the maximum product limit for your plan. Please upgrade.",
+        },
+        { status: 403 },
+      );
     }
 
     const userId = session.user.id;
@@ -54,7 +64,7 @@ export async function POST(request) {
       moq,
       stock,
       leadTime,
-      images = [], // آرایه‌ای از Base64 یا مسیرها
+      images = [],
       badge,
       countryCode,
       origin,
@@ -64,6 +74,20 @@ export async function POST(request) {
       isVisible,
       specs,
     } = body;
+
+    // بررسی محدودیت تعداد تصاویر برای این محصول
+    if (
+      images.length > plan.maxImagesPerProduct &&
+      plan.maxImagesPerProduct !== -1
+    ) {
+      return NextResponse.json(
+        {
+          message: `You can upload a maximum of ${plan.maxImagesPerProduct} images per product.`,
+        },
+        { status: 403 },
+      );
+    }
+
     const productNumber = generateNumber();
     const slug = generateSlug(name);
 
@@ -78,17 +102,16 @@ export async function POST(request) {
     // ====== پردازش تصاویر ======
     const imagePaths = [];
     for (const img of images) {
-      // اگر تصویر Base64 است، ذخیره کن
       if (img.startsWith("data:image")) {
         const savedPath = await saveBase64Image(img);
         if (savedPath) {
           imagePaths.push(savedPath);
         }
       } else {
-        // در غیر این صورت همان مسیر را نگه دار (اگر قبلاً آپلود شده)
         imagePaths.push(img);
       }
     }
+
     // ایجاد محصول
     const product = await prisma.product.create({
       data: {
@@ -112,12 +135,15 @@ export async function POST(request) {
         packaging: packaging || null,
         shippingTerms: shippingTerms || null,
         isVisible: isVisible !== undefined ? isVisible : true,
+        isVisible: false, // ✅ تا تأیید نشود، در سایت نمایش داده نمی‌شود
+        status: "PENDING", // ✅ در انتظار تأیید
         userId,
         productNumber,
         slug,
       },
     });
 
+    // ✅ برای محصولات، سهمیه ماهانه افزایش نمی‌یابد
     return NextResponse.json(
       {
         message: "Product created successfully",

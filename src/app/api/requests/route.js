@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { generateNumber, generateSlug } from "@/utils/generate";
+import {
+  canAddRequest,
+  getUserActivePlan,
+  incrementUsage,
+} from "@/lib/planService";
 
 export async function POST(request) {
   try {
@@ -11,7 +16,22 @@ export async function POST(request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // ✅ تعریف userId قبل از استفاده
     const userId = session.user.id;
+
+    const { plan, subscription } = await getUserActivePlan(userId);
+
+    // بررسی محدودیت ماهانه درخواست‌ها
+    if (!(await canAddRequest(userId, plan, subscription))) {
+      return NextResponse.json(
+        {
+          message:
+            "You have reached your monthly request limit. Please upgrade.",
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const {
       title,
@@ -27,10 +47,15 @@ export async function POST(request) {
       deliveryCountry,
       packagingReq,
       certifications,
+      paymentTerms,
+      targetPrice,
+      isPriceNegotiable,
+      supplierCountries,
       attachments,
       isUrgent,
       isVisible,
     } = body;
+
     const requestNumber = generateNumber();
     const slug = generateSlug(title);
 
@@ -64,15 +89,24 @@ export async function POST(request) {
         deliveryCountry,
         packagingReq: packagingReq || null,
         certifications: certifications || null,
+        paymentTerms: paymentTerms || null,
+        targetPrice: targetPrice ? parseFloat(targetPrice) : null,
+        isPriceNegotiable:
+        isPriceNegotiable !== undefined ? isPriceNegotiable : true,
+        supplierCountries: supplierCountries || ["WORLDWIDE"],
         attachments: attachments || [],
         isUrgent: isUrgent || false,
-        isVisible: isVisible !== undefined ? isVisible : true,
+        isVisible: false, // ✅ تا تأیید نشده نمایش داده نشود
+        status: "PENDING",
         buyerCountry: user?.country || null,
         userId,
         requestNumber,
         slug,
       },
     });
+
+    // افزایش شمارنده مصرف
+    await incrementUsage(userId, "request", subscription);
 
     return NextResponse.json(
       {

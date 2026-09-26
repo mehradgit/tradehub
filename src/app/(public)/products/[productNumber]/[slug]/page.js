@@ -2,11 +2,17 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import ProductDetail from "@/components/product/ProductDetail";
+import { auth } from "@/auth";
+import {
+  getSectionSettings,
+  canViewSupplierInfo,
+  hasRevealedSupplierInfo,
+} from "@/lib/accessControlService";
 
-// ====== دریافت داده‌های محصول با استفاده از productNumber ======
+// ====== دریافت داده‌های محصول ======
 async function getProductData(productNumber) {
   const product = await prisma.product.findUnique({
-    where: { productNumber },
+    where: { productNumber, status: "APPROVED" },
     include: {
       user: {
         select: {
@@ -18,8 +24,8 @@ async function getProductData(productNumber) {
           image: true,
           coverImage: true,
           logo: true,
-          profileNumber:true,
-          slug:true,
+          profileNumber: true,
+          slug: true,
           website: true,
           createdAt: true,
         },
@@ -31,7 +37,6 @@ async function getProductData(productNumber) {
     notFound();
   }
 
-  // ====== ساختار داده‌های مورد نیاز ProductDetail ======
   const productData = {
     id: product.id,
     name: product.name,
@@ -74,7 +79,6 @@ async function getProductData(productNumber) {
         : ["https://placehold.co/360x360"],
   };
 
-  // ساختار داده‌های تامین‌کننده
   const supplierData = {
     id: product.user.id,
     name: product.user.companyName || product.user.name || "Unknown Supplier",
@@ -85,12 +89,13 @@ async function getProductData(productNumber) {
     logo:
       product.user.logo || product.user.image || "https://placehold.co/55x50",
     coverImage: product.user.coverImage || "https://placehold.co/303x80",
-    profileNumber:product.user.profileNumber,
-    slug:product.user.slug
+    profileNumber: product.user.profileNumber,
+    slug: product.user.slug,
   };
+
   return { productData, supplierData };
 }
- // ====== متادیتا ======
+
 export async function generateMetadata({ params }) {
   const { productNumber } = await params;
   const product = await prisma.product.findUnique({
@@ -106,15 +111,45 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// ====== صفحه اصلی ======
 export default async function ProductPage({ params }) {
   const { productNumber } = await params;
   const productNum = parseInt(productNumber);
   const { productData, supplierData } = await getProductData(productNum);
-   console.log(supplierData)
+
+  // ====== بررسی دسترسی ======
+  const session = await auth();
+  const productSettings = await getSectionSettings("product");
+  const supplierInfoPermission = await canViewSupplierInfo(
+    session?.user?.id,
+    { id: productData.id, userId: productData.userId }
+  );
+
+  // ====== بررسی Reveal قبلی ======
+  const alreadyRevealed =
+    session?.user?.id && productData.userId !== session.user.id
+      ? await hasRevealedSupplierInfo(session.user.id, productData.id)
+      : false;
+
+  // ====== آیا باید خودکار باز شود؟ ======
+  const shouldAutoReveal =
+    supplierInfoPermission.allowed &&
+    (supplierInfoPermission.reason === "owner" ||
+      supplierInfoPermission.reason === "admin" ||
+      supplierInfoPermission.reason === "already_revealed" ||
+      supplierInfoPermission.reason === "guest_allowed" ||
+      supplierInfoPermission.reason === "everyone" ||
+      supplierInfoPermission.reason === "loggedIn" ||
+      productSettings?.supplierInfo?.consumeQuotaOnReveal === false);
+
   return (
     <div className="container py-4">
-      <ProductDetail product={productData} supplier={supplierData} />
+      <ProductDetail
+        product={productData}
+        supplier={supplierData}
+        supplierInfoPermission={supplierInfoPermission}
+        alreadyRevealed={alreadyRevealed}
+        shouldAutoReveal={shouldAutoReveal}
+      />
     </div>
   );
 }

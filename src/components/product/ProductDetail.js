@@ -11,28 +11,30 @@ import ProductTabs from "./ProductTabs";
 import ImageGallery from "./ImageGallery";
 import ShareModal from "@/components/ui/ShareModal";
 import LoginModal from "@/components/ui/LoginModal";
-import ConnectModal from "@/components/ui/ConnectModal";
+import SupplierInfoSection from "./SupplierInfoSection";
 
-export default function ProductDetail({ product, supplier }) {
+export default function ProductDetail({
+  product,
+  supplier,
+  supplierInfoPermission,
+  alreadyRevealed,
+  shouldAutoReveal,
+}) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isSaved, setIsSaved] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const formRef = useRef(null);
-  const [requestForm, setRequestForm] = useState({
-    name: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    quantity: "",
-    requestedPrice: "",
-    description: "",
-  });
   const [sending, setSending] = useState(false);
-  // ====== Check saved status from database ======
+
+  // ✅ وضعیت Reveal - از سرور می‌آید ولی بعد از Reveal توسط کامپوننت پسر به‌روز می‌شود
+  const [isSupplierRevealed, setIsSupplierRevealed] = useState(
+    alreadyRevealed || shouldAutoReveal,
+  );
+
+  // ====== Check saved status ======
   useEffect(() => {
     const checkSavedStatus = async () => {
       if (!session?.user || !product?.id) return;
@@ -52,6 +54,7 @@ export default function ProductDetail({ product, supplier }) {
 
     checkSavedStatus();
   }, [product?.id, session]);
+
   // ====== ارسال درخواست ======
   const handleSendRequest = async (e) => {
     e.preventDefault();
@@ -61,14 +64,17 @@ export default function ProductDetail({ product, supplier }) {
       return;
     }
 
+    // ✅ اگر Reveal نشده → هشدار
+    if (!isSupplierRevealed) {
+      toast.warning("Please reveal supplier info first");
+      return;
+    }
+
     setSending(true);
     try {
       const formData = new FormData(e.target);
-
-      // ✅ supplierId: از product.userId استفاده کن
       const supplierId = product.userId;
 
-      // اگر supplierId وجود نداشت، خطا بده
       if (!supplierId) {
         toast.error("Supplier information is missing. Please try again.");
         setSending(false);
@@ -99,25 +105,14 @@ export default function ProductDetail({ product, supplier }) {
         throw new Error(response.message || "Failed to send request");
 
       toast.success("Request sent successfully!");
-      e.target.reset(); // Reset form
+      e.target.reset();
     } catch (error) {
       toast.error(error.message);
     } finally {
       setSending(false);
     }
   };
-  // ====== بعد از لاگین موفق، دوباره فرم را ارسال کن ======
-  const handleLoginSuccess = () => {
-    // پس از لاگین، دوباره فرم را ارسال می‌کنیم
-    if (formRef.current) {
-      const event = new Event("submit", { cancelable: true, bubbles: true });
-      formRef.current.dispatchEvent(event);
-    }
-  }; // ====== تغییرات فرم ======
-  const handleRequestChange = (e) => {
-    const { name, value } = e.target;
-    setRequestForm((prev) => ({ ...prev, [name]: value }));
-  };
+
   // ====== Toggle save/unsave ======
   const toggleSave = async () => {
     if (!session) {
@@ -126,7 +121,6 @@ export default function ProductDetail({ product, supplier }) {
     }
 
     setLoading(true);
-
     try {
       const res = await fetch("/api/user/saved-products", {
         method: "POST",
@@ -135,10 +129,7 @@ export default function ProductDetail({ product, supplier }) {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to update saved products");
-      }
+      if (!res.ok) throw new Error(data.message || "Failed to update");
 
       setIsSaved(data.isSaved);
       toast.success(data.message);
@@ -149,58 +140,16 @@ export default function ProductDetail({ product, supplier }) {
     }
   };
 
-  const handleShare = () => {
-    setIsShareModalOpen(true);
-  };
+  const handleShare = () => setIsShareModalOpen(true);
 
-  // ====== Default data ======
-  const defaultProduct = {
-    id: "default-id",
-    name: "Premium Wildflower Honey",
-    category: "Honey & Sweeteners",
-    createdAt: "3 days ago",
-    honeyType: "Wildflower Honey",
-    moq: "2 units",
-    countryOfOrigin: "New Zealand",
-    countryCode: "nz",
-    price: 120,
-    currency: "USD",
-    annualSupply: "1000 tons",
-    shippingCountries: ["United States", "Canada", "United Kingdom"],
-    features: ["Raw", "Organic", "Unfiltered"],
-    shortDesc:
-      "This pure wildflower honey is sourced from local beehives in the heart of New Zealand. It has a delicate floral aroma and a slightly sweet, nutty flavor.",
-    fullDesc:
-      "This pure wildflower honey is sourced from local beehives in the heart of New Zealand. It has a delicate floral aroma and a slightly sweet, nutty flavor. Perfect for drizzling on toast, adding to tea, or using in baking.",
-    images: [
-      "https://placehold.co/360x360",
-      "https://placehold.co/64x64",
-      "https://placehold.co/64x64",
-      "https://placehold.co/64x64",
-      "https://placehold.co/64x64",
-      "https://placehold.co/64x64",
-      "https://placehold.co/64x64",
-    ],
-  };
-
-  const defaultSupplier = {
-    name: "Kedora Trading",
-    website: "KedoraTrading.com",
-    foundingYear: 2000,
-    country: "India",
-    countryCode: "in",
-    logo: "https://placehold.co/55x50",
-    coverImage: "https://placehold.co/303x80",
-  };
-
-  const data = product || defaultProduct;
-  const supplierData = supplier || defaultSupplier;
+  const data = product;
+  const supplierData = supplier;
   const productImages = data.images || [];
 
   return (
     <>
       <div className="product-detail-container">
-        {/* ====== Breadcrumb ====== */}
+        {/* Breadcrumb */}
         <nav className="product-breadcrumb" aria-label="Breadcrumb">
           <ol className="breadcrumb-list">
             <li className="breadcrumb-item">
@@ -222,7 +171,7 @@ export default function ProductDetail({ product, supplier }) {
           </ol>
         </nav>
 
-        {/* ====== Main row ====== */}
+        {/* Main row */}
         <div className="product-detail-row">
           {/* Gallery */}
           <ImageGallery images={productImages} productName={data.name} />
@@ -265,11 +214,8 @@ export default function ProductDetail({ product, supplier }) {
                   className={`product-save-btn ${isSaved ? "saved" : ""}`}
                   onClick={toggleSave}
                   disabled={loading}
-                  title={isSaved ? "Remove from saved" : "Save product"}
                 >
-                  <i
-                    className={`fas ${isSaved ? "fa-bookmark" : "fa-bookmark"}`}
-                  ></i>
+                  <i className="fas fa-bookmark"></i>
                   {loading ? "..." : isSaved ? " Saved" : " Save"}
                 </button>
               </div>
@@ -329,63 +275,18 @@ export default function ProductDetail({ product, supplier }) {
             </div>
           </div>
 
-          {/* Supplier Card */}
-          <div className="supplier-card">
-            <img
-              src={supplierData.coverImage}
-              alt="Cover"
-              className="supplier-cover"
-            />
-            <div className="supplier-logo-wrapper">
-              <img src={supplierData.logo} alt={supplierData.name} />
-            </div>
-            <div className="supplier-info">
-              <div className="supplier-info-inner">
-                <div>
-                  <h3 className="supplier-name">{supplierData.name}</h3>
-                  <p className="supplier-website">{supplierData.website}</p>
-                </div>
-                <div className="supplier-divider"></div>
-              </div>
-              <div className="supplier-details-grid">
-                <div className="supplier-detail-item">
-                  <span className="detail-label">Founding</span>
-                  <span className="detail-value">
-                    {supplierData.foundingYear}
-                  </span>
-                </div>
-                <div className="supplier-detail-item">
-                  <span className="detail-label">Country</span>
-                  <div className="detail-value-with-flag">
-                    <CountryFlag
-                      countryCode={
-                        supplierData.countryCode || supplierData.country
-                      }
-                      size="20px"
-                    />
-                    <span>{supplierData.country}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="supplier-actions">
-              <Link
-                href={`/profiles/${supplierData.profileNumber}/${supplierData.slug}`}
-                className="company-info-link"
-              >
-                Company information
-              </Link>
-              <button
-                className="connect-btn"
-                onClick={() => setIsConnectModalOpen(true)}
-              >
-                Connect with Us
-              </button>
-            </div>{" "}
-          </div>
+          {/* ✅ Supplier Card - با Reveal */}
+          <SupplierInfoSection
+            productId={data.id}
+            supplier={supplierData}
+            initialPermission={supplierInfoPermission}
+            alreadyRevealed={alreadyRevealed}
+            shouldAutoReveal={shouldAutoReveal}
+            onRevealSuccess={() => setIsSupplierRevealed(true)}
+          />
         </div>
 
-        {/* ====== Short Description ====== */}
+        {/* Short Description */}
         <div className="product-description-short">
           <h3>About This Product</h3>
           <div className="product-description-short-content">
@@ -414,90 +315,131 @@ export default function ProductDetail({ product, supplier }) {
           </div>
         </div>
 
-        {/* ====== Tabs + Request Form ====== */}
+        {/* Tabs + Request Form */}
         <div className="product-detail-bottom">
           <ProductTabs product={data} />
-          <div className="request-form-card">
-            <h3>Send Request</h3>
-            <form
-              ref={formRef}
-              className="request-form"
-              onSubmit={handleSendRequest}
-            >
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    Name <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Your name"
-                    defaultValue={session?.user?.name?.split(" ")[0] || ""}
-                    required
+
+          {/* ✅ فرم Send Request - فقط بعد از Reveal */}
+          {isSupplierRevealed ? (
+            <div className="request-form-card">
+              <h3>Send Request</h3>
+              <form
+                ref={formRef}
+                className="request-form"
+                onSubmit={handleSendRequest}
+              >
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>
+                      Name <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Your name"
+                      defaultValue={session?.user?.name?.split(" ")[0] || ""}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>
+                      Last Name <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      placeholder="Your last name"
+                      defaultValue={
+                        session?.user?.name?.split(" ").slice(1).join(" ") || ""
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>
+                      Email <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="your@email.com"
+                      defaultValue={session?.user?.email || ""}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder="+1 234 567 890"
+                      defaultValue={session?.user?.phone || ""}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Order Quantity</label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      placeholder="Quantity"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Requested Price</label>
+                    <input
+                      type="text"
+                      name="requestedPrice"
+                      placeholder="USD"
+                    />
+                  </div>
+                </div>
+                <div className="form-group full-width">
+                  <label>Description</label>
+                  <textarea
+                    rows="3"
+                    name="description"
+                    placeholder="Your message..."
                   />
                 </div>
-                <div className="form-group">
-                  <label>
-                    Last Name <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    placeholder="Your last name"
-                    defaultValue={
-                      session?.user?.name?.split(" ").slice(1).join(" ") || ""
-                    }
-                    required
-                  />
-                </div>
+                <button type="submit" className="submit-btn" disabled={sending}>
+                  {sending ? "Sending..." : "Send Request"}
+                </button>
+              </form>
+            </div>
+          ) : (
+            /* ====== پیام جایگزین: اول Reveal کن ====== */
+            <div className="request-form-card" style={{ textAlign: "center" }}>
+              <div
+                style={{
+                  padding: "30px 20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <i
+                  className="fas fa-lock"
+                  style={{ fontSize: 36, color: "#cbd5d1" }}
+                ></i>
+                <h3 style={{ margin: 0 }}>Request Form Locked</h3>
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "#71807b",
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  Please reveal supplier info to unlock the request form.
+                </p>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    Email <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="your@email.com"
-                    defaultValue={session?.user?.email || ""}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="+1 234 567 890"
-                    defaultValue={session?.user?.phone || ""}
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Order Quantity</label>
-                  <input type="number" name="quantity" placeholder="Quantity" />
-                </div>
-                <div className="form-group">
-                  <label>Requested Price</label>
-                  <input type="text" name="requestedPrice" placeholder="USD" />
-                </div>
-              </div>
-              <div className="form-group full-width">
-                <label>Description</label>
-                <textarea
-                  rows="3"
-                  name="description"
-                  placeholder="Your message..."
-                />
-              </div>
-              <button type="submit" className="submit-btn" disabled={sending}>
-                {sending ? "Sending..." : "Send Request"}
-              </button>
-            </form>
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -513,13 +455,6 @@ export default function ProductDetail({ product, supplier }) {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         redirectUrl={pathname}
-      />
-      <ConnectModal
-        isOpen={isConnectModalOpen}
-        onClose={() => setIsConnectModalOpen(false)}
-        supplierId={supplierData.id}
-        supplierName={supplierData.name}
-        productId={product?.id}
       />
       {/* ====== Styles ====== */}
       <style jsx>{`
@@ -761,7 +696,7 @@ export default function ProductDetail({ product, supplier }) {
           object-fit: cover;
           box-shadow: 0px 4px 6.8px rgba(0, 0, 0, 0.15);
         }
-          
+
         .supplier-logo-wrapper img {
           width: 55px;
           height: 50px;

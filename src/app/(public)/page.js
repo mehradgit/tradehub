@@ -14,8 +14,8 @@ export default async function HomePage() {
     // محصولات ویژه (۵ عدد)
     prisma.product
       .findMany({
-        where: { isVisible: true },
-        take: 6,
+        where: { isVisible: true, status: "APPROVED" },
+        take: 5,
         select: {
           id: true,
           name: true,
@@ -41,7 +41,7 @@ export default async function HomePage() {
     // درخواست‌های خرید (۴ عدد)
     prisma.buyingRequest
       .findMany({
-        where: { isVisible: true },
+        where: { isVisible: true,status: "APPROVED" },
         take: 6,
         select: {
           id: true,

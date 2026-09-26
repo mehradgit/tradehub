@@ -1,50 +1,41 @@
 // src/components/dashboard/Topbar.js
 "use client";
 
-import { useSession } from "next-auth/react";
-import Link from "next/link";
+import NotificationBell from "./NotificationBell";
+import UserMenu from "./UserMenu";
+import GlobalSearch from "./GlobalSearch";
 
 export default function Topbar({ onMenuToggle }) {
-  const { data: session } = useSession();
-  const user = session?.user;
-  const initials = user?.name?.split(" ").map(n => n[0]).join("").slice(0, 2) || "U";
-
   return (
     <header className="topbar">
       <div className="topbar-left">
         <button
-          className="top-icon mobile-menu"
+          className="icon-btn mobile-menu"
           onClick={onMenuToggle}
           aria-label="Toggle sidebar"
+          style={{ display: "none" }}
         >
-          <i className="fa-solid fa-bars"></i>
+          <i className="fas fa-bars"></i>
         </button>
-        <div className="page-title">
-          <h1>Business Dashboard</h1>
-          <p>Manage your B2B food marketplace activities</p>
+        <div className="page-info">
+          <h1 className="page-title">Dashboard</h1>
+          <div className="page-sub">Welcome back, here's your activity overview</div>
         </div>
       </div>
 
-      <div className="topbar-actions">
-        <Link href="/" className="top-icon" title="Go to Homepage">
-          <i className="fa-solid fa-house"></i>
-        </Link>
-        <div className="search-box">
-          <i className="fa-solid fa-search"></i>
-          <input type="text" placeholder="Search products, requests..." />
-        </div>
-        <button className="top-icon">
-          <i className="fa-regular fa-bell"></i>
-          <span className="notification-dot"></span>
-        </button>
-        <div className="profile">
-          <div className="avatar">{initials}</div>
-          <div>
-            <div className="profile-name">{user?.companyName || user?.name || "User"}</div>
-            <div className="profile-role">Account Manager</div>
-          </div>
-        </div>
+      <div className="topbar-right">
+        <GlobalSearch />
+        <NotificationBell />
+        <UserMenu />
       </div>
+
+      <style jsx global>{`
+        @media (max-width: 992px) {
+          .dashboard-layout .topbar .mobile-menu {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </header>
   );
 }

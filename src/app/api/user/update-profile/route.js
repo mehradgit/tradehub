@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { getUserActivePlan } from "@/lib/planService";
 
 export async function PUT(request) {
   try {
@@ -19,7 +20,6 @@ export async function PUT(request) {
       name,
       companyName,
       country,
-      countryCode,
       businessType,
       phone,
       bio,
@@ -29,11 +29,12 @@ export async function PUT(request) {
       employeeCount,
       logo,
       coverImage,
-      primaryCategory,      // ✅ اضافه شد
-      primarySubCategory,   // ✅ اضافه شد
+      primaryCategory,
+      primarySubCategory,
+      galleryImages, // آرایه‌ای از مسیرها (بعد از ترکیب عکس‌های موجود و جدید)
     } = body;
 
-    // اعتبارسنجی
+    // اعتبارسنجی اولیه
     if (!name || !companyName || !country) {
       return new Response(
         JSON.stringify({ message: "Required fields missing" }),
@@ -41,11 +42,26 @@ export async function PUT(request) {
       );
     }
 
+    // ====== دریافت پلن فعال کاربر و بررسی محدودیت عکس‌ها ======
+    const { plan } = await getUserActivePlan(userId);
+
+    if (galleryImages && Array.isArray(galleryImages)) {
+      // اگر maxProfileImages برابر -1 باشد یعنی نامحدود
+      if (plan.maxProfileImages !== -1 && galleryImages.length > plan.maxProfileImages) {
+        return new Response(
+          JSON.stringify({
+            message: `You can have a maximum of ${plan.maxProfileImages} profile images.`,
+          }),
+          { status: 403 },
+        );
+      }
+    }
+
+    // ====== آماده‌سازی داده‌ها ======
     const updateData = {
       name,
       companyName,
       country,
-      countryCode,
       businessType: businessType || null,
       phone: phone || null,
       bio: bio || null,
@@ -53,11 +69,11 @@ export async function PUT(request) {
       website: website || null,
       companyEmail: companyEmail || null,
       employeeCount: employeeCount || null,
-      primaryCategory: primaryCategory || null,      // ✅ ذخیره
-      primarySubCategory: primarySubCategory || null, // ✅ ذخیره
+      primaryCategory: primaryCategory || null,
+      primarySubCategory: primarySubCategory || null,
+      galleryImages: galleryImages || [],
     };
 
-    // تصاویر
     if (logo) {
       updateData.image = logo;
       updateData.logo = logo;
