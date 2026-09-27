@@ -1,14 +1,14 @@
 // src/app/(public)/login/page.js
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import Captcha from "@/components/ui/Captcha";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const captchaRef = useRef(null);
@@ -279,5 +279,22 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+          <div className="container text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="text-muted mt-3">Loading...</p>
+          </div>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }

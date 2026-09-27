@@ -1,13 +1,13 @@
 // src/app/dashboard/messages/page.js
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef ,Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import EmojiPickerWrapper from "@/components/ui/EmojiPicker";
 
-export default function MessagesPage() {
+function MessagesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -534,5 +534,22 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+          <div className="container text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="text-muted mt-3">Loading...</p>
+          </div>
+      }
+    >
+      <MessagesPageContent />
+    </Suspense>
   );
 }

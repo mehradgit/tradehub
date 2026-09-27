@@ -1,7 +1,7 @@
 // src/app/complete-registration/page.js
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { toast } from "react-toastify";
@@ -34,7 +34,7 @@ function saveToStorage(data) {
   }
 }
 
-export default function CompleteRegistrationPage() {
+function CompleteRegistrationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status, update } = useSession();
@@ -123,7 +123,7 @@ export default function CompleteRegistrationPage() {
         if (result?.error) {
           toast.error("Session expired. Please login manually.");
           router.replace(
-            `/login?verified=true&email=${encodeURIComponent(emailFromUrl)}`
+            `/login?verified=true&email=${encodeURIComponent(emailFromUrl)}`,
           );
         } else {
           // URL رو تمیز کن (توکن رو از آدرس حذف کن)
@@ -137,7 +137,7 @@ export default function CompleteRegistrationPage() {
       .catch(() => {
         toast.error("Auto-login failed. Please login manually.");
         router.replace(
-          `/login?verified=true&email=${encodeURIComponent(emailFromUrl)}`
+          `/login?verified=true&email=${encodeURIComponent(emailFromUrl)}`,
         );
       })
       .finally(() => {
@@ -302,7 +302,9 @@ export default function CompleteRegistrationPage() {
 
       const sizeMB = file.size / (1024 * 1024);
       if (sizeMB > 3) {
-        toast.error(`Image size (${sizeMB.toFixed(1)}MB) exceeds the 3MB limit.`);
+        toast.error(
+          `Image size (${sizeMB.toFixed(1)}MB) exceeds the 3MB limit.`,
+        );
         e.target.value = "";
         return;
       }
@@ -316,7 +318,7 @@ export default function CompleteRegistrationPage() {
           "profiles",
           (percent) => {
             setUploadProgress((prev) => ({ ...prev, [fieldName]: percent }));
-          }
+          },
         );
 
         setFormData((prev) => ({ ...prev, [fieldName]: result.path }));
@@ -354,7 +356,7 @@ export default function CompleteRegistrationPage() {
           "profiles",
           (percent) => {
             setUploadProgress((prev) => ({ ...prev, gallery: percent }));
-          }
+          },
         );
         uploadedPaths.push(result.path);
       }
@@ -739,13 +741,21 @@ export default function CompleteRegistrationPage() {
               <label className="form-label fw-semibold">Profile Preview</label>
               <div
                 className="border rounded-3 position-relative overflow-hidden"
-                style={{ width: "100%", height: "120px", background: "var(--light)" }}
+                style={{
+                  width: "100%",
+                  height: "120px",
+                  background: "var(--light)",
+                }}
               >
                 {formData.coverImage || existingCover ? (
                   <img
                     src={formData.coverImage || existingCover}
                     alt="Cover preview"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
                     onError={(e) => (e.target.style.display = "none")}
                   />
                 ) : (
@@ -910,7 +920,12 @@ export default function CompleteRegistrationPage() {
                     <button
                       type="button"
                       className="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle"
-                      style={{ width: "20px", height: "20px", fontSize: "10px", padding: 0 }}
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        fontSize: "10px",
+                        padding: 0,
+                      }}
                       onClick={() => removeImage("galleryImages", index)}
                     >
                       ×
@@ -946,7 +961,9 @@ export default function CompleteRegistrationPage() {
                 <div className="col-6">
                   <div
                     className={`p-3 text-center border rounded-3 cursor-pointer ${
-                      formData.role === "SUPPLIER" ? "border-primary bg-light" : ""
+                      formData.role === "SUPPLIER"
+                        ? "border-primary bg-light"
+                        : ""
                     }`}
                     onClick={() =>
                       setFormData((prev) => ({ ...prev, role: "SUPPLIER" }))
@@ -985,5 +1002,24 @@ export default function CompleteRegistrationPage() {
         </div>
       </div>
     </Layout>
+  );
+}
+
+export default function CompleteRegistrationPage() {
+  return (
+    <Suspense
+      fallback={
+        <Layout>
+          <div className="container text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="text-muted mt-3">Loading...</p>
+          </div>
+        </Layout>
+      }
+    >
+      <CompleteRegistrationContent />
+    </Suspense>
   );
 }
