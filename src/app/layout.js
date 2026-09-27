@@ -7,6 +7,7 @@ import Script from "next/script";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+import BootstrapClient from "@/components/ui/BootstrapClient";
 
 export const metadata = {
   title: "FoodHub · B2B Food Marketplace",
@@ -42,10 +43,7 @@ export default function RootLayout({ children }) {
           />
           {children}
         </Providers>
-        <Script
-          src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-          strategy="afterInteractive"
-        />
+          <BootstrapClient />
       </body>
     </html>
   );
