@@ -3,11 +3,41 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import { Providers } from "./providers";
-import Script from "next/script";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+import localFont from "next/font/local";
 import BootstrapClient from "@/components/ui/BootstrapClient";
+
+// ===== فونت‌ها =====
+const inter = localFont({
+  src: "../../public/fonts/Inter-VariableFont_opsz,wght.ttf",
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const dmSans = localFont({
+  src: "../../public/fonts/DMSans-VariableFont_opsz,wght.ttf",
+  variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const manrope = localFont({
+  src: "../../public/fonts/Manrope-VariableFont_wght.ttf",
+  variable: "--font-manrope",
+  display: "swap",
+});
+
+const poppins = localFont({
+  src: [
+    { path: "../../public/fonts/Poppins-Regular.ttf",     weight: "400", style: "normal" },
+    { path: "../../public/fonts/Poppins-Medium.ttf",      weight: "500", style: "normal" },
+    { path: "../../public/fonts/Poppins-SemiBold.ttf",    weight: "600", style: "normal" },
+    { path: "../../public/fonts/Poppins-Bold.ttf",        weight: "700", style: "normal" },
+  ],
+  variable: "--font-poppins",
+  display: "swap",
+});
 
 export const metadata = {
   title: "FoodHub · B2B Food Marketplace",
@@ -16,17 +46,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
-        />
-      </head>
+    <html
+      lang="en"
+      className={`${inter.variable} ${poppins.variable} ${dmSans.variable} ${manrope.variable}`}
+    >
       <body>
         <Providers>
           <ToastContainer
@@ -43,7 +66,7 @@ export default function RootLayout({ children }) {
           />
           {children}
         </Providers>
-          <BootstrapClient />
+        <BootstrapClient />
       </body>
     </html>
   );
