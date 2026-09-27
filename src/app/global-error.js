@@ -14,14 +14,6 @@ export default function GlobalError({ error, reset }) {
     <html lang="en">
       <head>
         <title>Critical Error | FoodTradeHub</title>
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body style={{ margin: 0, padding: 0 }}>
         <div className="gerr-page">
@@ -29,7 +21,25 @@ export default function GlobalError({ error, reset }) {
             {/* Icon */}
             <div className="gerr-icon-wrap">
               <div className="gerr-icon">
-                <i className="fas fa-plug-circle-xmark"></i>
+                {/* Plug with X icon (SVG) */}
+                <svg
+                  width="46"
+                  height="46"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 22v-5" />
+                  <path d="M9 8V2" />
+                  <path d="M15 8V2" />
+                  <path d="M18 8v3a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8" />
+                  <path d="M14 16l6 6" />
+                  <path d="M20 16l-6 6" />
+                </svg>
               </div>
               <div className="gerr-icon-pulse"></div>
             </div>
@@ -37,16 +47,28 @@ export default function GlobalError({ error, reset }) {
             {/* Content */}
             <div className="gerr-content">
               <div className="gerr-badge">
-                <i className="fas fa-circle-exclamation"></i>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
                 Critical System Error
               </div>
 
-              <h1 className="gerr-title">
-                Something went very wrong.
-              </h1>
+              <h1 className="gerr-title">Something went very wrong.</h1>
 
               <p className="gerr-subtitle">
-                The application encountered a critical error and couldn't
+                The application encountered a critical error and couldn&apos;t
                 load properly. Please try reloading the page. If the problem
                 persists, contact our support team.
               </p>
@@ -56,19 +78,63 @@ export default function GlobalError({ error, reset }) {
                 <button
                   onClick={() => reset()}
                   className="gerr-btn primary"
+                  type="button"
                 >
-                  <i className="fas fa-rotate-right"></i>
+                  {/* Rotate right icon */}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+                    <path d="M21 3v5h-5" />
+                  </svg>
                   Reload Application
                 </button>
                 <a href="/" className="gerr-btn ghost">
-                  <i className="fas fa-home"></i>
+                  {/* Home icon */}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
                   Back to Home
                 </a>
               </div>
 
               {/* Info */}
               <div className="gerr-info">
-                <i className="fas fa-info-circle"></i>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  style={{ flexShrink: 0 }}
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
                 <span>
                   If this keeps happening, please contact us at{" "}
                   <a href="mailto:support@foodtradehub.com">
@@ -82,7 +148,21 @@ export default function GlobalError({ error, reset }) {
             {isDev && error?.message && (
               <div className="gerr-details">
                 <div className="gerr-details-title">
-                  <i className="fas fa-code"></i> Developer Details
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="16 18 22 12 16 6" />
+                    <polyline points="8 6 2 12 8 18" />
+                  </svg>
+                  Developer Details
                 </div>
                 <div className="gerr-details-body">
                   <div className="gerr-details-label">Message:</div>
@@ -90,7 +170,9 @@ export default function GlobalError({ error, reset }) {
                   {error.digest && (
                     <>
                       <div className="gerr-details-label">Digest:</div>
-                      <code className="gerr-details-code">{error.digest}</code>
+                      <code className="gerr-details-code">
+                        {error.digest}
+                      </code>
                     </>
                   )}
                   {error.stack && (
@@ -116,7 +198,7 @@ export default function GlobalError({ error, reset }) {
               radial-gradient(circle at 20% 20%, rgba(239, 68, 68, 0.06) 0%, transparent 40%),
               radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
               linear-gradient(180deg, #f6f8f9 0%, #f5f0f0 100%);
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             position: relative;
             overflow: hidden;
           }
@@ -181,7 +263,6 @@ export default function GlobalError({ error, reset }) {
             background: linear-gradient(135deg, #ef4444 0%, #7f1d1d 100%);
             display: grid;
             place-items: center;
-            font-size: 46px;
             color: white;
             position: relative;
             z-index: 2;
@@ -232,7 +313,6 @@ export default function GlobalError({ error, reset }) {
           }
 
           .gerr-title {
-            font-family: "Manrope", sans-serif;
             font-size: 32px;
             font-weight: 800;
             color: #0b1f18;
@@ -313,9 +393,8 @@ export default function GlobalError({ error, reset }) {
             line-height: 1.5;
           }
 
-          .gerr-info i {
+          .gerr-info svg {
             color: #6366f1;
-            font-size: 14px;
             flex-shrink: 0;
           }
 
@@ -400,8 +479,12 @@ export default function GlobalError({ error, reset }) {
             .gerr-icon {
               width: 84px;
               height: 84px;
-              font-size: 34px;
               border-radius: 24px;
+            }
+
+            .gerr-icon svg {
+              width: 34px;
+              height: 34px;
             }
 
             .gerr-icon-pulse {
