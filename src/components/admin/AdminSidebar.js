@@ -14,7 +14,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
       .then((data) => {
         if (data) setStats(data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
   const menuItems = [
     // بخش Main Menu (بررسی کنید این‌ها با ساختار مطابقت دارند)
@@ -63,6 +63,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
       icon: "fa-shield-halved",
       href: "/admin/settings/access-control",
     },
+    { label: "Email Users", icon: "fa-envelope", href: "/admin/email-users" },
     { label: "Reports", icon: "fa-file-lines", href: "/admin/reports" },
     { label: "Settings", icon: "fa-gear", href: "/admin/settings" },
     { label: "Backup & Restore", icon: "fa-database", href: "/admin/backup" },

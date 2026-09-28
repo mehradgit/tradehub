@@ -3,35 +3,60 @@ import { NextResponse } from "next/server";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { getVmailPool } from "@/lib/vmailDb";
-import { auth } from "@/auth"; // مسیر auth خودتان را جایگزین کنید
+import { auth } from "@/auth";
 
 const execAsync = promisify(exec);
 
-// ===== تابع هش کردن رمز با SHA512-CRYPT =====
+// ===== هش کردن رمز با SHA512-CRYPT =====
 async function hashPassword(password) {
-  // جلوگیری از تزریق در دستور shell
   const escaped = password.replace(/'/g, "'\\''");
   const { stdout } = await execAsync(
     `doveadm pw -s SHA512-CRYPT -p '${escaped}'`
   );
-  return stdout.trim(); // مثل: {SHA512-CRYPT}$6$...
+  return stdout.trim();
 }
 
-// ===== POST: ساخت کاربر ایمیل =====
-export async function POST(request) {
-  try {
-    // ۱. احراز هویت و بررسی ادمین
-    const session = await auth();
-    if (!session?.user || !session.user.isAdmin) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+// ===== محافظت: بررسی ادمین =====
+async function checkAdmin() {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
+    return { ok: false, response: NextResponse.json(
+      { message: "Unauthorized" }, { status: 401 }
+    )};
+  }
+  return { ok: true };
+}
 
-    // ۲. دریافت اطلاعات
-    const body = await request.json();
-    const { email, password } = body;
+// ============================================================
+// GET: لیست کاربران ایمیل
+// ============================================================
+export async function GET() {
+  const guard = await checkAdmin();
+  if (!guard.ok) return guard.response;
+
+  try {
+    const pool = getVmailPool();
+    const [users] = await pool.execute(
+      "SELECT id, email, active, domain_id FROM users ORDER BY id DESC"
+    );
+    return NextResponse.json({ users });
+  } catch (error) {
+    console.error("[Email User List]", error);
+    return NextResponse.json(
+      { message: error.message }, { status: 500 }
+    );
+  }
+}
+
+// ============================================================
+// POST: ساخت کاربر ایمیل جدید
+// ============================================================
+export async function POST(request) {
+  const guard = await checkAdmin();
+  if (!guard.ok) return guard.response;
+
+  try {
+    const { email, password } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -40,25 +65,20 @@ export async function POST(request) {
       );
     }
 
-    // ۳. اعتبارسنجی ایمیل
     const emailRegex = /^[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { message: "Invalid email format" },
-        { status: 400 }
+        { message: "Invalid email format" }, { status: 400 }
       );
     }
 
-    // ۴. بررسی دامنه مجاز
     const domain = process.env.VMAIL_DOMAIN || "bulkfoodtrade.ir";
     if (!email.toLowerCase().endsWith(`@${domain}`)) {
       return NextResponse.json(
-        { message: `Email must be @${domain}` },
-        { status: 400 }
+        { message: `Email must be @${domain}` }, { status: 400 }
       );
     }
 
-    // ۵. بررسی حداقل طول رمز
     if (password.length < 8) {
       return NextResponse.json(
         { message: "Password must be at least 8 characters" },
@@ -68,23 +88,19 @@ export async function POST(request) {
 
     const pool = getVmailPool();
 
-    // ۶. بررسی تکراری نبودن ایمیل
     const [existing] = await pool.execute(
       "SELECT id FROM users WHERE email = ?",
       [email.toLowerCase()]
     );
     if (existing.length > 0) {
       return NextResponse.json(
-        { message: "Email already exists" },
-        { status: 409 }
+        { message: "Email already exists" }, { status: 409 }
       );
     }
 
-    // ۷. هش کردن رمز
     const hashedPassword = await hashPassword(password);
-
-    // ۸. ساخت کاربر
     const domainId = parseInt(process.env.VMAIL_DOMAIN_ID || "1");
+
     const [result] = await pool.execute(
       "INSERT INTO users (email, password, domain_id, active) VALUES (?, ?, ?, 1)",
       [email.toLowerCase(), hashedPassword, domainId]
@@ -92,63 +108,113 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      message: "Email user created successfully",
+      message: "Email user created",
       id: result.insertId,
       email: email.toLowerCase(),
     });
   } catch (error) {
-    console.error("[Email User Create] Error:", error);
+    console.error("[Email User Create]", error);
     return NextResponse.json(
-      { message: error.message || "Internal server error" },
-      { status: 500 }
+      { message: error.message }, { status: 500 }
     );
   }
 }
 
-// ===== GET: لیست کاربران ایمیل =====
-export async function GET() {
+// ============================================================
+// PATCH: تغییر رمز یا وضعیت فعال/غیرفعال
+// ============================================================
+export async function PATCH(request) {
+  const guard = await checkAdmin();
+  if (!guard.ok) return guard.response;
+
   try {
-    const session = await auth();
-    if (!session?.user || !session.user.isAdmin) {
+    const { email, action, password, active } = await request.json();
+
+    if (!email || !action) {
       return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
+        { message: "Email and action are required" },
+        { status: 400 }
       );
     }
 
     const pool = getVmailPool();
-    const [users] = await pool.execute(
-      "SELECT id, email, active, domain_id FROM users ORDER BY id DESC"
-    );
 
-    return NextResponse.json({ users });
-  } catch (error) {
-    console.error("[Email User List] Error:", error);
+    // بررسی وجود کاربر
+    const [rows] = await pool.execute(
+      "SELECT id FROM users WHERE email = ?",
+      [email.toLowerCase()]
+    );
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { message: "User not found" }, { status: 404 }
+      );
+    }
+
+    // ===== تغییر رمز =====
+    if (action === "change-password") {
+      if (!password || password.length < 8) {
+        return NextResponse.json(
+          { message: "Password must be at least 8 characters" },
+          { status: 400 }
+        );
+      }
+
+      const hashedPassword = await hashPassword(password);
+      await pool.execute(
+        "UPDATE users SET password = ? WHERE email = ?",
+        [hashedPassword, email.toLowerCase()]
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "Password changed successfully",
+      });
+    }
+
+    // ===== تغییر وضعیت =====
+    if (action === "toggle-active") {
+      if (typeof active !== "boolean") {
+        return NextResponse.json(
+          { message: "Active must be a boolean" }, { status: 400 }
+        );
+      }
+
+      await pool.execute(
+        "UPDATE users SET active = ? WHERE email = ?",
+        [active ? 1 : 0, email.toLowerCase()]
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: active ? "User activated" : "User deactivated",
+      });
+    }
+
     return NextResponse.json(
-      { message: error.message || "Internal server error" },
-      { status: 500 }
+      { message: "Unknown action" }, { status: 400 }
+    );
+  } catch (error) {
+    console.error("[Email User Patch]", error);
+    return NextResponse.json(
+      { message: error.message }, { status: 500 }
     );
   }
 }
 
-// ===== DELETE: حذف کاربر ایمیل =====
+// ============================================================
+// DELETE: حذف کاربر ایمیل
+// ============================================================
 export async function DELETE(request) {
-  try {
-    const session = await auth();
-    if (!session?.user || !session.user.isAdmin) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+  const guard = await checkAdmin();
+  if (!guard.ok) return guard.response;
 
+  try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
 
     if (!email) {
       return NextResponse.json(
-        { message: "Email is required" },
-        { status: 400 }
+        { message: "Email is required" }, { status: 400 }
       );
     }
 
@@ -160,12 +226,11 @@ export async function DELETE(request) {
 
     if (result.affectedRows === 0) {
       return NextResponse.json(
-        { message: "User not found" },
-        { status: 404 }
+        { message: "User not found" }, { status: 404 }
       );
     }
 
-    // حذف فایل‌های Maildir (اختیاری)
+    // حذف فایل‌های Maildir
     const domain = process.env.VMAIL_DOMAIN || "bulkfoodtrade.ir";
     const username = email.split("@")[0];
     const maildir = `/var/mail/vhosts/${domain}/${username}`;
@@ -176,10 +241,9 @@ export async function DELETE(request) {
       message: "Email user deleted",
     });
   } catch (error) {
-    console.error("[Email User Delete] Error:", error);
+    console.error("[Email User Delete]", error);
     return NextResponse.json(
-      { message: error.message || "Internal server error" },
-      { status: 500 }
+      { message: error.message }, { status: 500 }
     );
   }
 }

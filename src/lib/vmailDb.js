@@ -18,10 +18,3 @@ export function getVmailPool() {
   }
   return pool;
 }
-
-export async function closeVmailPool() {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
-}
