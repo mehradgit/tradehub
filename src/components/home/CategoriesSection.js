@@ -29,8 +29,8 @@ export default function CategoriesSection() {
           <p>Find reliable suppliers across major food industries.</p>
         </div>
         <Link href="/products" className="view-all">
-          View All Categories
-          <i className="fa-solid fa-arrow-right ps-2"></i>
+          <span>View All Categories</span>
+          <i className="fa-solid fa-arrow-right"></i>
         </Link>
       </div>
 
