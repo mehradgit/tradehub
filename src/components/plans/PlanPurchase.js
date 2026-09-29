@@ -32,11 +32,6 @@ export default function PlanPurchase({ plan, durations }) {
       return;
     }
 
-    if (originalAmount === 0 && !couponCode) {
-      // پلن رایگان
-      // همچنان به API بفرست
-    }
-
     setLoading(true);
     try {
       const res = await fetch("/api/user/subscription/purchase", {
@@ -52,13 +47,33 @@ export default function PlanPurchase({ plan, durations }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Purchase failed");
 
-      toast.success(data.message || "Subscription activated!");
+      // ====== حالت ۱: پلن رایگان ======
+      if (data.free) {
+        toast.success("Subscription activated!");
+        router.push(`/dashboard/billing/invoice/${data.payment.id}`);
+        return;
+      }
 
-      // به صفحه billing هدایت کن
-      router.push(`/dashboard/billing/invoice/${data.payment.id}`);
+      // ====== حالت ۲: پرداخت با YekPay ======
+      if (data.paymentUrl) {
+        toast.info("Redirecting to payment gateway...");
+        // کمی صبر تا toast دیده شود
+        setTimeout(() => {
+          window.location.href = data.paymentUrl;
+        }, 800);
+        return;
+      }
+
+      // ====== حالت ۳: fallback شبیه‌سازی (اگر YekPay تنظیم نشده) ======
+      if (data.payment?.id) {
+        toast.success("Subscription activated!");
+        router.push(`/dashboard/billing/invoice/${data.payment.id}`);
+        return;
+      }
+
+      throw new Error("Unexpected response from server");
     } catch (error) {
       toast.error(error.message);
-    } finally {
       setLoading(false);
     }
   };

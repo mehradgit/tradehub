@@ -22,6 +22,8 @@ model User {
   plan          String   @default("FREE")
   companyName   String?
   country       String?
+  city          String?     
+  postalCode    String?       
   countryCode   String?
   businessType  String?
   phone         String?

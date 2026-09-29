@@ -24,6 +24,8 @@ export async function PUT(request) {
       phone,
       bio,
       address,
+      city,              // ← جدید
+      postalCode,        // ← جدید
       website,
       companyEmail,
       employeeCount,
@@ -66,6 +68,8 @@ export async function PUT(request) {
       phone: phone || null,
       bio: bio || null,
       address: address || null,
+      city: city || null,              // ← جدید
+      postalCode: postalCode || null,  // ← جدید
       website: website || null,
       companyEmail: companyEmail || null,
       employeeCount: employeeCount || null,

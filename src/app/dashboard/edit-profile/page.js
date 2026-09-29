@@ -29,6 +29,8 @@ export default function EditProfilePage() {
     phone: "",
     bio: "",
     address: "",
+    city: "",          // ← جدید
+    postalCode: "",    // ← جدید
     website: "",
     companyEmail: "",
     employeeCount: "",
@@ -74,6 +76,8 @@ export default function EditProfilePage() {
           phone: user.phone || "",
           bio: user.bio || "",
           address: user.address || "",
+          city: user.city || "",              // ← جدید
+          postalCode: user.postalCode || "",  // ← جدید
           website: user.website || "",
           companyEmail: user.companyEmail || "",
           employeeCount: user.employeeCount || "",
@@ -482,12 +486,37 @@ export default function EditProfilePage() {
                 type="text"
                 className="form-control"
                 name="address"
-                placeholder="123 Main St, City, Country"
+                placeholder="123 Main St"
                 value={formData.address}
                 onChange={handleChange}
               />
             </div>
             <div className="col-md-6">
+              <label className="form-label fw-semibold">City</label>
+              <input
+                type="text"
+                className="form-control"
+                name="city"
+                placeholder="Tehran"
+                value={formData.city}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          {/* Postal Code + Employee Count */}
+          <div className="row g-3 mt-1">
+            <div className="col-md-6">
+              <label className="form-label fw-semibold">Postal Code</label>
+              <input
+                type="text"
+                className="form-control"
+                name="postalCode"
+                placeholder="1234567890"
+                value={formData.postalCode}
+                onChange={handleChange}
+              />
+            </div>            <div className="col-md-6">
               <label className="form-label fw-semibold">
                 Number of Employees
               </label>
