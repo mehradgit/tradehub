@@ -261,6 +261,8 @@ export default function EditProfilePage() {
         phone: formData.phone || null,
         bio: formData.bio || null,
         address: formData.address || null,
+        city: formData.city || null,              // ✅ مطمئن شو هست
+        postalCode: formData.postalCode || null,  // ✅ مطمئن شو هست
         website: formData.website || null,
         companyEmail: formData.companyEmail || null,
         employeeCount: formData.employeeCount || null,
