@@ -41,10 +41,10 @@ export default function Footer() {
           <div>
             <h3>Support</h3>
             <ul className="footer-links">
-              <li><Link href="#">Help Center</Link></li>
-              <li><Link href="#">Contact Us</Link></li>
-              <li><Link href="#">Privacy Policy</Link></li>
-              <li><Link href="#">Terms of Service</Link></li>
+              <li><Link href="/contact">Contact Us</Link></li>
+              <li><Link href="/about">About Us</Link></li>
+              <li><Link href="/privacy">Privacy Policy</Link></li>
+              <li><Link href="/terms">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
