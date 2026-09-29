@@ -43,6 +43,55 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+
+    // ✅ NEW: ورود با ایمیل و رمز عبور
+    Credentials({
+      id: "credentials",
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+
+        const email = credentials.email.toLowerCase().trim();
+
+        const user = await prisma.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password: true,
+            emailVerified: true,
+            registrationComplete: true,
+            isAdmin: true,
+          },
+        });
+
+        if (!user || !user.password) return null;
+
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.password,
+        );
+        if (!isValid) return null;
+
+        if (!user.emailVerified) return null;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          registrationComplete: user.registrationComplete,
+          emailVerified: true,
+          isAdmin: user.isAdmin,
+        };
+      },
+    }),
+
+    // ✅ حفظ provider قبلی برای auto-login بعد از verify-email
     Credentials({
       id: "verify-token",
       name: "Verify Token",
@@ -65,7 +114,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
         if (!record) return null;
 
-        // یک‌بارمصرف: توکن رو پاک کن
         await prisma.verificationToken.deleteMany({
           where: { identifier: email, token: credentials.token },
         });
@@ -95,7 +143,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.isAdmin = user.isAdmin ?? false;
       }
 
-      // ✅ مهم‌ترین بخش
       if (trigger === "update" && session) {
         if (session.registrationComplete !== undefined) {
           token.registrationComplete = session.registrationComplete;

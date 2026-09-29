@@ -1,10 +1,9 @@
-$projectPath = "D:\barnamenevisi\uidesigns\tradehub"   # ← مسیر پروژه خود را اینجا بگذارید
-$outputFile  = "$projectPath\project-source.txt"        # فایل خروجی
+$projectPath = "D:\barnamenevisi\uidesigns\tradehub"
+$outputFile  = Join-Path $projectPath "project-source.txt"
 
-# ====== پوشه‌ها و پسوندهایی که نباید خوانده شوند ======
 $excludeDirs = @(
     "node_modules", ".next", ".git", "dist", "build",
-    ".vercel", ".idea", ".vscode", ".agents", ".claude", "windsurf"
+    ".vercel", ".idea", ".vscode", ".agents", ".claude"
 )
 
 $excludeExts = @(
@@ -14,38 +13,43 @@ $excludeExts = @(
     ".xls", ".xlsx"
 )
 
-# ====== فایل‌هایی که نباید خوانده شوند ======
 $excludeFiles = @("package-lock.json", "project-source.txt")
 
-# ====== پاک کردن فایل خروجی قبلی ======
-if (Test-Path $outputFile) { Remove-Item $outputFile -Force }
-
-# ====== دریافت همه فایل‌ها ======
-$files = Get-ChildItem -Path $projectPath -Recurse -File | Where-Object {
-    # بررسی پوشه‌های مستثنی
-    $dirMatch = $false
-    foreach ($d in $excludeDirs) {
-        if ($_.FullName -match "\\$d\\") { $dirMatch = $true; break }
-    }
-
-    # بررسی پسوندهای مستثنی
-    $extMatch = $excludeExts -contains $_.Extension.ToLower()
-
-    # بررسی نام فایل‌های مستثنی
-    $fileMatch = $excludeFiles -contains $_.Name
-
-    -not $dirMatch -and -not $extMatch -and -not $fileMatch
+# پاک کردن فایل خروجی قبلی
+if (Test-Path -LiteralPath $outputFile) {
+    Remove-Item -LiteralPath $outputFile -Force
 }
 
-# ====== نوشتن محتوا در فایل خروجی ======
+# ساخت الگوی رجولار امن برای پوشه‌ها
+$escapedDirs = $excludeDirs | ForEach-Object { [regex]::Escape($_) }
+$dirPattern  = "\\($($escapedDirs -join '|'))\\"
+
+# دریافت فایل‌ها
+$files = Get-ChildItem -LiteralPath $projectPath -Recurse -File -ErrorAction SilentlyContinue |
+    Where-Object {
+        $dirMatch  = $_.FullName -match $dirPattern
+        $extMatch  = $excludeExts -contains $_.Extension.ToLower()
+        $fileMatch = $excludeFiles -contains $_.Name
+        -not $dirMatch -and -not $extMatch -and -not $fileMatch
+    }
+
+# نوشتن محتوا
 foreach ($file in $files) {
-    $relativePath = $file.FullName.Replace($projectPath, "").TrimStart("\")
-    Add-Content -Path $outputFile -Value "`n`n=========================================="
-    Add-Content -Path $outputFile -Value "FILE: $relativePath"
-    Add-Content -Path $outputFile -Value "==========================================`n"
+    $relativePath = $file.FullName.Substring($projectPath.Length).TrimStart("\")
+
+    Add-Content -LiteralPath $outputFile -Encoding UTF8 -Value "`n`n=========================================="
+    Add-Content -LiteralPath $outputFile -Encoding UTF8 -Value "FILE: $relativePath"
+    Add-Content -LiteralPath $outputFile -Encoding UTF8 -Value "==========================================`n"
+
     try {
-        Get-Content -Path $file.FullName -Raw -ErrorAction Stop | Add-Content -Path $outputFile
-    } catch {
-        Add-Content -Path $outputFile -Value "[خطا در خواندن فایل]"
+        # -LiteralPath نکته کلیدی برای مسیرهای دارای [ ] است
+        $content = Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Stop
+        Add-Content -LiteralPath $outputFile -Encoding UTF8 -Value $content
+    }
+    catch {
+        Add-Content -LiteralPath $outputFile -Encoding UTF8 `
+            -Value "[ERROR reading file: $($_.Exception.Message)]"
     }
 }
+
+Write-Host "Done. Output: $outputFile" -ForegroundColor Green

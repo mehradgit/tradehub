@@ -7,7 +7,7 @@ import { sendVerificationEmail } from "@/lib/email";
 import { generateNumber, generateSlug } from "@/utils/generate";
 import { verifyCaptcha } from "@/lib/captcha";
 
-// ✅ تعیین base URL
+// ====== base URL ======
 function getBaseUrl() {
   return (
     process.env.NEXTAUTH_URL ||
@@ -17,7 +17,7 @@ function getBaseUrl() {
   );
 }
 
-// ✅ تولید profileNumber یکتا
+// ====== تولید profileNumber یکتا ======
 async function generateUniqueProfileNumber() {
   let profileNumber;
   let isUnique = false;
@@ -40,14 +40,13 @@ async function generateUniqueProfileNumber() {
   return profileNumber;
 }
 
-// ✅ تولید slug یکتا
+// ====== تولید slug یکتا ======
 async function generateUniqueSlug(baseText) {
   const baseSlug = generateSlug(baseText || "user");
   let slug = baseSlug;
   let counter = 1;
 
   while (true) {
-    // ⚠️ چون slug در اسکیما @unique نیست، باید از findFirst استفاده کنیم
     const existing = await prisma.user.findFirst({
       where: { slug },
       select: { id: true },
@@ -59,7 +58,6 @@ async function generateUniqueSlug(baseText) {
     counter++;
 
     if (counter > 100) {
-      // در بدترین حالت، از یک شناسه‌ی تصادفی استفاده کن
       return `${baseSlug}_${Date.now()}`;
     }
   }
@@ -67,7 +65,8 @@ async function generateUniqueSlug(baseText) {
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
+    // ✅ اصلاح: استخراج همه فیلدها از body
+    const { email, password, captchaAnswer, captchaToken } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -75,7 +74,8 @@ export async function POST(request) {
         { status: 400 },
       );
     }
-    // ✅ بررسی کپچا
+
+    // ✅ بررسی کپچا (حالا متغیرها تعریف شده‌اند)
     if (!verifyCaptcha(captchaAnswer, captchaToken)) {
       return NextResponse.json(
         {
@@ -85,6 +85,7 @@ export async function POST(request) {
         { status: 400 },
       );
     }
+
     // اعتبارسنجی ایمیل
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -131,7 +132,7 @@ export async function POST(request) {
     // هش رمز عبور
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ تولید profileNumber و slug
+    // تولید profileNumber و slug
     const profileNumber = await generateUniqueProfileNumber();
     const slug = await generateUniqueSlug(normalizedEmail.split("@")[0]);
 

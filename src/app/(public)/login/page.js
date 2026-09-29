@@ -183,8 +183,8 @@ function LoginPageContent() {
             )}
           </div>
         )}
-
         <form onSubmit={handleCredentialsLogin}>
+          {/* Email */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Email Address</label>
             <input
@@ -198,18 +198,7 @@ function LoginPageContent() {
             />
           </div>
 
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Password</label>
-            <input
-              type="password"
-              className="form-control form-control-lg"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
+          {/* Password (فقط یک بار) */}
           <div className="mb-3">
             <div className="d-flex justify-content-between align-items-center mb-1">
               <label className="form-label fw-semibold mb-0">Password</label>
@@ -231,7 +220,8 @@ function LoginPageContent() {
               disabled={loading}
             />
           </div>
-          {/* ✅ کپچا */}
+
+          {/* Captcha */}
           <Captcha ref={captchaRef} disabled={loading} />
 
           <button
@@ -286,12 +276,12 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-          <div className="container text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="text-muted mt-3">Loading...</p>
+        <div className="container text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
+          <p className="text-muted mt-3">Loading...</p>
+        </div>
       }
     >
       <LoginPageContent />
