@@ -9,13 +9,14 @@ import { toast } from "react-toastify";
 import CountryFlag from "@/components/ui/CountryFlag";
 import LoginModal from "@/components/ui/LoginModal";
 import ConnectModal from "@/components/ui/ConnectModal";
+
 export default function SupplierInfoSection({
   productId,
   supplier,
   initialPermission,
   alreadyRevealed,
   shouldAutoReveal,
-  onRevealSuccess, // callback برای اطلاع به ProductDetail
+  onRevealSuccess,
 }) {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -103,8 +104,12 @@ export default function SupplierInfoSection({
       icon: isQuota ? "fa-hourglass-end" : "fa-crown",
       title: isQuota ? "Monthly quota exhausted" : "Upgrade your plan",
       subtitle: isQuota
-        ? `You've used ${permissionError.used || 0} of ${permissionError.limit || 0} monthly inquiries. Upgrade your plan or wait until next month.`
-        : `Your current plan (${permissionError.currentPlan || "Basic"}) doesn't allow viewing supplier information. Please upgrade to continue.`,
+        ? `You've used ${permissionError.used || 0} of ${
+            permissionError.limit || 0
+          } monthly inquiries. Upgrade your plan or wait until next month.`
+        : `Your current plan (${
+            permissionError.currentPlan || "Basic"
+          }) doesn't allow viewing supplier information. Please upgrade to continue.`,
       buttonText: isQuota ? "Upgrade Plan" : "View Plans",
     };
   })();
@@ -121,12 +126,15 @@ export default function SupplierInfoSection({
                 <img src={supplier.logo} alt={supplier.name} />
               </div>
             </div>
+
             <div className="supplier-card-body">
               <div className="supplier-card-header">
                 <h3 className="supplier-name">{supplier.name}</h3>
                 <p className="supplier-website">{supplier.website}</p>
               </div>
+
               <div className="supplier-divider"></div>
+
               <div className="supplier-details-grid">
                 <div className="supplier-detail-item">
                   <span className="detail-label">Founding</span>
@@ -144,6 +152,7 @@ export default function SupplierInfoSection({
                 </div>
               </div>
             </div>
+
             <div className="supplier-actions">
               <Link
                 href={`/profiles/${supplier.profileNumber}/${supplier.slug}`}
@@ -165,9 +174,22 @@ export default function SupplierInfoSection({
             <div className="blurred-content">
               <div className="supplier-card">
                 <div className="supplier-card-cover">
-                  <div style={{ width: "100%", height: "100%", background: "#e8e2da" }} />
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      background: "#e8e2da",
+                    }}
+                  />
                   <div className="supplier-logo-wrapper">
-                    <div style={{ width: "100%", height: "100%", background: "#d1dbd6", borderRadius: "50%" }} />
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        background: "#d1dbd6",
+                        borderRadius: "50%",
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="supplier-card-body">
@@ -283,6 +305,7 @@ export default function SupplierInfoSection({
           </div>
         </ModalOverlay>
       )}
+
       <ConnectModal
         isOpen={isConnectModalOpen}
         onClose={() => setIsConnectModalOpen(false)}
@@ -290,6 +313,329 @@ export default function SupplierInfoSection({
         supplierName={supplier.name}
         productId={productId}
       />
+
+      {/* ====== Styles ====== */}
+      <style jsx>{`
+        /* ============================================================
+           Wrapper
+           ============================================================ */
+        .supplier-card-wrapper {
+          width: 100%;
+          max-width: 300px;
+          min-width: 0;
+        }
+
+        /* ============================================================
+           Card
+           ============================================================ */
+        .supplier-card {
+          background: white;
+          border-radius: 20px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+          overflow: hidden;
+          width: 100%;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          border: 1px solid #e8edf0;
+        }
+
+        /* ============================================================
+           Cover
+           ============================================================ */
+        .supplier-card-cover {
+          position: relative;
+          width: 100%;
+          height: 90px;
+          overflow: visible;
+          flex-shrink: 0;
+        }
+
+        .supplier-card-cover > img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        /* ============================================================
+           Logo (روی کاور، offset به پایین)
+           ============================================================ */
+        .supplier-logo-wrapper {
+          position: absolute;
+          bottom: -32px;
+          right: 20px;
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: #080f3b;
+          border: 3px solid white;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+          overflow: hidden;
+          display: grid;
+          place-items: center;
+          z-index: 2;
+        }
+
+        .supplier-logo-wrapper img {
+          width: 70%;
+          height: 70%;
+          object-fit: contain;
+        }
+
+        /* ============================================================
+           Body
+           ============================================================ */
+        .supplier-card-body {
+          padding: 44px 20px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          min-width: 0;
+        }
+
+        .supplier-card-header {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+        }
+
+        .supplier-name {
+          font-size: 15.5px;
+          font-weight: 700;
+          color: #052311;
+          font-family: "Poppins", sans-serif;
+          line-height: 1.35;
+          margin: 0;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          min-width: 0;
+        }
+
+        .supplier-website {
+          font-size: 12.5px;
+          color: rgba(5, 35, 17, 0.55);
+          font-family: "Poppins", sans-serif;
+          line-height: 1.4;
+          margin: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+        }
+
+        .supplier-divider {
+          width: 60%;
+          height: 1px;
+          background: #f7c3a3;
+          border-radius: 2px;
+          margin: 6px 0;
+        }
+
+        /* ============================================================
+           Details Grid
+           ============================================================ */
+        .supplier-details-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+          width: 100%;
+          min-width: 0;
+        }
+
+        .supplier-detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          min-width: 0;
+        }
+
+        .detail-label {
+          font-size: 11.5px;
+          color: rgba(5, 35, 17, 0.5);
+          font-weight: 500;
+          font-family: "Poppins", sans-serif;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+
+        .detail-value {
+          font-size: 13.5px;
+          font-weight: 600;
+          color: #000;
+          font-family: "Poppins", sans-serif;
+          line-height: 1.3;
+          min-width: 0;
+          word-wrap: break-word;
+        }
+
+        .detail-value-with-flag {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        .detail-value-with-flag span {
+          font-size: 13.5px;
+          font-weight: 600;
+          color: #052311;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+        }
+
+        /* ============================================================
+           Actions
+           ============================================================ */
+        .supplier-actions {
+          padding: 12px 20px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
+          border-top: 1px solid #f1f5f7;
+        }
+
+        .company-info-link {
+          color: rgba(22, 144, 212, 0.9);
+          font-size: 13px;
+          font-weight: 600;
+          font-family: "Poppins", sans-serif;
+          text-align: center;
+          text-decoration: none;
+          cursor: pointer;
+          transition: color 0.2s ease;
+        }
+
+        .company-info-link:hover {
+          color: #168fd4;
+          text-decoration: underline;
+        }
+
+        .connect-btn {
+          width: 100%;
+          padding: 10px 18px;
+          background: transparent;
+          border: 1.5px solid #5dc888;
+          border-radius: 10px;
+          color: #117c3c;
+          font-size: 13px;
+          font-weight: 600;
+          font-family: "Poppins", sans-serif;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .connect-btn:hover {
+          background: #5dc888;
+          color: white;
+        }
+
+        .connect-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        /* ============================================================
+           Blurred (برای Basic)
+           ============================================================ */
+        .blurred-wrapper {
+          position: relative;
+          border-radius: 20px;
+          overflow: hidden;
+          min-height: 320px;
+        }
+
+        .blurred-content {
+          filter: blur(8px);
+          user-select: none;
+          pointer-events: none;
+          opacity: 0.55;
+        }
+
+        .blurred-overlay {
+          position: absolute;
+          inset: 0;
+          display: grid;
+          place-items: center;
+          padding: 12px;
+          background: rgba(255, 255, 255, 0.35);
+          backdrop-filter: blur(2px);
+          z-index: 10;
+        }
+
+        .blurred-overlay-card {
+          background: white;
+          border-radius: 16px;
+          padding: 20px 18px;
+          max-width: 320px;
+          width: 100%;
+          text-align: center;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+          border: 1px solid #e2e9e5;
+        }
+
+        .blurred-overlay-card.compact {
+          padding: 16px 14px;
+          max-width: 260px;
+        }
+
+        .blurred-overlay-card.compact .blurred-icon {
+          width: 40px;
+          height: 40px;
+          font-size: 16px;
+          margin-bottom: 8px;
+        }
+
+        .blurred-icon {
+          width: 46px;
+          height: 46px;
+          margin: 0 auto 10px;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          font-size: 18px;
+          background: linear-gradient(135deg, #eaf7f1, #d1ede0);
+          color: #13795b;
+        }
+
+        .blurred-title {
+          font-family: "Manrope", sans-serif;
+          font-size: 14.5px;
+          font-weight: 800;
+          color: #13251f;
+          margin: 0 0 12px 0;
+        }
+
+        .btn-blur-upgrade {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 9px 18px;
+          border-radius: 50px;
+          font-size: 12.5px;
+          font-weight: 700;
+          background: linear-gradient(135deg, #f59e0b, #d97706);
+          color: white;
+          border: none;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25);
+        }
+
+        .btn-blur-upgrade:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 24px rgba(245, 158, 11, 0.35);
+        }
+
+        .btn-blur-upgrade:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+      `}</style>
     </>
   );
 }
@@ -334,13 +680,13 @@ function IconCircle({ icon, variant }) {
   const v =
     variant === "warning"
       ? {
-        background: "linear-gradient(135deg, #fff4dd, #fde2b5)",
-        color: "#d97706",
-      }
+          background: "linear-gradient(135deg, #fff4dd, #fde2b5)",
+          color: "#d97706",
+        }
       : {
-        background: "linear-gradient(135deg, #eaf7f1, #d1ede0)",
-        color: "#13795b",
-      };
+          background: "linear-gradient(135deg, #eaf7f1, #d1ede0)",
+          color: "#13795b",
+        };
   return (
     <div
       style={{

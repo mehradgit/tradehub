@@ -149,7 +149,7 @@ export default function ProductDetail({
   return (
     <>
       <div className="product-detail-container">
-        {/* Breadcrumb */}
+        {/* ====== Breadcrumb ====== */}
         <nav className="product-breadcrumb" aria-label="Breadcrumb">
           <ol className="breadcrumb-list">
             <li className="breadcrumb-item">
@@ -160,7 +160,9 @@ export default function ProductDetail({
             </li>
             <li className="breadcrumb-item">
               <Link
-                href={`/products?category=${encodeURIComponent(data.category || "all")}`}
+                href={`/products?category=${encodeURIComponent(
+                  data.category || "all",
+                )}`}
               >
                 {data.category || "All"}
               </Link>
@@ -171,12 +173,12 @@ export default function ProductDetail({
           </ol>
         </nav>
 
-        {/* Main row */}
+        {/* ====== ردیف ۳ ستونی: گالری | اطلاعات | کارت تأمین‌کننده ====== */}
         <div className="product-detail-row">
-          {/* Gallery */}
+          {/* --- ستون ۱: گالری --- */}
           <ImageGallery images={productImages} productName={data.name} />
 
-          {/* Product Info */}
+          {/* --- ستون ۲: اطلاعات محصول --- */}
           <div className="product-info-wrapper">
             <div className="product-info-header">
               <h1 className="product-title">{data.name}</h1>
@@ -221,7 +223,7 @@ export default function ProductDetail({
               </div>
             </div>
 
-            {/* Specs */}
+            {/* مشخصات — دو ستونی داخل همین ستون */}
             <div className="product-specs-grid">
               <div className="product-specs-column">
                 <div className="product-spec-item">
@@ -257,9 +259,7 @@ export default function ProductDetail({
                 </div>
                 <div className="product-spec-item">
                   <span className="spec-label">Shipping Terms</span>
-                  <span className="spec-value">
-                    {data.shippingTerms || "—"}
-                  </span>
+                  <span className="spec-value">{data.shippingTerms || "—"}</span>
                 </div>
                 <div className="product-spec-item">
                   <span className="spec-label">Packaging</span>
@@ -275,7 +275,7 @@ export default function ProductDetail({
             </div>
           </div>
 
-          {/* ✅ Supplier Card - با Reveal */}
+          {/* --- ستون ۳: کارت تأمین‌کننده --- */}
           <SupplierInfoSection
             productId={data.id}
             supplier={supplierData}
@@ -286,7 +286,7 @@ export default function ProductDetail({
           />
         </div>
 
-        {/* Short Description */}
+        {/* ====== توضیحات کوتاه ====== */}
         <div className="product-description-short">
           <h3>About This Product</h3>
           <div className="product-description-short-content">
@@ -315,11 +315,10 @@ export default function ProductDetail({
           </div>
         </div>
 
-        {/* Tabs + Request Form */}
+        {/* ====== Tabs + فرم ====== */}
         <div className="product-detail-bottom">
           <ProductTabs product={data} />
 
-          {/* ✅ فرم Send Request - فقط بعد از Reveal */}
           {isSupplierRevealed ? (
             <div className="request-form-card">
               <h3>Send Request</h3>
@@ -405,13 +404,16 @@ export default function ProductDetail({
                     placeholder="Your message..."
                   />
                 </div>
-                <button type="submit" className="submit-btn" disabled={sending}>
+                <button
+                  type="submit"
+                  className="submit-btn"
+                  disabled={sending}
+                >
                   {sending ? "Sending..." : "Send Request"}
                 </button>
               </form>
             </div>
           ) : (
-            /* ====== پیام جایگزین: اول Reveal کن ====== */
             <div className="request-form-card" style={{ textAlign: "center" }}>
               <div
                 style={{
@@ -443,19 +445,20 @@ export default function ProductDetail({
         </div>
       </div>
 
-      {/* ====== Share Modal ====== */}
+      {/* Share Modal */}
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         product={data}
       />
 
-      {/* ====== مودال لاگین ====== */}
+      {/* Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         redirectUrl={pathname}
       />
+
       {/* ====== Styles ====== */}
       <style jsx>{`
         .product-detail-container {
@@ -486,24 +489,20 @@ export default function ProductDetail({
           align-items: center;
         }
 
-        /* ✅ فقط آیتم‌هایی که آخرین نیستند، اسلش می‌گیرند */
         .breadcrumb-item:not(:last-child)::after {
           content: "/";
           margin: 0 8px;
           color: var(--gray-light);
         }
 
-        /* حذف اسلش از آخرین آیتم (اضافی) */
         .breadcrumb-item:last-child::after {
           display: none;
         }
 
-        /* حذف هرگونه ::before از قبل */
         .breadcrumb-item::before {
           display: none !important;
         }
 
-        /* لینک‌ها */
         .breadcrumb-item a {
           color: var(--primary);
           text-decoration: none;
@@ -520,25 +519,45 @@ export default function ProductDetail({
           font-weight: 500;
         }
 
-        /* Main row */
+        /* ============================================================
+           ✅ ردیف ۳ ستونی: گالری | اطلاعات | کارت تأمین‌کننده
+           ============================================================ */
         .product-detail-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 30px;
-          flex-wrap: wrap;
+          display: grid;
+          grid-template-columns: 320px minmax(0, 1fr) 300px;
+          gap: 28px;
+          align-items: start;
+          width: 100%;
+          margin-bottom: 28px;
         }
 
+        .product-detail-row > * {
+          min-width: 0;
+        }
+
+        /* کارت تأمین‌کننده - چسبیده به راست */
+        .product-detail-row :global(.supplier-card-wrapper) {
+          width: 100%;
+          max-width: 300px;
+          justify-self: end;
+          align-self: start;
+        }
+
+        /* ============================================================
+           ✅ اطلاعات محصول (ستون میانی)
+           ============================================================ */
         .product-info-wrapper {
-          flex: 1;
-          min-width: 280px;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+          min-width: 0;
         }
 
         .product-info-header {
           display: flex;
           flex-direction: column;
-          gap: 4px;
-          margin-bottom: 22px;
+          gap: 6px;
         }
 
         .product-title {
@@ -546,8 +565,9 @@ export default function ProductDetail({
           font-weight: 600;
           color: #052311;
           font-family: "Poppins", sans-serif;
-          line-height: 43.2px;
+          line-height: 1.4;
           margin: 0;
+          word-wrap: break-word;
         }
 
         .product-meta {
@@ -586,15 +606,7 @@ export default function ProductDetail({
           transition: all 0.3s ease;
         }
 
-        .product-share-btn:hover {
-          color: #ea6a18;
-          background: rgba(234, 106, 24, 0.05);
-        }
-
-        .product-save-btn {
-          color: rgba(5, 35, 17, 0.6);
-        }
-
+        .product-share-btn:hover,
         .product-save-btn:hover {
           color: #ea6a18;
           background: rgba(234, 106, 24, 0.05);
@@ -615,12 +627,13 @@ export default function ProductDetail({
           cursor: not-allowed;
         }
 
-        /* Specs */
+        /* ============================================================
+           ✅ مشخصات — دو ستونی داخل ستون میانی
+           ============================================================ */
         .product-specs-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
           gap: 23px 30px;
-          align-items: start;
           width: 100%;
         }
 
@@ -628,6 +641,7 @@ export default function ProductDetail({
           display: flex;
           flex-direction: column;
           gap: 23px;
+          min-width: 0;
         }
 
         .product-spec-item {
@@ -637,6 +651,7 @@ export default function ProductDetail({
           gap: 5px;
           position: relative;
           padding-left: 14px;
+          min-width: 0;
         }
 
         .product-spec-item::before {
@@ -678,152 +693,12 @@ export default function ProductDetail({
           gap: 10px;
         }
 
-        /* Supplier Card */
-        .supplier-card {
-          width: 290px;
-          flex-shrink: 0;
-          background: white;
-          border-radius: 20px;
-          box-shadow: 0px 7px 25px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-          position: relative;
-          padding-bottom: 16px;
-        }
-
-        .supplier-cover {
-          // width: 100%;
-          height: 80px;
-          object-fit: cover;
-          box-shadow: 0px 4px 6.8px rgba(0, 0, 0, 0.15);
-        }
-
-        .supplier-logo-wrapper img {
-          width: 55px;
-          height: 50px;
-          object-fit: contain;
-        }
-
-        .supplier-info {
-          padding: 8px 20px 0;
-        }
-
-        .supplier-info-inner {
-          padding-left: 0;
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 8px;
-        }
-
-        .supplier-name {
-          font-size: 16px;
-          font-weight: 600;
-          color: #052311;
-          font-family: "Poppins", sans-serif;
-          line-height: 24px;
-          margin: 0;
-        }
-
-        .supplier-website {
-          font-size: 14px;
-          color: rgba(5, 35, 17, 0.6);
-          font-family: "Poppins", sans-serif;
-          line-height: 21px;
-          margin: 0;
-        }
-
-        .supplier-divider {
-          width: 171.45px;
-          height: 1px;
-          background: #f7c3a3;
-          margin: 4px 0 0 0;
-        }
-
-        .supplier-details-grid {
-          width: 100%;
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          flex-wrap: wrap;
-          padding: 8px 0;
-        }
-
-        .supplier-detail-item {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-          padding: 8px 0;
-        }
-
-        .detail-label {
-          font-size: 14px;
-          color: rgba(5, 35, 17, 0.6);
-          font-weight: 400;
-          font-family: "Poppins", sans-serif;
-        }
-
-        .detail-value {
-          font-size: 16px;
-          font-weight: 600;
-          color: #000;
-          font-family: "Poppins", sans-serif;
-        }
-
-        .detail-value-with-flag {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .detail-value-with-flag span {
-          font-size: 16px;
-          font-weight: 600;
-          color: #052311;
-        }
-
-        .supplier-actions {
-          padding: 0 20px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          margin-top: 4px;
-        }
-
-        .company-info-link {
-          color: rgba(22, 144, 212, 0.8);
-          font-size: 14px;
-          font-weight: 400;
-          font-family: "Poppins", sans-serif;
-          cursor: pointer;
-        }
-
-        .company-info-link:hover {
-          color: #168fd4;
-        }
-
-        .connect-btn {
-          width: 100%;
-          padding: 8px 20px;
-          background: transparent;
-          border: 1px solid #5dc888;
-          border-radius: 10px;
-          color: #117c3c;
-          font-size: 14px;
-          font-weight: 400;
-          font-family: "Poppins", sans-serif;
-          cursor: pointer;
-        }
-
-        .connect-btn:hover {
-          background: #5dc888;
-          color: white;
-        }
-
-        /* Short Description */
+        /* ============================================================
+           Short Description
+           ============================================================ */
         .product-description-short {
           width: 100%;
-          margin: 24px 0 32px 0;
+          margin: 0 0 32px 0;
           padding: 24px 32px;
           background: var(--white);
           border-radius: var(--radius-lg);
@@ -884,12 +759,14 @@ export default function ProductDetail({
           transform: translateY(2px);
         }
 
-        /* Tabs + Form */
+        /* ============================================================
+           Tabs + Request Form
+           ============================================================ */
         .product-detail-bottom {
           display: grid;
-          grid-template-columns: 2fr 1fr;
+          grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
           gap: 30px;
-          margin-top: 40px;
+          margin-top: 8px;
           align-items: start;
         }
 
@@ -899,6 +776,9 @@ export default function ProductDetail({
           padding: 23px;
           box-shadow: 0px 7px 25px rgba(0, 0, 0, 0.1);
           width: 100%;
+          align-self: start;
+          position: sticky;
+          top: 20px;
         }
 
         .request-form-card h3 {
@@ -926,6 +806,7 @@ export default function ProductDetail({
           display: flex;
           flex-direction: column;
           gap: 7px;
+          min-width: 0;
         }
 
         .form-group.full-width {
@@ -991,72 +872,112 @@ export default function ProductDetail({
             0px 6px 20px rgba(234, 106, 24, 0.6);
         }
 
-        /* Responsive */
+        /* ============================================================
+           Responsive
+           ============================================================ */
+
+        /* تبلت بزرگ */
         @media (max-width: 1200px) {
           .product-detail-row {
-            flex-direction: column;
-            align-items: center;
+            grid-template-columns: 280px minmax(0, 1fr) 280px;
+            gap: 22px;
           }
-          .supplier-card {
-            width: 100%;
-            max-width: 400px;
+
+          .product-detail-row :global(.supplier-card-wrapper) {
+            max-width: 280px;
+          }
+
+          .product-specs-grid {
+            gap: 18px 22px;
           }
         }
 
+        /* تبلت: کارت می‌ره زیر */
+        @media (max-width: 1000px) {
+          .product-detail-row {
+            grid-template-columns: 300px minmax(0, 1fr);
+          }
+
+          .product-detail-row :global(.supplier-card-wrapper) {
+            grid-column: 1 / -1;
+            max-width: 100%;
+            justify-self: stretch;
+          }
+        }
+
+        /* موبایل: تک‌ستونه */
         @media (max-width: 768px) {
-          .product-detail-bottom {
+          .product-detail-row {
             grid-template-columns: 1fr;
             gap: 20px;
           }
-          .product-description-short {
-            padding: 16px 20px;
-            margin: 16px 0 24px 0;
+
+          .product-detail-row :global(.supplier-card-wrapper) {
+            max-width: 100%;
           }
+
           .product-specs-grid {
             grid-template-columns: 1fr;
             gap: 15px;
           }
-          .request-form-card {
-            width: 100%;
+
+          .product-detail-bottom {
+            grid-template-columns: 1fr;
+            gap: 20px;
           }
+
+          .request-form-card {
+            position: static;
+          }
+
           .form-row {
             grid-template-columns: 1fr;
           }
+
           .product-title {
             font-size: 20px;
           }
+
           .product-meta {
             gap: 8px;
           }
+
           .product-share-btn,
           .product-save-btn {
             font-size: 12px;
             padding: 2px 6px;
           }
+
           .breadcrumb-list {
             font-size: 12px;
+          }
+
+          .product-description-short {
+            padding: 16px 20px;
+            margin: 0 0 24px 0;
           }
         }
 
         @media (max-width: 480px) {
           .product-title {
             font-size: 18px;
-            line-height: 28px;
+            line-height: 1.5;
           }
+
           .product-date {
             font-size: 12px;
           }
+
           .product-divider {
             height: 14px;
           }
+
           .product-specs-column {
             gap: 16px;
           }
+
           .product-spec-item {
             padding-left: 10px;
-          }
-          .supplier-card {
-            padding-bottom: 12px;
           }
         }
       `}</style>
