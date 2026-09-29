@@ -115,22 +115,18 @@ export default function SupplierInfoSection({
         {isRevealed ? (
           /* ====== کارت باز ====== */
           <div className="supplier-card">
-            <img
-              src={supplier.coverImage}
-              alt="Cover"
-              className="supplier-cover"
-            />
-            <div className="supplier-logo-wrapper">
-              <img src={supplier.logo} alt={supplier.name} />
-            </div>
-            <div className="supplier-info">
-              <div className="supplier-info-inner">
-                <div>
-                  <h3 className="supplier-name">{supplier.name}</h3>
-                  <p className="supplier-website">{supplier.website}</p>
-                </div>
-                <div className="supplier-divider"></div>
+            <div className="supplier-card-cover">
+              <img src={supplier.coverImage} alt="Cover" />
+              <div className="supplier-logo-wrapper">
+                <img src={supplier.logo} alt={supplier.name} />
               </div>
+            </div>
+            <div className="supplier-card-body">
+              <div className="supplier-card-header">
+                <h3 className="supplier-name">{supplier.name}</h3>
+                <p className="supplier-website">{supplier.website}</p>
+              </div>
+              <div className="supplier-divider"></div>
               <div className="supplier-details-grid">
                 <div className="supplier-detail-item">
                   <span className="detail-label">Founding</span>
@@ -168,31 +164,18 @@ export default function SupplierInfoSection({
           <div className="blurred-wrapper">
             <div className="blurred-content">
               <div className="supplier-card">
-                <div
-                  style={{
-                    width: "100%",
-                    height: "80px",
-                    background: "#e8e2da",
-                  }}
-                />
-                <div className="supplier-logo-wrapper">
-                  <div
-                    style={{
-                      width: "55px",
-                      height: "50px",
-                      background: "#e8e2da",
-                      borderRadius: "50%",
-                    }}
-                  />
-                </div>
-                <div className="supplier-info">
-                  <div className="supplier-info-inner">
-                    <div>
-                      <h3 className="supplier-name">██████████</h3>
-                      <p className="supplier-website">████████████</p>
-                    </div>
-                    <div className="supplier-divider"></div>
+                <div className="supplier-card-cover">
+                  <div style={{ width: "100%", height: "100%", background: "#e8e2da" }} />
+                  <div className="supplier-logo-wrapper">
+                    <div style={{ width: "100%", height: "100%", background: "#d1dbd6", borderRadius: "50%" }} />
                   </div>
+                </div>
+                <div className="supplier-card-body">
+                  <div className="supplier-card-header">
+                    <h3 className="supplier-name">████████████</h3>
+                    <p className="supplier-website">████████████</p>
+                  </div>
+                  <div className="supplier-divider"></div>
                   <div className="supplier-details-grid">
                     <div className="supplier-detail-item">
                       <span className="detail-label">Founding</span>
@@ -351,13 +334,13 @@ function IconCircle({ icon, variant }) {
   const v =
     variant === "warning"
       ? {
-          background: "linear-gradient(135deg, #fff4dd, #fde2b5)",
-          color: "#d97706",
-        }
+        background: "linear-gradient(135deg, #fff4dd, #fde2b5)",
+        color: "#d97706",
+      }
       : {
-          background: "linear-gradient(135deg, #eaf7f1, #d1ede0)",
-          color: "#13795b",
-        };
+        background: "linear-gradient(135deg, #eaf7f1, #d1ede0)",
+        color: "#13795b",
+      };
   return (
     <div
       style={{
