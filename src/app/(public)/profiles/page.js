@@ -4,11 +4,13 @@ import Link from "next/link";
 import ProfileCard from "@/components/profiles/ProfileCard";
 import ProfileFilter from "@/components/profiles/ProfileFilter";
 import Pagination from "@/components/requests/Pagination";
+import { categories as allCategories } from "@/lib/categories";
 
 export default async function ProfilesPage({ searchParams }) {
   const {
     role = "all",
     category = "",
+    subCategory = "",       
     page: pageParam = 1,
     search = "",
   } = await searchParams;
@@ -34,37 +36,25 @@ export default async function ProfilesPage({ searchParams }) {
     ];
   }
 
+  // ✅ فیلتر دسته / زیردسته
   if (category) {
+    const productFilter = {
+      isVisible: true,
+      category,
+      ...(subCategory && { subCategory }),
+    };
+    const requestFilter = {
+      isVisible: true,
+      category,
+      ...(subCategory && { subCategory }),
+    };
+
     where.OR = [
       ...(where.OR || []),
-      {
-        products: {
-          some: {
-            category: category,
-            isVisible: true,
-          },
-        },
-      },
-      {
-        buyingRequests: {
-          some: {
-            category: category,
-            isVisible: true,
-          },
-        },
-      },
+      { products: { some: productFilter } },
+      { buyingRequests: { some: requestFilter } },
     ];
   }
-
-  const categoriesData = await prisma.$queryRaw`
-    SELECT DISTINCT category FROM (
-      SELECT category FROM Product WHERE isVisible = true
-      UNION
-      SELECT category FROM BuyingRequest WHERE isVisible = true
-    ) AS all_categories
-    WHERE category IS NOT NULL AND category != ''
-  `;
-  const categories = categoriesData.map((row) => row.category).filter(Boolean);
 
   const [profiles, totalCount] = await Promise.all([
     prisma.user.findMany({
@@ -80,8 +70,8 @@ export default async function ProfilesPage({ searchParams }) {
         image: true,
         logo: true,
         createdAt: true,
-        profileNumber: true,   // ✅ اضافه شد
-        slug: true,            // ✅ اضافه شد
+        profileNumber: true,
+        slug: true,
         _count: {
           select: {
             products: { where: { isVisible: true } },
@@ -97,38 +87,55 @@ export default async function ProfilesPage({ searchParams }) {
   ]);
 
   const totalPages = Math.ceil(totalCount / limit);
-
   return (
     <div className="container py-4">
-      <div className="page-header">
+      <nav
+        aria-label="breadcrumb"
+        className="mb-4 profiles-page-breadcrumb"
+      >
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link href="/" style={{ color: "var(--primary)" }}>
+              Home
+            </Link>
+          </li>
+          <li className="breadcrumb-item active text-muted">Profiles</li>
+        </ol>
+      </nav>
+
+      <div className="profiles-page-header">
         <h1>
-          <i className="fas fa-users" style={{ color: "var(--primary)" }}></i>
+          <i className="fas fa-users"></i>
           Profiles
         </h1>
+        <p className="profiles-page-subtitle">
+          Discover verified suppliers and buyers on our platform
+        </p>
       </div>
 
       <ProfileFilter
         currentRole={role}
         currentCategory={category}
         currentSearch={search}
-        categories={categories}
       />
 
       {profiles.length > 0 ? (
-        <div className="profiles-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
+        <div className="profiles-grid">
           {profiles.map((profile) => (
             <ProfileCard key={profile.id} profile={profile} />
           ))}
         </div>
       ) : (
         <div className="empty-state">
-          <i className="fas fa-inbox fa-3x text-muted mb-3"></i>
+          <i className="fas fa-inbox"></i>
           <h3>No profiles found</h3>
-          <p className="text-muted">Try adjusting your filters.</p>
+          <p>Try adjusting your filters.</p>
         </div>
       )}
 
-      {totalPages > 1 && <Pagination currentPage={page} totalPages={totalPages} />}
+      {totalPages > 1 && (
+        <Pagination currentPage={page} totalPages={totalPages} />
+      )}
     </div>
   );
-}
+} 

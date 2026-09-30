@@ -9229,3 +9229,110 @@ a:hover {
   height: auto;
   display: block;
 }
+
+/* ============================================================
+   PROFILES PAGE — Header & Grid
+   ============================================================ */
+.profiles-page-header {
+  margin: 20px 0 24px;
+}
+
+.profiles-page-header h1 {
+  font-size: 28px;
+  color: var(--black);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.profiles-page-header h1 i {
+  color: #13795b;
+  background: rgba(19, 121, 91, 0.08);
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 20px;
+}
+
+.profiles-page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 6px 0 0 0;
+  line-height: 1.5;
+}
+
+.profiles-page-breadcrumb {
+  padding: 16px 0 8px;
+}
+
+/* ===== Profiles Grid ===== */
+.profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 40px;
+  width: 100%;
+}
+
+.profiles-grid > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .profiles-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .profiles-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profiles-page-header {
+    margin: 16px 0 18px;
+  }
+
+  .profiles-page-header h1 {
+    font-size: 22px;
+    gap: 10px;
+  }
+
+  .profiles-page-header h1 i {
+    padding: 6px;
+    font-size: 16px;
+  }
+
+  .profiles-page-subtitle {
+    font-size: 13px;
+  }
+
+  .profiles-page-breadcrumb {
+    padding: 12px 0 4px;
+  }
+}
+
+@media (max-width: 520px) {
+  .profiles-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .profiles-page-header h1 {
+    font-size: 20px;
+  }
+
+  .profiles-page-subtitle {
+    font-size: 12.5px;
+  }
+}
