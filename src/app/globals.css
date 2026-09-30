@@ -8221,12 +8221,12 @@ a:hover {
   }
 }
 
-.product-detail-row :global(.supplier-card-wrapper) {
+/* .product-detail-row :global(.supplier-card-wrapper) {
   width: 100%;
   max-width: 300px;
   justify-self: end;
   align-self: start;
-}
+} */
 
 /* ============================================================
    SITE HEADER
@@ -9452,4 +9452,11 @@ a:hover {
   .profiles-page-subtitle {
     font-size: 12.5px;
   }
+}
+
+/* ============================================================
+   Anti-Extension: جلوگیری از دستکاری اعداد توسط 3CX و مشابه
+   ============================================================ */
+.safe-text::before {
+  content: attr(data-text);
 }

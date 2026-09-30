@@ -2,144 +2,71 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import TicketListItem from "@/components/support/TicketListItem";
+import SupportClient from "@/components/support/SupportClient";
 
 export const metadata = { title: "Support | Dashboard" };
 
-export default async function SupportPage({ searchParams }) {
+export default async function SupportPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const { status = "all", search = "" } = await searchParams;
+  const userId = session.user.id;
 
-  const where = { userId: session.user.id };
-  if (status && status !== "all") where.status = status;
-  if (search) {
-    where.OR = [
-      { subject: { contains: search } },
-      { ticketNumber: parseInt(search) || -1 },
-    ];
-  }
-
-  const [tickets, counts] = await Promise.all([
-    prisma.ticket.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      include: {
-        _count: { select: { messages: true } },
-        assignedTo: { select: { id: true, name: true } },
-      },
-    }),
-    Promise.all([
-      prisma.ticket.count({ where: { userId: session.user.id } }),
-      prisma.ticket.count({
-        where: {
-          userId: session.user.id,
-          status: { in: ["open", "in_progress", "waiting_user"] },
-        },
-      }),
-      prisma.ticket.count({
-        where: { userId: session.user.id, status: "resolved" },
-      }),
-      prisma.ticket.count({
-        where: { userId: session.user.id, status: "closed" },
-      }),
-    ]),
+  // ===== Counts (کل) =====
+  const [
+    totalCount,
+    openCount,
+    inProgressCount,
+    waitingCount,
+    resolvedCount,
+    closedCount,
+    unreadCount,
+  ] = await Promise.all([
+    prisma.ticket.count({ where: { userId } }),
+    prisma.ticket.count({ where: { userId, status: "open" } }),
+    prisma.ticket.count({ where: { userId, status: "in_progress" } }),
+    prisma.ticket.count({ where: { userId, status: "waiting_user" } }),
+    prisma.ticket.count({ where: { userId, status: "resolved" } }),
+    prisma.ticket.count({ where: { userId, status: "closed" } }),
+    prisma.ticket.count({ where: { userId, unreadByUser: true } }),
   ]);
 
-  const [total, openCount, resolvedCount, closedCount] = counts;
+  // ===== Tickets =====
+  const tickets = await prisma.ticket.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      _count: { select: { messages: true } },
+      assignedTo: { select: { id: true, name: true } },
+    },
+  });
 
-  const filters = [
-    { value: "all", label: "All", count: total },
-    { value: "open", label: "Open", count: openCount },
-    { value: "resolved", label: "Resolved", count: resolvedCount },
-    { value: "closed", label: "Closed", count: closedCount },
-  ];
+  // ===== Serialize =====
+  const serialized = tickets.map((t) => ({
+    id: t.id,
+    ticketNumber: t.ticketNumber,
+    subject: t.subject,
+    category: t.category,
+    priority: t.priority,
+    status: t.status,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+    lastReplyAt: t.lastReplyAt ? t.lastReplyAt.toISOString() : null,
+    unreadByUser: t.unreadByUser,
+    _count: t._count,
+    assignedTo: t.assignedTo,
+  }));
 
-  return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <div>
-          <h1 className="fw-bold mb-0">
-            <i
-              className="fas fa-headset me-2"
-              style={{ color: "var(--primary)" }}
-            ></i>
-            Support Tickets
-          </h1>
-          <p className="text-muted mb-0">
-            Get help from our support team
-          </p>
-        </div>
-        <Link href="/dashboard/support/new" className="btn btn-primary">
-          <i className="fas fa-plus me-2"></i>New Ticket
-        </Link>
-      </div>
+  const counts = {
+    total: totalCount,
+    open: openCount + inProgressCount + waitingCount, // همه "فعال"
+    openOnly: openCount,
+    inProgress: inProgressCount,
+    waiting: waitingCount,
+    resolved: resolvedCount,
+    closed: closedCount,
+    unread: unreadCount,
+  };
 
-      {/* Filter tabs */}
-      <div className="d-flex gap-2 flex-wrap mb-4">
-        {filters.map((f) => (
-          <Link
-            key={f.value}
-            href={`/dashboard/support${f.value === "all" ? "" : `?status=${f.value}`}`}
-            className={`btn btn-sm ${
-              status === f.value ? "btn-primary" : "btn-outline-secondary"
-            }`}
-            style={{ borderRadius: 50, padding: "6px 16px", fontSize: 13 }}
-          >
-            {f.label} ({f.count})
-          </Link>
-        ))}
-      </div>
-
-      {/* Search */}
-      <form className="mb-4" action="/dashboard/support">
-        {status !== "all" && (
-          <input type="hidden" name="status" value={status} />
-        )}
-        <div className="filter-bar">
-          <div className="search-box" style={{ maxWidth: 500 }}>
-            <input
-              type="text"
-              name="search"
-              placeholder="Search by subject or ticket number..."
-              defaultValue={search}
-            />
-            <button type="submit" className="btn btn-primary search-btn">
-              <i className="fas fa-search"></i> Search
-            </button>
-          </div>
-        </div>
-      </form>
-
-      {/* List */}
-      {tickets.length > 0 ? (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-          }}
-        >
-          {tickets.map((ticket) => (
-            <TicketListItem key={ticket.id} ticket={ticket} />
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <i className="fas fa-headset fa-3x text-muted mb-3"></i>
-          <h3>No tickets yet</h3>
-          <p className="text-muted">
-            {search
-              ? "No tickets match your search."
-              : "You haven't created any support tickets yet."}
-          </p>
-          <Link href="/dashboard/support/new" className="btn btn-primary">
-            <i className="fas fa-plus me-2"></i>Create Your First Ticket
-          </Link>
-        </div>
-      )}
-    </div>
-  );
+  return <SupportClient tickets={serialized} counts={counts} />;
 }
