@@ -85,7 +85,7 @@ export default async function ProductsPage({ searchParams }) {
 
   return (
     <div className="container py-4">
-      <nav aria-label="breadcrumb" className="mb-4">
+      <nav aria-label="breadcrumb products-page-breadcrumb" className="mb-4">
         <ol className="breadcrumb">
           <li className="breadcrumb-item">
             <Link href="/" style={{ color: "var(--primary)" }}>
@@ -96,7 +96,7 @@ export default async function ProductsPage({ searchParams }) {
         </ol>
       </nav>
 
-      <div className="page-header">
+      <div className="page-header products-page-header">
         <h1>
           <i className="fas fa-box" style={{ color: "var(--primary)" }}></i>
           All Products

@@ -44,14 +44,7 @@ export default function ProductTabs({ product }) {
       {/* ====== تب Description ====== */}
       <div className={`tab-content ${activeTab === "desc" ? "active" : ""}`}>
         {hasAnyDescription ? (
-          <>
-            {/* خلاصه */}
-            {hasShortDesc && (
-              <div className="mb-4">
-                <h5 className="description-label">Summary</h5>
-                <p className="description-text">{product.shortDesc}</p>
-              </div>
-            )}
+          <>            
             {/* توضیحات کامل */}
             {hasFullDesc && (
               <div>
@@ -68,7 +61,6 @@ export default function ProductTabs({ product }) {
         )}
       </div>
 
-      {/* ====== تب Specifications ====== */}
       {/* ====== تب Specifications ====== */}
       <div className={`tab-content ${activeTab === "specs" ? "active" : ""}`}>
         <table className="tab-spec-table">

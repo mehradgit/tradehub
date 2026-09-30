@@ -900,7 +900,7 @@ a:hover {
   line-height: 1.7;
 }
 
- .supplier-avatar {
+.supplier-avatar {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -2654,7 +2654,7 @@ a:hover {
   }
 }
 
- /* ====== SINGLE SUPPLIER PAGE ====== */
+/* ====== SINGLE SUPPLIER PAGE ====== */
 
 /* Supplier Profile Header */
 .supplier-profile-header {
@@ -3370,10 +3370,6 @@ a:hover {
   gap: 4px;
 }
 
-
-
-
-
 /* ============================================================
    BLURRED WRAPPER (basic users)
    ============================================================ */
@@ -3471,8 +3467,6 @@ a:hover {
   color: white;
   box-shadow: 0 6px 16px rgba(19, 121, 91, 0.25);
 }
-
-
 
 /* ====== DASHBOARD PRODUCTS ====== */
 
@@ -8571,7 +8565,41 @@ a:hover {
 /* ============================================================
    1. GRIDS
    ============================================================ */
+/* ============================================================
+   PRODUCTS PAGE — Header & Breadcrumb
+   ============================================================ */
+.products-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
+.products-page-header h1 {
+  font-size: 28px;
+  color: var(--black);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.products-page-header h1 i {
+  color: var(--primary);
+  background: rgba(19, 121, 91, 0.08);
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 20px;
+}
+
+.products-page-breadcrumb {
+  padding: 16px 0 8px;
+}
 /* --- Products Page (/products) --- */
 .products-grid {
   display: grid;
@@ -8579,7 +8607,6 @@ a:hover {
   gap: 20px;
   margin-bottom: 40px;
   width: 100%;
-  min-width: 0;
 }
 
 .products-grid > * {
@@ -8587,6 +8614,56 @@ a:hover {
   max-width: 100%;
 }
 
+@media (max-width: 1300px) {
+  .products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (max-width: 992px) {
+  .products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-page-header {
+    margin: 16px 0 18px;
+  }
+
+  .products-page-header h1 {
+    font-size: 22px;
+    gap: 10px;
+  }
+
+  .products-page-header h1 i {
+    padding: 6px;
+    font-size: 16px;
+  }
+
+  .products-page-breadcrumb {
+    padding: 12px 0 4px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 500px) {
+  .products-page-header h1 {
+    font-size: 20px;
+  }
+
+  .products-grid {
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+}
 /* --- Featured Products (Home) --- */
 .compact-products-grid {
   display: grid;
