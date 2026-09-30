@@ -61,6 +61,8 @@ function CompleteRegistrationContent() {
         phone: "",
         bio: "",
         address: "",
+        city: "",
+        postalCode: "",
         website: "",
         companyEmail: "",
         employeeCount: "",
@@ -181,7 +183,7 @@ function CompleteRegistrationContent() {
     // اگر session نداری، صبر کن (auto-login در جریانه)
     if (!session) return;
 
-    // از sessionStorage اگه چیز ذخیره‌شده داریم
+    // از sessionStorage اگه چیزی ذخیره‌شده داریم
     const saved = loadFromStorage();
     if (saved?.formData) {
       setFormData(saved.formData);
@@ -223,6 +225,8 @@ function CompleteRegistrationContent() {
           phone: user.phone || "",
           bio: user.bio || "",
           address: user.address || "",
+          city: user.city || "",
+          postalCode: user.postalCode || "",
           website: user.website || "",
           companyEmail: user.companyEmail || "",
           employeeCount: user.employeeCount || "",
@@ -427,6 +431,8 @@ function CompleteRegistrationContent() {
         phone: formData.phone || null,
         bio: formData.bio || null,
         address: formData.address || null,
+        city: formData.city || null,
+        postalCode: formData.postalCode || null,
         website: formData.website || null,
         companyEmail: formData.companyEmail || null,
         employeeCount: formData.employeeCount || null,
@@ -695,7 +701,7 @@ function CompleteRegistrationContent() {
               />
             </div>
 
-            {/* ====== آدرس + تعداد کارکنان ====== */}
+            {/* ====== آدرس، شهر، کدپستی، تعداد کارکنان ====== */}
             <div className="row g-3 mt-1">
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Address</label>
@@ -703,8 +709,30 @@ function CompleteRegistrationContent() {
                   type="text"
                   className="form-control"
                   name="address"
-                  placeholder="123 Main St, City, Country"
+                  placeholder="123 Main St"
                   value={formData.address}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">City</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="city"
+                  placeholder="e.g., Tehran"
+                  value={formData.city}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Postal Code</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="postalCode"
+                  placeholder="e.g., 1234567890"
+                  value={formData.postalCode}
                   onChange={handleChange}
                 />
               </div>

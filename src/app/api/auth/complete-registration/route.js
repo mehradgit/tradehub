@@ -23,6 +23,8 @@ export async function POST(request) {
       phone,
       bio,
       address,
+      city,
+      postalCode,
       website,
       companyEmail,
       employeeCount,
@@ -67,6 +69,8 @@ export async function POST(request) {
       phone: phone || null,
       bio: bio || null,
       address: address || null,
+      city: city || null,              // ← جدید
+      postalCode: postalCode || null,
       website: website || null,
       companyEmail: companyEmail || null,
       employeeCount: employeeCount || null,

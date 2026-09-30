@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { toast } from "react-toastify";
 import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
@@ -19,7 +20,7 @@ export default function EditProfilePage() {
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
 
-  // ====== فرم دیتا ======
+  // ===== Form State =====
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
@@ -29,8 +30,8 @@ export default function EditProfilePage() {
     phone: "",
     bio: "",
     address: "",
-    city: "",          // ← جدید
-    postalCode: "",    // ← جدید
+    city: "",
+    postalCode: "",
     website: "",
     companyEmail: "",
     employeeCount: "",
@@ -44,6 +45,7 @@ export default function EditProfilePage() {
 
   const [existingLogo, setExistingLogo] = useState(null);
   const [existingCover, setExistingCover] = useState(null);
+
   const [uploadProgress, setUploadProgress] = useState({
     logo: 0,
     coverImage: 0,
@@ -59,7 +61,7 @@ export default function EditProfilePage() {
   const coverInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
-  // ====== دریافت اطلاعات کاربر ======
+  // ===== Fetch Profile =====
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -76,8 +78,8 @@ export default function EditProfilePage() {
           phone: user.phone || "",
           bio: user.bio || "",
           address: user.address || "",
-          city: user.city || "",              // ← جدید
-          postalCode: user.postalCode || "",  // ← جدید
+          city: user.city || "",
+          postalCode: user.postalCode || "",
           website: user.website || "",
           companyEmail: user.companyEmail || "",
           employeeCount: user.employeeCount || "",
@@ -107,45 +109,30 @@ export default function EditProfilePage() {
     fetchUserProfile();
   }, [session, status, router]);
 
-  // ====== تغییرات فیلدها ======
+  // ===== Handlers =====
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
 
-  // ====== تغییرات دسته‌بندی ======
-  const handleCategoryChange = (category, subCategory) => {
-    setFormData((prev) => ({
-      ...prev,
-      primaryCategory: category,
-      primarySubCategory: subCategory || "",
-    }));
-    if (error) setError("");
-  };
-
-  // ====== تغییرات توضیحات (Rich Text) ======
-  const handleBioChange = (value) => {
-    setFormData((prev) => ({ ...prev, bio: value }));
-  };
-
-  // ====== آپلود فایل‌ها ======
   const handleFileChange = async (e, fieldName) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // Single file (logo / cover)
     if (fieldName !== "galleryImages") {
       const file = files[0];
+
       if (!file.type.startsWith("image/")) {
         toast.warning("Please select a valid image file.");
         e.target.value = "";
         return;
       }
+
       const sizeMB = file.size / (1024 * 1024);
       if (sizeMB > 3) {
-        toast.error(
-          `Image size (${sizeMB.toFixed(1)}MB) exceeds the 3MB limit.`,
-        );
+        toast.error(`Image size (${sizeMB.toFixed(1)}MB) exceeds 3MB limit.`);
         e.target.value = "";
         return;
       }
@@ -157,17 +144,12 @@ export default function EditProfilePage() {
         const result = await uploadFileWithProgress(
           file,
           "profiles",
-          (percent) => {
-            setUploadProgress((prev) => ({ ...prev, [fieldName]: percent }));
-          },
+          (percent) =>
+            setUploadProgress((prev) => ({ ...prev, [fieldName]: percent })),
         );
 
-        setFormData((prev) => ({
-          ...prev,
-          [fieldName]: result.path,
-        }));
-
-        toast.success(`Image uploaded! (${result.saved}% smaller)`);
+        setFormData((prev) => ({ ...prev, [fieldName]: result.path }));
+        toast.success("Image uploaded successfully!");
       } catch (err) {
         toast.error(err.message || "Failed to upload image.");
       } finally {
@@ -179,7 +161,7 @@ export default function EditProfilePage() {
       return;
     }
 
-    // ====== آپلود گالری (چند فایل) ======
+    // Gallery (multiple)
     setIsUploading((prev) => ({ ...prev, gallery: true }));
     setUploadProgress((prev) => ({ ...prev, gallery: 0 }));
 
@@ -198,9 +180,8 @@ export default function EditProfilePage() {
         const result = await uploadFileWithProgress(
           file,
           "profiles",
-          (percent) => {
-            setUploadProgress((prev) => ({ ...prev, gallery: percent }));
-          },
+          (percent) =>
+            setUploadProgress((prev) => ({ ...prev, gallery: percent })),
         );
         uploadedPaths.push(result.path);
       }
@@ -210,9 +191,9 @@ export default function EditProfilePage() {
         galleryImages: [...prev.galleryImages, ...uploadedPaths],
       }));
 
-      toast.success(`${uploadedPaths.length} images uploaded for gallery!`);
+      toast.success(`${uploadedPaths.length} images uploaded!`);
     } catch (err) {
-      toast.error(err.message || "Failed to upload gallery images.");
+      toast.error(err.message || "Failed to upload images.");
     } finally {
       setIsUploading((prev) => ({ ...prev, gallery: false }));
       setTimeout(() => {
@@ -221,7 +202,6 @@ export default function EditProfilePage() {
     }
   };
 
-  // ====== حذف تصاویر ======
   const removeImage = (fieldName, index = null, isExisting = false) => {
     if (fieldName === "galleryImages" && index !== null) {
       setFormData((prev) => ({
@@ -236,16 +216,14 @@ export default function EditProfilePage() {
       else if (fieldName === "coverImage") setExistingCover(null);
     } else {
       setFormData((prev) => ({ ...prev, [fieldName]: null }));
-      if (fieldName === "logo" && logoInputRef.current) {
+      if (fieldName === "logo" && logoInputRef.current)
         logoInputRef.current.value = "";
-      }
-      if (fieldName === "coverImage" && coverInputRef.current) {
+      if (fieldName === "coverImage" && coverInputRef.current)
         coverInputRef.current.value = "";
-      }
     }
   };
 
-  // ====== ارسال فرم ======
+  // ===== Submit =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -261,8 +239,8 @@ export default function EditProfilePage() {
         phone: formData.phone || null,
         bio: formData.bio || null,
         address: formData.address || null,
-        city: formData.city || null,              // ✅ مطمئن شو هست
-        postalCode: formData.postalCode || null,  // ✅ مطمئن شو هست
+        city: formData.city || null,
+        postalCode: formData.postalCode || null,
         website: formData.website || null,
         companyEmail: formData.companyEmail || null,
         employeeCount: formData.employeeCount || null,
@@ -280,7 +258,7 @@ export default function EditProfilePage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to update profile");
+      if (!res.ok) throw new Error(data.message || "Failed to update");
 
       await update();
       setExistingLogo(payload.logo);
@@ -288,7 +266,7 @@ export default function EditProfilePage() {
       setFormData((prev) => ({ ...prev, logo: null, coverImage: null }));
 
       toast.success("Profile updated successfully!");
-      router.push("/dashboard");
+      router.push("/dashboard/profile");
     } catch (err) {
       setError(err.message);
       toast.error(err.message);
@@ -297,413 +275,450 @@ export default function EditProfilePage() {
     }
   };
 
-  // ====== وضعیت بارگذاری ======
+  // ===== Loading =====
   if (status === "loading" || fetching) {
     return (
-      <div className="container text-center py-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div className="ep-loading">
+        <div className="ep-spinner" />
+        <p>Loading your profile...</p>
       </div>
     );
   }
 
   if (!session) return null;
-  console.log("Gallery Images:", formData.galleryImages);
+
+  const currentCover = formData.coverImage || existingCover;
+  const currentLogo = formData.logo || existingLogo;
+
   return (
-    <div
-      className="container"
-      style={{ maxWidth: "800px", marginTop: "40px", marginBottom: "60px" }}
-    >
-      <div className="card shadow border-0 rounded-4 p-4 p-md-5">
-        <div className="text-center mb-4">
-          <h2 className="fw-bold">Edit Profile</h2>
-          <p className="text-muted">
-            Update your personal and business information
-          </p>
+    <>
+      <div className="ep-page">
+        {/* ===== Header ===== */}
+        <div className="ep-header">
+          <div className="ep-header-left">
+            <h1>
+              <i className="fas fa-pen"></i>
+              Edit Profile
+            </h1>
+            <p>Update your personal and business information</p>
+          </div>
         </div>
 
+        {/* ===== Error ===== */}
         {error && (
-          <div
-            className="alert alert-danger d-flex align-items-center gap-2"
-            role="alert"
-          >
+          <div className="ep-alert">
             <i className="fas fa-exclamation-circle"></i>
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          {/* ====== نام کامل ====== */}
-          <div className="form-group mb-3">
-            <label className="form-label fw-semibold">
-              Full Name <span className="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              name="name"
-              placeholder="John Doe"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          {/* ====== نام شرکت ====== */}
-          <div className="form-group mb-3">
-            <label className="form-label fw-semibold">
-              Company Name <span className="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              name="companyName"
-              placeholder="Anderson Foods LLC"
-              value={formData.companyName}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          {/* ====== کشور ====== */}
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">
-                Country <span className="text-danger">*</span>
-              </label>
-              <CountrySelect
-                value={formData.countryCode}
-                onChange={(code) => {
-                  const name = getCountryName(code);
-                  setFormData((prev) => ({
-                    ...prev,
-                    countryCode: code,
-                    country: name,
-                  }));
-                }}
-                placeholder="Select country"
-                required
-              />
+        <form onSubmit={handleSubmit} className="ep-form">
+          {/* ============================================================
+             SECTION 1: Cover & Logo Preview
+             ============================================================ */}
+          <section className="ep-card">
+            <div className="ep-card-head">
+              <h3 className="ep-card-title">
+                <i className="fas fa-image"></i>
+                Cover & Logo
+              </h3>
+              <p className="ep-card-sub">
+                These will be shown on your public profile
+              </p>
             </div>
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Business Type</label>
-              <select
-                className="form-select"
-                name="businessType"
-                value={formData.businessType}
-                onChange={handleChange}
+
+            <div className="ep-hero-preview">
+              {/* Cover */}
+              <div
+                className={`ep-cover ${
+                  currentCover ? "has-image" : "placeholder"
+                }`}
+                onClick={() => coverInputRef.current.click()}
               >
-                <option value="">Select business type</option>
-                <option>Manufacturer</option>
-                <option>Distributor</option>
-                <option>Wholesaler</option>
-                <option>Retailer</option>
-                <option>Exporter</option>
-                <option>Importer</option>
-                <option>Processor</option>
-              </select>
-            </div>
-          </div>
-
-          {/* ====== دسته‌بندی محصولات ====== */}
-          <div className="form-group mt-3">
-            <label className="form-label fw-semibold">Product Category</label>
-            <CategorySelect
-              categoryValue={formData.primaryCategory}
-              subCategoryValue={formData.primarySubCategory}
-              onCategoryChange={(cat) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  primaryCategory: cat,
-                  primarySubCategory: "",
-                }));
-                if (error) setError("");
-              }}
-              onSubCategoryChange={(sub) => {
-                setFormData((prev) => ({ ...prev, primarySubCategory: sub }));
-                if (error) setError("");
-              }}
-              categoryRequired={false}
-            />
-          </div>
-
-          {/* ====== تلفن و ایمیل شرکت ====== */}
-          <div className="row g-3 mt-1">
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Phone Number</label>
-              <input
-                type="tel"
-                className="form-control"
-                name="phone"
-                placeholder="+1 234 567 890"
-                value={formData.phone}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Company Email</label>
-              <input
-                type="email"
-                className="form-control"
-                name="companyEmail"
-                placeholder="info@company.com"
-                value={formData.companyEmail}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* ====== وب‌سایت ====== */}
-          <div className="form-group mt-3">
-            <label className="form-label fw-semibold">Company Website</label>
-            <input
-              type="url"
-              className="form-control"
-              name="website"
-              placeholder="https://www.example.com"
-              value={formData.website}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* ====== توضیحات شرکت (Rich Text Editor) ====== */}
-          <div className="form-group mt-3">
-            <label className="form-label fw-semibold">
-              Company Bio / Description
-            </label>
-            <RichTextEditor
-              value={formData.bio}
-              onChange={handleBioChange}
-              placeholder="Tell us about your company..."
-              height={200}
-            />
-          </div>
-
-          {/* ====== آدرس و تعداد کارکنان ====== */}
-          <div className="row g-3 mt-1">
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Address</label>
-              <input
-                type="text"
-                className="form-control"
-                name="address"
-                placeholder="123 Main St"
-                value={formData.address}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">City</label>
-              <input
-                type="text"
-                className="form-control"
-                name="city"
-                placeholder="Tehran"
-                value={formData.city}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* Postal Code + Employee Count */}
-          <div className="row g-3 mt-1">
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Postal Code</label>
-              <input
-                type="text"
-                className="form-control"
-                name="postalCode"
-                placeholder="1234567890"
-                value={formData.postalCode}
-                onChange={handleChange}
-              />
-            </div>            <div className="col-md-6">
-              <label className="form-label fw-semibold">
-                Number of Employees
-              </label>
-              <select
-                className="form-select"
-                name="employeeCount"
-                value={formData.employeeCount}
-                onChange={handleChange}
-              >
-                <option value="">Select range</option>
-                <option>1-10</option>
-                <option>11-50</option>
-                <option>51-200</option>
-                <option>201-500</option>
-                <option>501-1000</option>
-                <option>1000+</option>
-              </select>
-            </div>
-          </div>
-
-          {/* ====== بخش تصاویر ====== */}
-          <h5 className="fw-bold mt-4 mb-3">Company Images</h5>
-          <p className="text-muted small">
-            <i className="fas fa-info-circle me-1"></i>
-            Maximum file size: 3MB · Supported formats: JPG, PNG, WEBP
-          </p>
-
-          {/* ====== پیش‌نمایش ترکیبی (کاور + لوگو) ====== */}
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Profile Preview</label>
-            <div
-              className="border rounded-3 position-relative overflow-hidden"
-              style={{
-                width: "100%",
-                height: "120px",
-                background: "var(--light)",
-              }}
-            >
-              {/* کاور */}
-              {formData.coverImage || existingCover ? (
-                <img
-                  src={formData.coverImage || existingCover}
-                  alt="Cover preview"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "var(--gray-light)",
-                    color: "var(--gray)",
-                  }}
-                >
-                  <i className="fas fa-image fa-2x"></i>
+                {currentCover ? (
+                  <img src={currentCover} alt="Cover" />
+                ) : (
+                  <div className="ep-cover-placeholder">
+                    <i className="fas fa-image"></i>
+                    <span>Click to upload cover</span>
+                  </div>
+                )}
+                <div className="ep-cover-overlay">
+                  <i className="fas fa-camera"></i>
+                  <span>Change Cover</span>
                 </div>
-              )}
+                {isUploading.coverImage && (
+                  <div className="ep-upload-spinner">
+                    <div className="ep-spinner-small" />
+                  </div>
+                )}
+              </div>
 
-              {/* لوگو */}
-              {formData.logo || existingLogo ? (
-                <img
-                  src={formData.logo || existingLogo}
-                  alt="Logo preview"
-                  style={{
-                    position: "absolute",
-                    bottom: "-20px",
-                    left: "20px",
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    border: "3px solid white",
-                    objectFit: "cover",
-                    background: "var(--gray-light)",
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "-20px",
-                    left: "20px",
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    border: "3px solid white",
-                    background: "var(--gray-light)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "var(--gray)",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                  }}
-                >
+              {/* Logo */}
+              <div
+                className={`ep-avatar ${currentLogo ? "has-image" : "placeholder"}`}
+                onClick={() => logoInputRef.current.click()}
+              >
+                {currentLogo ? (
+                  <img src={currentLogo} alt="Logo" />
+                ) : (
+                  <div className="ep-avatar-placeholder">
+                    <i className="fas fa-camera"></i>
+                  </div>
+                )}
+                <div className="ep-avatar-overlay">
                   <i className="fas fa-camera"></i>
                 </div>
-              )}
-            </div>{" "}
-            <div className="d-flex gap-2 mt-2">
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => coverInputRef.current.click()}
-                disabled={isUploading.coverImage}
-              >
-                {isUploading.coverImage ? "Uploading..." : "Upload Cover"}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => logoInputRef.current.click()}
-                disabled={isUploading.logo}
-              >
-                {isUploading.logo ? "Uploading..." : "Upload Logo"}
-              </button>
-              {(formData.coverImage || formData.logo) && (
+                {isUploading.logo && (
+                  <div className="ep-upload-spinner">
+                    <div className="ep-spinner-small" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Progress & reset */}
+            <div className="ep-hero-actions">
+              <UploadProgress
+                progress={uploadProgress.coverImage}
+                label="Uploading cover..."
+              />
+              <UploadProgress
+                progress={uploadProgress.logo}
+                label="Uploading logo..."
+              />
+              {(currentCover || currentLogo) && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-danger"
+                  className="ep-btn ep-btn-ghost ep-btn-sm"
                   onClick={() => {
                     setFormData((prev) => ({
                       ...prev,
                       logo: null,
                       coverImage: null,
                     }));
-                    if (logoInputRef.current) logoInputRef.current.value = "";
-                    if (coverInputRef.current) coverInputRef.current.value = "";
+                    setExistingLogo(null);
+                    setExistingCover(null);
+                    if (logoInputRef.current)
+                      logoInputRef.current.value = "";
+                    if (coverInputRef.current)
+                      coverInputRef.current.value = "";
                   }}
                 >
-                  <i className="fas fa-trash"></i> Reset
+                  <i className="fas fa-trash"></i>
+                  Reset Images
                 </button>
               )}
             </div>
-            <UploadProgress
-              progress={uploadProgress.coverImage}
-              label="Uploading cover..."
-            />
-            <UploadProgress
-              progress={uploadProgress.logo}
-              label="Uploading logo..."
-            />
-          </div>
 
-          {/* inputهای مخفی */}
-          <input
-            type="file"
-            ref={coverInputRef}
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={(e) => handleFileChange(e, "coverImage")}
-          />
-          <input
-            type="file"
-            ref={logoInputRef}
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={(e) => handleFileChange(e, "logo")}
-          />
+            <input
+              type="file"
+              ref={coverInputRef}
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => handleFileChange(e, "coverImage")}
+            />
+            <input
+              type="file"
+              ref={logoInputRef}
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => handleFileChange(e, "logo")}
+            />
+          </section>
 
-          {/* ====== گالری تصاویر ====== */}
-          <div className="form-group mb-3">
-            <label className="form-label fw-semibold">Gallery Images</label>
-            <div
-              className="image-upload-area"
-              onClick={() => galleryInputRef.current.click()}
-            >
-              <i className="fas fa-images fa-2x text-muted"></i>
-              <p className="mt-2">Click or drag to upload multiple images</p>
-              <button type="button" className="btn btn-secondary btn-sm">
-                Choose Images
+          {/* ============================================================
+             SECTION 2: Basic Information
+             ============================================================ */}
+          <section className="ep-card">
+            <div className="ep-card-head">
+              <h3 className="ep-card-title">
+                <i className="fas fa-user"></i>
+                Basic Information
+              </h3>
+            </div>
+
+            <div className="ep-grid-2">
+              <Field
+                label="Full Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="John Doe"
+                required
+                icon="fa-user"
+              />
+              <Field
+                label="Personal Email"
+                value={session.user.email}
+                disabled
+                icon="fa-envelope"
+                hint="Cannot be changed"
+              />
+            </div>
+          </section>
+
+          {/* ============================================================
+             SECTION 3: Company Information
+             ============================================================ */}
+          <section className="ep-card">
+            <div className="ep-card-head">
+              <h3 className="ep-card-title">
+                <i className="fas fa-building"></i>
+                Company Information
+              </h3>
+            </div>
+
+            <div className="ep-grid-2">
+              <Field
+                label="Company Name"
+                name="companyName"
+                value={formData.companyName}
+                onChange={handleChange}
+                placeholder="Anderson Foods LLC"
+                required
+                icon="fa-building"
+              />
+              <Field
+                label="Business Type"
+                name="businessType"
+                value={formData.businessType}
+                onChange={handleChange}
+                type="select"
+                icon="fa-briefcase"
+                options={[
+                  "Manufacturer",
+                  "Distributor",
+                  "Wholesaler",
+                  "Retailer",
+                  "Exporter",
+                  "Importer",
+                  "Processor",
+                ]}
+              />
+              <Field
+                label="Number of Employees"
+                name="employeeCount"
+                value={formData.employeeCount}
+                onChange={handleChange}
+                type="select"
+                icon="fa-users"
+                options={[
+                  "1-10",
+                  "11-50",
+                  "51-200",
+                  "201-500",
+                  "501-1000",
+                  "1000+",
+                ]}
+              />
+              <div className="ep-field">
+                <label className="ep-label">
+                  <i className="fas fa-globe"></i>
+                  Country
+                </label>
+                <CountrySelect
+                  value={formData.countryCode}
+                  onChange={(code) => {
+                    const name = getCountryName(code);
+                    setFormData((prev) => ({
+                      ...prev,
+                      countryCode: code,
+                      country: name,
+                    }));
+                  }}
+                  placeholder="Select country"
+                />
+              </div>
+            </div>
+
+            <div className="ep-divider" />
+
+            <div className="ep-field">
+              <label className="ep-label">
+                <i className="fas fa-tags"></i>
+                Primary Category
+              </label>
+              <CategorySelect
+                categoryValue={formData.primaryCategory}
+                subCategoryValue={formData.primarySubCategory}
+                onCategoryChange={(cat) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    primaryCategory: cat,
+                    primarySubCategory: "",
+                  }));
+                }}
+                onSubCategoryChange={(sub) => {
+                  setFormData((prev) => ({ ...prev, primarySubCategory: sub }));
+                }}
+                categoryRequired={false}
+              />
+            </div>
+          </section>
+
+          {/* ============================================================
+             SECTION 4: Contact Information
+             ============================================================ */}
+          <section className="ep-card">
+            <div className="ep-card-head">
+              <h3 className="ep-card-title">
+                <i className="fas fa-address-book"></i>
+                Contact Information
+              </h3>
+            </div>
+
+            <div className="ep-grid-2">
+              <Field
+                label="Phone Number"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+1 234 567 890"
+                type="tel"
+                icon="fa-phone"
+              />
+              <Field
+                label="Company Email"
+                name="companyEmail"
+                value={formData.companyEmail}
+                onChange={handleChange}
+                placeholder="info@company.com"
+                type="email"
+                icon="fa-at"
+              />
+              <div className="ep-field ep-col-full">
+                <label className="ep-label">
+                  <i className="fas fa-globe"></i>
+                  Website
+                </label>
+                <input
+                  type="url"
+                  className="ep-input"
+                  name="website"
+                  placeholder="https://www.example.com"
+                  value={formData.website}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* ============================================================
+             SECTION 5: Address
+             ============================================================ */}
+          <section className="ep-card">
+            <div className="ep-card-head">
+              <h3 className="ep-card-title">
+                <i className="fas fa-map-marker-alt"></i>
+                Address
+              </h3>
+            </div>
+
+            <div className="ep-grid-2">
+              <Field
+                label="Street Address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="123 Main St"
+                icon="fa-home"
+              />
+              <Field
+                label="City"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                placeholder="Tehran"
+                icon="fa-city"
+              />
+              <Field
+                label="Postal Code"
+                name="postalCode"
+                value={formData.postalCode}
+                onChange={handleChange}
+                placeholder="1234567890"
+                icon="fa-mail-bulk"
+              />
+            </div>
+          </section>
+
+          {/* ============================================================
+             SECTION 6: Bio
+             ============================================================ */}
+          <section className="ep-card">
+            <div className="ep-card-head">
+              <h3 className="ep-card-title">
+                <i className="fas fa-align-left"></i>
+                Company Bio / Description
+              </h3>
+              <p className="ep-card-sub">
+                Tell buyers and suppliers about your business
+              </p>
+            </div>
+
+            <RichTextEditor
+              value={formData.bio}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, bio: value }))
+              }
+              placeholder="Tell us about your company..."
+              height={220}
+            />
+          </section>
+
+          {/* ============================================================
+             SECTION 7: Gallery
+             ============================================================ */}
+          <section className="ep-card">
+            <div className="ep-card-head">
+              <h3 className="ep-card-title">
+                <i className="fas fa-images"></i>
+                Gallery Images
+              </h3>
+              <p className="ep-card-sub">
+                Showcase your facilities, products, and team
+              </p>
+            </div>
+
+            <div className="ep-gallery-grid">
+              {formData.galleryImages.map((img, index) => (
+                <div key={index} className="ep-gallery-item">
+                  <img src={img} alt={`Gallery ${index + 1}`} />
+                  <button
+                    type="button"
+                    className="ep-gallery-remove"
+                    onClick={() => removeImage("galleryImages", index)}
+                    aria-label="Remove image"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              ))}
+
+              {/* Add button */}
+              <button
+                type="button"
+                className="ep-gallery-add"
+                onClick={() => galleryInputRef.current.click()}
+                disabled={isUploading.gallery}
+              >
+                {isUploading.gallery ? (
+                  <div className="ep-spinner-small" />
+                ) : (
+                  <>
+                    <i className="fas fa-plus"></i>
+                    <span>Add Images</span>
+                  </>
+                )}
               </button>
             </div>
+
+            <UploadProgress
+              progress={uploadProgress.gallery}
+              label="Uploading gallery..."
+            />
+
             <input
               type="file"
               ref={galleryInputRef}
@@ -712,88 +727,803 @@ export default function EditProfilePage() {
               style={{ display: "none" }}
               onChange={(e) => handleFileChange(e, "galleryImages")}
             />
-            <UploadProgress
-              progress={uploadProgress.gallery}
-              label="Uploading gallery..."
-            />
+          </section>
 
-            {/* پیش‌نمایش تصاویر گالری */}
-            <div className="d-flex flex-wrap gap-2 mt-2">
-              {formData.galleryImages.map((img, index) => (
-                <div key={index} className="position-relative">
-                  {img ? (
-                    <img
-                      src={img}
-                      alt={`Gallery ${index + 1}`}
-                      style={{
-                        width: "60px",
-                        height: "60px",
-                        objectFit: "cover",
-                        borderRadius: "8px",
-                        border: "1px solid var(--gray-light)",
-                      }}
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                        // نمایش پل‌هولدر به جای مخفی کردن کامل
-                        e.target.parentElement.innerHTML = `
-              <div style="width:60px;height:60px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-                <i class="fas fa-image" style="color:#ccc;"></i>
-              </div>`;
-                      }}
-                    />
-                  ) : null}
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle"
-                    style={{
-                      width: "20px",
-                      height: "20px",
-                      fontSize: "10px",
-                      padding: 0,
-                    }}
-                    onClick={() => removeImage("galleryImages", index)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+          {/* ============================================================
+             Sticky Save Bar
+             ============================================================ */}
+          <div className="ep-save-bar">
+            <div className="ep-save-info">
+              <i className="fas fa-info-circle"></i>
+              <span>Changes will be saved to your profile</span>
+            </div>
+            <div className="ep-save-actions">
+              <Link href="/dashboard/profile" className="ep-btn ep-btn-ghost">
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                className="ep-btn ep-btn-primary"
+                disabled={
+                  loading ||
+                  isUploading.logo ||
+                  isUploading.coverImage ||
+                  isUploading.gallery
+                }
+              >
+                {loading ? (
+                  <>
+                    <span className="ep-spinner-small" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-check"></i>
+                    Save Changes
+                  </>
+                )}
+              </button>
             </div>
           </div>
-
-          {/* ====== نقش (غیرقابل تغییر) ====== */}
-          <div className="form-group mt-3">
-            <label className="form-label fw-semibold">Role</label>
-            <input
-              type="text"
-              className="form-control"
-              value={formData.role === "SUPPLIER" ? "Supplier" : "Buyer"}
-              disabled
-              style={{ background: "#f5f5f5" }}
-            />
-            <small className="text-muted">
-              Role cannot be changed after registration
-            </small>
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-lg w-100 mt-4"
-            style={{
-              background: "var(--color-primary, #e85d3a)",
-              borderColor: "var(--color-primary, #e85d3a)",
-              borderRadius: "50px",
-            }}
-            disabled={
-              loading ||
-              isUploading.logo ||
-              isUploading.coverImage ||
-              isUploading.gallery
-            }
-          >
-            {loading ? "Saving..." : "Save Changes"}
-          </button>
         </form>
       </div>
+
+      {/* ============================================================
+         Styles
+         ============================================================ */}
+      <style jsx>{`
+        .ep-page {
+          width: 100%;
+          max-width: 900px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        /* ============================================================
+           Loading
+           ============================================================ */
+        .ep-loading {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 400px;
+          gap: 16px;
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        .ep-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid #e8edf0;
+          border-top-color: #13795b;
+          border-radius: 50%;
+          animation: epSpin 0.8s linear infinite;
+        }
+
+        .ep-spinner-small {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.4);
+          border-top-color: currentColor;
+          border-radius: 50%;
+          animation: epSpin 0.8s linear infinite;
+          display: inline-block;
+        }
+
+        @keyframes epSpin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        /* ============================================================
+           Header
+           ============================================================ */
+        .ep-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .ep-header-left h1 {
+          font-size: 24px;
+          font-weight: 800;
+          color: #0b1f18;
+          margin: 0;
+          font-family: "Manrope", sans-serif;
+          letter-spacing: -0.02em;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .ep-header-left h1 i {
+          color: #13795b;
+          background: rgba(19, 121, 91, 0.08);
+          padding: 8px;
+          border-radius: 10px;
+          font-size: 18px;
+        }
+
+        .ep-header-left p {
+          font-size: 13.5px;
+          color: #64748b;
+          margin: 4px 0 0 0;
+        }
+
+        /* ============================================================
+           Alert
+           ============================================================ */
+        .ep-alert {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 18px;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 12px;
+          color: #991b1b;
+          font-size: 13.5px;
+          font-weight: 600;
+        }
+
+        .ep-alert i {
+          font-size: 16px;
+          flex-shrink: 0;
+        }
+
+        /* ============================================================
+           Form
+           ============================================================ */
+        .ep-form {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        /* ============================================================
+           Card
+           ============================================================ */
+        .ep-card {
+          background: white;
+          border: 1px solid #e8edf0;
+          border-radius: 18px;
+          padding: 24px;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .ep-card-head {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding-bottom: 14px;
+          border-bottom: 1px solid #f1f5f7;
+        }
+
+        .ep-card-title {
+          font-size: 15px;
+          font-weight: 800;
+          color: #0b1f18;
+          margin: 0;
+          font-family: "Manrope", sans-serif;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .ep-card-title i {
+          color: #13795b;
+          background: #eaf7f1;
+          padding: 6px;
+          border-radius: 8px;
+          font-size: 12px;
+        }
+
+        .ep-card-sub {
+          font-size: 12.5px;
+          color: #94a3b8;
+          margin: 0;
+          padding-left: 36px;
+        }
+
+        /* ============================================================
+           Hero Preview (Cover + Logo)
+           ============================================================ */
+        .ep-hero-preview {
+          position: relative;
+          width: 100%;
+          height: 180px;
+          border-radius: 14px;
+          overflow: visible;
+        }
+
+        .ep-cover {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          border-radius: 14px;
+          overflow: hidden;
+          cursor: pointer;
+          background: linear-gradient(
+            135deg,
+            #e8f7f1 0%,
+            #d1ede0 50%,
+            #eaf7f1 100%
+          );
+          transition: all 0.2s ease;
+        }
+
+        .ep-cover.has-image {
+          background: #f5f8f6;
+        }
+
+        .ep-cover img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .ep-cover-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          color: rgba(19, 121, 91, 0.5);
+        }
+
+        .ep-cover-placeholder i {
+          font-size: 32px;
+        }
+
+        .ep-cover-placeholder span {
+          font-size: 12.5px;
+          font-weight: 700;
+        }
+
+        .ep-cover-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.5);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          color: white;
+          font-size: 12.5px;
+          font-weight: 700;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+
+        .ep-cover-overlay i {
+          font-size: 22px;
+        }
+
+        .ep-cover:hover .ep-cover-overlay {
+          opacity: 1;
+        }
+
+        /* Avatar */
+        .ep-avatar {
+          position: absolute;
+          bottom: -20px;
+          left: 24px;
+          width: 90px;
+          height: 90px;
+          border-radius: 50%;
+          border: 4px solid white;
+          overflow: hidden;
+          cursor: pointer;
+          background: linear-gradient(135deg, #13795b, #0d9469);
+          display: grid;
+          place-items: center;
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+          transition: all 0.2s ease;
+          z-index: 2;
+        }
+
+        .ep-avatar.has-image {
+          background: #f5f8f6;
+        }
+
+        .ep-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .ep-avatar-placeholder {
+          color: white;
+          font-size: 26px;
+        }
+
+        .ep-avatar-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.5);
+          display: grid;
+          place-items: center;
+          color: white;
+          font-size: 20px;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+
+        .ep-avatar:hover .ep-avatar-overlay {
+          opacity: 1;
+        }
+
+        .ep-upload-spinner {
+          position: absolute;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.6);
+          display: grid;
+          place-items: center;
+          color: white;
+          z-index: 3;
+        }
+
+        /* Hero actions */
+        .ep-hero-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 26px;
+        }
+
+        /* ============================================================
+           Grid & Fields
+           ============================================================ */
+        .ep-grid-2 {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .ep-col-full {
+          grid-column: 1 / -1;
+        }
+
+        :global(.ep-field) {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        :global(.ep-label) {
+          font-size: 12.5px;
+          font-weight: 700;
+          color: #334155;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        :global(.ep-label i) {
+          color: #13795b;
+          font-size: 11px;
+          width: 14px;
+          text-align: center;
+        }
+
+        :global(.ep-input) {
+          width: 100%;
+          padding: 11px 14px;
+          border: 1.5px solid #e8edf0;
+          border-radius: 12px;
+          font-size: 13.5px;
+          font-family: inherit;
+          color: #0b1f18;
+          background: white;
+          transition: all 0.2s ease;
+          outline: none;
+          min-height: 44px;
+        }
+
+        :global(.ep-input:focus) {
+          border-color: #13795b;
+          box-shadow: 0 0 0 3px rgba(19, 121, 91, 0.1);
+        }
+
+        :global(.ep-input::placeholder) {
+          color: #94a3b8;
+        }
+
+        :global(.ep-input:disabled) {
+          background: #f8fafc;
+          color: #94a3b8;
+          cursor: not-allowed;
+        }
+
+        :global(.ep-hint) {
+          font-size: 11px;
+          color: #94a3b8;
+          margin-top: 2px;
+        }
+
+        .ep-divider {
+          height: 1px;
+          background: #f1f5f7;
+          margin: 4px 0;
+        }
+
+        /* ============================================================
+           Gallery
+           ============================================================ */
+        .ep-gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .ep-gallery-item {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 1 / 1;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 1px solid #e8edf0;
+          background: #f5f8f6;
+          transition: all 0.2s ease;
+        }
+
+        .ep-gallery-item img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .ep-gallery-item:hover {
+          border-color: #13795b;
+          box-shadow: 0 8px 20px rgba(19, 121, 91, 0.12);
+        }
+
+        .ep-gallery-remove {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          background: rgba(220, 38, 38, 0.9);
+          color: white;
+          border: none;
+          cursor: pointer;
+          display: grid;
+          place-items: center;
+          font-size: 11px;
+          opacity: 0;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(4px);
+        }
+
+        .ep-gallery-item:hover .ep-gallery-remove {
+          opacity: 1;
+        }
+
+        .ep-gallery-remove:hover {
+          background: #dc2626;
+          transform: scale(1.1);
+        }
+
+        .ep-gallery-add {
+          aspect-ratio: 1 / 1;
+          border: 2px dashed #cbd5d1;
+          border-radius: 12px;
+          background: #f8fafc;
+          color: #64748b;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          font-family: inherit;
+          font-size: 12.5px;
+          font-weight: 700;
+          transition: all 0.2s ease;
+          padding: 0;
+        }
+
+        .ep-gallery-add:hover:not(:disabled) {
+          border-color: #13795b;
+          background: #f0faf6;
+          color: #13795b;
+        }
+
+        .ep-gallery-add:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .ep-gallery-add i {
+          font-size: 22px;
+        }
+
+        /* ============================================================
+           Buttons
+           ============================================================ */
+        :global(.ep-btn) {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 11px 20px;
+          border-radius: 12px;
+          font-size: 13.5px;
+          font-weight: 700;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+          font-family: inherit;
+          border: 1.5px solid transparent;
+          cursor: pointer;
+          min-height: 44px;
+        }
+
+        :global(.ep-btn:disabled) {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        :global(.ep-btn-primary) {
+          background: linear-gradient(135deg, #13795b, #0d9469);
+          color: white;
+          box-shadow: 0 6px 16px rgba(19, 121, 91, 0.25);
+        }
+
+        :global(.ep-btn-primary:hover:not(:disabled)) {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 24px rgba(19, 121, 91, 0.35);
+        }
+
+        :global(.ep-btn-ghost) {
+          background: white;
+          color: #334155;
+          border-color: #e8edf0;
+        }
+
+        :global(.ep-btn-ghost:hover:not(:disabled)) {
+          border-color: #13795b;
+          color: #13795b;
+          background: #f0faf6;
+        }
+
+        :global(.ep-btn-sm) {
+          padding: 8px 14px;
+          font-size: 12px;
+          min-height: 36px;
+        }
+
+        /* ============================================================
+           Sticky Save Bar
+           ============================================================ */
+        .ep-save-bar {
+          position: sticky;
+          bottom: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 14px 20px;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid #e8edf0;
+          border-radius: 16px;
+          box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
+          z-index: 20;
+          flex-wrap: wrap;
+        }
+
+        .ep-save-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12.5px;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .ep-save-info i {
+          color: #13795b;
+          font-size: 14px;
+        }
+
+        .ep-save-actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        /* ============================================================
+           Responsive
+           ============================================================ */
+        @media (max-width: 768px) {
+          .ep-header-left h1 {
+            font-size: 20px;
+          }
+
+          .ep-header-left h1 i {
+            padding: 6px;
+            font-size: 15px;
+          }
+
+          .ep-card {
+            padding: 18px;
+            border-radius: 16px;
+          }
+
+          .ep-gallery-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+          }
+
+          .ep-hero-preview {
+            height: 140px;
+          }
+
+          .ep-avatar {
+            width: 74px;
+            height: 74px;
+            border-width: 3px;
+          }
+
+          .ep-avatar-placeholder {
+            font-size: 22px;
+          }
+
+          .ep-save-bar {
+            padding: 12px 16px;
+            bottom: 8px;
+          }
+
+          .ep-save-info {
+            display: none;
+          }
+
+          .ep-save-actions {
+            width: 100%;
+          }
+
+          :global(.ep-save-actions .ep-btn) {
+            flex: 1;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .ep-grid-2 {
+            grid-template-columns: 1fr;
+          }
+
+          .ep-gallery-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .ep-hero-preview {
+            height: 120px;
+          }
+
+          .ep-avatar {
+            width: 66px;
+            height: 66px;
+            left: 16px;
+          }
+
+          .ep-hero-actions {
+            margin-top: 22px;
+          }
+
+          .ep-cover-placeholder i {
+            font-size: 24px;
+          }
+
+          .ep-cover-placeholder span {
+            font-size: 11.5px;
+          }
+
+          .ep-card-title {
+            font-size: 14px;
+          }
+
+          .ep-card-sub {
+            font-size: 11.5px;
+            padding-left: 0;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .ep-page {
+            gap: 16px;
+          }
+
+          .ep-header-left h1 {
+            font-size: 18px;
+          }
+
+          .ep-card {
+            padding: 16px;
+          }
+
+          .ep-gallery-grid {
+            gap: 8px;
+          }
+        }
+      `}</style>
+    </>
+  );
+}
+
+// ============================================================
+// Field Component
+// ============================================================
+function Field({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  required = false,
+  disabled = false,
+  icon,
+  hint,
+  options = [],
+}) {
+  return (
+    <div className="ep-field">
+      <label className="ep-label">
+        {icon && <i className={`fas ${icon}`}></i>}
+        {label}
+        {required && <span style={{ color: "#dc2626" }}>*</span>}
+      </label>
+
+      {type === "select" ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          className="ep-input"
+        >
+          <option value="">Select {label.toLowerCase()}</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          disabled={disabled}
+          required={required}
+          className="ep-input"
+        />
+      )}
+
+      {hint && <div className="ep-hint">{hint}</div>}
     </div>
   );
 }
