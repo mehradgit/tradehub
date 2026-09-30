@@ -159,9 +159,14 @@ export default function BuyerInfoSection({
               </div>
             </div>
             <Link
-              href={`/profile/${buyer.id}`}
+              href={
+                buyer.profileNumber && buyer.slug
+                  ? `/profiles/${buyer.profileNumber}/${buyer.slug}`
+                  : "#"
+              }
               className="btn btn-secondary"
               style={{ whiteSpace: "nowrap" }}
+              aria-disabled={!buyer.profileNumber || !buyer.slug}
             >
               Company Information
             </Link>
@@ -326,13 +331,13 @@ function IconCircle({ icon, variant }) {
   const v =
     variant === "warning"
       ? {
-          background: "linear-gradient(135deg, #fff4dd, #fde2b5)",
-          color: "#d97706",
-        }
+        background: "linear-gradient(135deg, #fff4dd, #fde2b5)",
+        color: "#d97706",
+      }
       : {
-          background: "linear-gradient(135deg, #eaf7f1, #d1ede0)",
-          color: "#13795b",
-        };
+        background: "linear-gradient(135deg, #eaf7f1, #d1ede0)",
+        color: "#13795b",
+      };
   return (
     <div
       style={{

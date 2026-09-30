@@ -30,10 +30,10 @@ export default function RequestDetail({
 
   const deadlineDate = request.deadline
     ? new Date(request.deadline).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
     : "Flexible";
 
   const buyerName =
@@ -127,9 +127,8 @@ export default function RequestDetail({
             {/* Header Badges */}
             <div className="request-header-info">
               <span
-                className={`request-badge-lg ${
-                  request.isUrgent ? "urgent" : ""
-                }`}
+                className={`request-badge-lg ${request.isUrgent ? "urgent" : ""
+                  }`}
               >
                 {request.isUrgent ? (
                   <>
@@ -295,6 +294,8 @@ export default function RequestDetail({
                 country: request.user?.country,
                 countryCode: request.user?.countryCode,
                 createdAt: request.user?.createdAt,
+                profileNumber: request.user?.profileNumber,   
+                slug: request.user?.slug,                   
               }}
               initialPermission={buyerInfoPermission}
               alreadyRevealed={alreadyRevealed}
@@ -332,14 +333,12 @@ export default function RequestDetail({
                   className="related-request-link"
                 >
                   <div
-                    className={`compact-request-card ${
-                      rel.isUrgent ? "wanted" : ""
-                    }`}
+                    className={`compact-request-card ${rel.isUrgent ? "wanted" : ""
+                      }`}
                   >
                     <span
-                      className={`request-badge-sm ${
-                        rel.isUrgent ? "urgent" : "verified"
-                      }`}
+                      className={`request-badge-sm ${rel.isUrgent ? "urgent" : "verified"
+                        }`}
                     >
                       {rel.isUrgent ? "Urgent" : "Verified"}
                     </span>

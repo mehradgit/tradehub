@@ -26,6 +26,8 @@ async function getRequest(requestNumber) {
           countryCode: true,
           image: true,
           logo: true,
+          profileNumber: true,
+          slug: true,
           createdAt: true,
         },
       },
@@ -173,6 +175,8 @@ export default async function RequestPage({ params }) {
       countryCode: request.user.countryCode,
       image: request.user.image,
       logo: request.user.logo,
+      profileNumber: request.user.profileNumber, 
+      slug: request.user.slug,
       createdAt: request.user.createdAt.toISOString(),
     },
   };

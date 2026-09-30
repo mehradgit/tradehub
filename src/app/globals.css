@@ -695,7 +695,6 @@ a:hover {
   color: var(--primary);
 }
 
-
 /* ====== PRODUCT DETAIL PAGE ====== */
 .product-detail {
   display: grid;
@@ -1032,7 +1031,6 @@ a:hover {
 .breadcrumb-item a:hover {
   text-decoration: underline;
 }
- 
 
 /* ====== DASHBOARD ====== */
 
@@ -1876,7 +1874,6 @@ a:hover {
   border-color: var(--primary);
 }
 
-
 /* Pagination (used in Pagination component) */
 .pagination-container {
   display: flex;
@@ -2090,7 +2087,6 @@ a:hover {
   }
 }
 
- 
 /* ====== DASHBOARD COMPANY HEADER ====== */
 .dashboard-company-header {
   background: var(--white);
@@ -5967,7 +5963,26 @@ a:hover {
 }
 @media (max-width: 640px) {
   .dashboard-layout .d-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .dashboard-layout .d-stat {
+    padding: 16px;
+  }
+
+  .dashboard-layout .d-stat .stat-value {
+    font-size: 22px;
+  }
+
+  .dashboard-layout .d-stat .stat-label {
+    font-size: 12px;
+  }
+
+  .dashboard-layout .d-stat .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 }
 
@@ -7566,7 +7581,6 @@ a:hover {
   max-width: 100%;
 }
 
- 
 /* ============================================================
    2. GRID RESPONSIVE
    ============================================================ */
@@ -8090,7 +8104,6 @@ a:hover {
   display: block;
 }
 
- 
 /* ============================================================
    REQUESTS PAGE — Header & Grid
    ============================================================ */
@@ -8283,8 +8296,7 @@ a:hover {
 .site-header .header-nav-link {
   display: inline-flex;
   align-items: center;
-  padding: 8px 14px;
-  border-radius: 10px;
+  padding: 8px 12px;
   font-size: 13.5px;
   font-weight: 700;
   color: #334155;
@@ -8296,20 +8308,20 @@ a:hover {
 
 .site-header .header-nav-link:hover {
   color: #13795b;
-  background: #f0faf6;
+  background: transparent;
 }
 
 .site-header .header-nav-link.active {
   color: #13795b;
-  background: #eaf7f1;
+  background: transparent;
 }
 
 .site-header .header-nav-link.active::after {
   content: "";
   position: absolute;
-  bottom: -3px;
-  left: 14px;
-  right: 14px;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
   height: 2px;
   background: #13795b;
   border-radius: 2px;
@@ -8724,12 +8736,7 @@ a:hover {
    ============================================================ */
 .skeleton {
   display: block;
-  background: linear-gradient(
-    90deg,
-    #f1f5f7 0%,
-    #e8edf0 50%,
-    #f1f5f7 100%
-  );
+  background: linear-gradient(90deg, #f1f5f7 0%, #e8edf0 50%, #f1f5f7 100%);
   background-size: 200% 100%;
   animation: skeletonShimmer 1.5s ease-in-out infinite;
   border-radius: 8px;

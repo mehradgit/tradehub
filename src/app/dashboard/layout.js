@@ -28,13 +28,12 @@ export default function DashboardLayout({ children }) {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            zIndex: 999,
+            backgroundColor: "rgba(0, 0, 0, 0.4)",
+            zIndex: 90,
             display: "block",
           }}
         />
       )}
-
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
       <main className="main">
         <Topbar onMenuToggle={toggleSidebar} />
