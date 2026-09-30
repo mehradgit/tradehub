@@ -15,10 +15,10 @@ export default function ProductTabs({ product }) {
   // تاریخ به‌صورت خوانا
   const formattedDate = product.createdAt
     ? new Date(product.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "—";
 
   // بررسی وجود توضیحات
@@ -69,50 +69,74 @@ export default function ProductTabs({ product }) {
       </div>
 
       {/* ====== تب Specifications ====== */}
+      {/* ====== تب Specifications ====== */}
       <div className={`tab-content ${activeTab === "specs" ? "active" : ""}`}>
         <table className="tab-spec-table">
           <tbody>
             <tr>
               <td className="label">
-                <i className="fas fa-tag"></i> Product Name
+                <div className="label-inner">
+                  <i className="fas fa-tag"></i>
+                  <span className="label-text">Product Name</span>
+                </div>
               </td>
               <td className="value">{product.name || "—"}</td>
             </tr>
             <tr>
               <td className="label">
-                <i className="fas fa-folder"></i> Category
+                <div className="label-inner">
+                  <i className="fas fa-folder"></i>
+                  <span className="label-text">Category</span>
+                </div>
               </td>
               <td className="value">{product.category || "—"}</td>
             </tr>
             {product.subCategory && (
               <tr>
                 <td className="label">
-                  <i className="fas fa-folder-open"></i> Sub-Category
+                  <div className="label-inner">
+                    <i className="fas fa-folder-open"></i>
+                    <span className="label-text">Sub-Category</span>
+                  </div>
                 </td>
                 <td className="value">{product.subCategory}</td>
               </tr>
             )}
             <tr>
               <td className="label">
-                <i className="fas fa-globe"></i> Origin
+                <div className="label-inner">
+                  <i className="fas fa-globe"></i>
+                  <span className="label-text">Origin</span>
+                </div>
               </td>
-              <td className="value">{product.origin || product.country || "—"}</td>
+              <td className="value">
+                {product.origin || product.country || "—"}
+              </td>
             </tr>
             <tr>
               <td className="label">
-                <i className="fas fa-certificate"></i> Certifications
+                <div className="label-inner">
+                  <i className="fas fa-certificate"></i>
+                  <span className="label-text">Certifications</span>
+                </div>
               </td>
               <td className="value">{product.certifications || "—"}</td>
             </tr>
             <tr>
               <td className="label">
-                <i className="fas fa-box"></i> Packaging
+                <div className="label-inner">
+                  <i className="fas fa-box"></i>
+                  <span className="label-text">Packaging</span>
+                </div>
               </td>
               <td className="value">{product.packaging || "—"}</td>
             </tr>
             <tr>
               <td className="label">
-                <i className="fas fa-weight-hanging"></i> Minimum Order
+                <div className="label-inner">
+                  <i className="fas fa-weight-hanging"></i>
+                  <span className="label-text">Minimum Order</span>
+                </div>
               </td>
               <td className="value">
                 {product.moq || "—"} {product.unit || ""}
@@ -120,13 +144,19 @@ export default function ProductTabs({ product }) {
             </tr>
             <tr>
               <td className="label">
-                <i className="fas fa-ship"></i> Shipping Terms
+                <div className="label-inner">
+                  <i className="fas fa-ship"></i>
+                  <span className="label-text">Shipping Terms</span>
+                </div>
               </td>
               <td className="value">{product.shippingTerms || "—"}</td>
             </tr>
             <tr>
               <td className="label">
-                <i className="fas fa-clock"></i> Lead Time
+                <div className="label-inner">
+                  <i className="fas fa-clock"></i>
+                  <span className="label-text">Lead Time</span>
+                </div>
               </td>
               <td className="value">
                 {product.leadTime ? `${product.leadTime} days` : "—"}
@@ -134,7 +164,10 @@ export default function ProductTabs({ product }) {
             </tr>
             <tr>
               <td className="label">
-                <i className="fas fa-calendar-check"></i> Listed
+                <div className="label-inner">
+                  <i className="fas fa-calendar-check"></i>
+                  <span className="label-text">Listed</span>
+                </div>
               </td>
               <td className="value">{formattedDate}</td>
             </tr>
@@ -336,46 +369,119 @@ export default function ProductTabs({ product }) {
 
         /* ====== جدول مشخصات ====== */
         .tab-spec-table {
-          width: 100%;
-          border-collapse: collapse;
-          border-radius: var(--radius);
-          table-layout: fixed;
-          overflow: hidden;
-        }
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border-radius: 12px;
+  overflow: hidden;
+}
 
-        .tab-spec-table tr {
-          border-bottom: 1px solid var(--gray-light);
-        }
+.tab-spec-table tr {
+  border-bottom: 1px solid #f1f5f7;
+}
 
-        .tab-spec-table tr:last-child {
-          border-bottom: none;
-        }
+.tab-spec-table tr:last-child {
+  border-bottom: none;
+}
 
-        .tab-spec-table td {
-          padding: 14px 20px;
-          font-size: 14px;
-          vertical-align: middle;
-          word-wrap: break-word;
-        }
+.tab-spec-table td {
+  padding: 12px 16px;
+  font-size: 13.5px;
+  vertical-align: middle;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
 
-        .tab-spec-table .label {
-          font-weight: 700;
-          color: var(--black);
-          background: var(--light);
-          width: 35%;
-          min-width: 140px;
-        }
+/* سلول label — آیکون و متن در یک خط */
+.tab-spec-table td.label {
+  font-weight: 700;
+  color: #0b1f18;
+  background: #f5f8f6;
+  width: 38%;
+  min-width: 120px;
+}
 
-        .tab-spec-table .label i {
-          width: 20px;
-          color: var(--primary);
-          margin-right: 10px;
-        }
+/* ✅ کلید حل مشکل: آیکون و متن در یک flex row */
+.tab-spec-table td.label .label-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
 
-        .tab-spec-table .value {
-          color: var(--gray-dark);
-          background: var(--white);
-        }
+.tab-spec-table td.label i {
+  color: #13795b;
+  font-size: 12px;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.tab-spec-table td.label .label-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-spec-table td.value {
+  color: #33413d;
+  background: white;
+}
+  @media (max-width: 650px) {
+  .tab-spec-table td {
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+
+  .tab-spec-table td.label {
+    width: 45%;
+    min-width: 110px;
+  }
+
+  .tab-spec-table td.label .label-inner {
+    gap: 6px;
+  }
+
+  .tab-spec-table td.label i {
+    font-size: 11px;
+    width: 12px;
+  }
+
+  /* ✅ روی موبایل متن label هم nowrap بمونه */
+  .tab-spec-table td.label .label-text {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tab-spec-table td.value {
+    font-size: 12.5px;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 400px) {
+  .tab-spec-table td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .tab-spec-table td.label {
+    width: 48%;
+    min-width: 100px;
+  }
+
+  .tab-spec-table td.label .label-text {
+    font-size: 11.5px;
+  }
+
+  .tab-spec-table td.label i {
+    font-size: 10px;
+    width: 10px;
+  }
+}
 
         /* ====== نظرات ====== */
         .review-item {

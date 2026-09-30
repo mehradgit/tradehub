@@ -645,22 +645,23 @@ export default function ProductDetail({
         }
 
         .product-spec-item {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 5px;
-          position: relative;
-          padding-left: 14px;
-          min-width: 0;
-        }
+         display: flex;
+         flex-direction: column;
+         align-items: flex-start;
+         gap: 5px;
+         position: relative;
+         padding-left: 14px;
+         min-width: 0;
+         min-height: 50px;       
+}
 
         .product-spec-item::before {
           content: "";
           position: absolute;
           left: 0;
-          top: 2px;
-          width: 3px;
-          height: 18px;
+          bottom: 0px;
+          width: 2px;
+          height: 50px;
           background: #5dc888;
           border-radius: 2px;
         }
