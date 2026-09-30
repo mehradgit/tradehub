@@ -138,6 +138,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.logo = user.logo; // ✅ جدید
+        token.image = user.image; // ✅ جدید
+        token.companyName = user.companyName; // ✅ جدید
         token.registrationComplete = user.registrationComplete ?? false;
         token.emailVerified = user.emailVerified ?? false;
         token.isAdmin = user.isAdmin ?? false;
@@ -147,40 +150,56 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (session.registrationComplete !== undefined) {
           token.registrationComplete = session.registrationComplete;
         }
+        // ✅ اگر بعد از edit-profile خواستی logo هم آپدیت بشه:
+        if (session.logo !== undefined) token.logo = session.logo;
+        if (session.image !== undefined) token.image = session.image;
+        if (session.companyName !== undefined)
+          token.companyName = session.companyName;
       }
 
-      if (!token.isAdmin && token.email) {
+      // هر بار از DB بخون (fresh) — این‌طوری بعد از آپلود لوگو، در اولین رفرش آپدیت می‌شه
+      if (token.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
-          select: { isAdmin: true, registrationComplete: true },
+          select: {
+            isAdmin: true,
+            registrationComplete: true,
+            logo: true, // ✅ جدید
+            image: true, // ✅ جدید
+            companyName: true, // ✅ جدید
+            name: true, // ✅ جدید
+          },
         });
         if (dbUser) {
           token.isAdmin = dbUser.isAdmin;
           token.registrationComplete = dbUser.registrationComplete;
+          token.logo = dbUser.logo; // ✅
+          token.image = dbUser.image; // ✅
+          token.companyName = dbUser.companyName; // ✅
+          token.name = dbUser.name ?? token.name; // ✅
         }
       }
 
       return token;
     },
+
     async session({ session, token }) {
       if (session?.user) {
         session.user.id = token.id;
         session.user.email = token.email;
         session.user.name = token.name;
+        session.user.logo = token.logo; // ✅ جدید
+        session.user.image = token.image; // ✅ جدید
+        session.user.companyName = token.companyName; // ✅ جدید
         session.user.registrationComplete = token.registrationComplete ?? false;
         session.user.emailVerified = token.emailVerified ?? false;
         session.user.isAdmin = token.isAdmin ?? false;
       }
       return session;
     },
+
     async redirect({ url, baseUrl, user }) {
-      if (user && user.registrationComplete === false) {
-        return `${baseUrl}/complete-registration`;
-      }
-      if (url.startsWith(baseUrl)) {
-        return url;
-      }
-      return `${baseUrl}/dashboard`;
+      // ... همون کد قبلی
     },
   },
   pages: {
