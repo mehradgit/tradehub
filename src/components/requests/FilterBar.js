@@ -14,7 +14,6 @@ export default function FilterBar({
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(currentSearch || "");
 
-  // ====== ساخت لیست سلسله‌مراتبی برای دراپ‌داون ======
   const categoryOptions = useMemo(() => {
     const options = [{ value: "", label: "All Categories", isParent: false }];
     const parents = categories.filter((c) => c.parent === 0);
@@ -28,7 +27,7 @@ export default function FilterBar({
       children.forEach((child) => {
         options.push({
           value: `${parent.name}|${child.name}`,
-          label: `    ${child.name}`,
+          label: `    ${child.name}`,
           isParent: false,
         });
       });
@@ -76,58 +75,323 @@ export default function FilterBar({
       return `${currentCategory}|${currentSubCategory}`;
     } else if (currentCategory) {
       return currentCategory;
-    } else {
-      return "";
     }
+    return "";
   }, [currentCategory, currentSubCategory]);
 
   return (
-    <div className="filter-bar">
-      <form className="search-box" onSubmit={handleSearchSubmit}>
-        <input
-          type="text"
-          name="search"
-          placeholder="Search requests..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
-        <button type="submit" className="btn btn-primary search-btn">
-          <i className="fas fa-search"></i> Search
-        </button>
-      </form>
-      <div className="filter-group">
-        {/* ====== دراپ‌داون واحد دسته‌ها ====== */}
-        <select
-          name="category"
-          onChange={handleCategoryChange}
-          value={selectedValue}
-          style={{ minWidth: "180px" }}
-        >
-          {categoryOptions.map((opt, idx) => (
-            <option
-              key={idx}
-              value={opt.value}
-              style={
-                opt.isParent
-                  ? { fontWeight: "bold", backgroundColor: "#f5f5f5" }
-                  : {}
-              }
-            >
-              {opt.label}
-            </option>
-          ))}
-        </select>
+    <>
+      <div className="requests-filter-bar">
+        {/* Search */}
+        <form className="filter-search" onSubmit={handleSearchSubmit}>
+          <i className="fas fa-search filter-search-icon"></i>
+          <input
+            type="text"
+            name="search"
+            placeholder="Search buying requests..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          <button type="submit" className="filter-search-btn">
+            <span className="btn-text">Search</span>
+            <i className="fas fa-arrow-right"></i>
+          </button>
+        </form>
 
-        {/* ====== فیلتر وضعیت (فقط Urgent / All) ====== */}
-        <select
-          name="filter"
-          onChange={handleFilterChange}
-          defaultValue={currentFilter || "all"}
-        >
-          <option value="all">All Requests</option>
-          <option value="urgent">Urgent Only</option>
-        </select>
+        {/* Filters */}
+        <div className="filter-selects">
+          <div className="filter-select-wrapper">
+            <i className="fas fa-layer-group filter-select-icon"></i>
+            <select
+              name="category"
+              onChange={handleCategoryChange}
+              value={selectedValue}
+              aria-label="Filter by category"
+            >
+              {categoryOptions.map((opt, idx) => (
+                <option
+                  key={idx}
+                  value={opt.value}
+                  style={
+                    opt.isParent
+                      ? { fontWeight: "bold", backgroundColor: "#f5f5f5" }
+                      : {}
+                  }
+                >
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-select-wrapper">
+            <i className="fas fa-flag filter-select-icon"></i>
+            <select
+              name="filter"
+              onChange={handleFilterChange}
+              defaultValue={currentFilter || "all"}
+              aria-label="Filter requests"
+            >
+              <option value="all">All Requests</option>
+              <option value="urgent">Urgent Only</option>
+            </select>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <style jsx>{`
+        .requests-filter-bar {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 24px;
+          align-items: stretch;
+          flex-wrap: wrap;
+          width: 100%;
+        }
+
+        .filter-search {
+          flex: 1 1 320px;
+          min-width: 0;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          background: white;
+          border: 1.5px solid #e8edf0;
+          border-radius: 14px;
+          padding: 0 4px 0 16px;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+        }
+
+        .filter-search:focus-within {
+          border-color: #13795b;
+          box-shadow: 0 0 0 3px rgba(19, 121, 91, 0.1);
+        }
+
+        .filter-search-icon {
+          color: #94a3b8;
+          font-size: 14px;
+          flex-shrink: 0;
+          margin-right: 10px;
+        }
+
+        .filter-search input {
+          flex: 1;
+          min-width: 0;
+          border: none;
+          outline: none;
+          background: transparent;
+          font-size: 14px;
+          color: #0b1f18;
+          font-family: inherit;
+          padding: 0;
+          height: 100%;
+        }
+
+        .filter-search input::placeholder {
+          color: #94a3b8;
+        }
+
+        .filter-search-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          height: 40px;
+          padding: 0 20px;
+          background: linear-gradient(135deg, #13795b, #0d9469);
+          color: white;
+          border: none;
+          border-radius: 11px;
+          font-size: 13px;
+          font-weight: 700;
+          font-family: inherit;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+          flex-shrink: 0;
+          box-shadow: 0 4px 12px rgba(19, 121, 91, 0.2);
+        }
+
+        .filter-search-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(19, 121, 91, 0.3);
+        }
+
+        .filter-search-btn i {
+          font-size: 11px;
+          transition: transform 0.2s ease;
+        }
+
+        .filter-search-btn:hover i {
+          transform: translateX(3px);
+        }
+
+        .filter-selects {
+          display: flex;
+          gap: 10px;
+          align-items: stretch;
+          flex-shrink: 0;
+        }
+
+        .filter-select-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          height: 48px;
+          background: white;
+          border: 1.5px solid #e8edf0;
+          border-radius: 14px;
+          padding: 0 8px 0 14px;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+          min-width: 180px;
+        }
+
+        .filter-select-wrapper:focus-within {
+          border-color: #13795b;
+          box-shadow: 0 0 0 3px rgba(19, 121, 91, 0.1);
+        }
+
+        .filter-select-icon {
+          color: #94a3b8;
+          font-size: 13px;
+          flex-shrink: 0;
+          margin-right: 8px;
+          pointer-events: none;
+        }
+
+        .filter-select-wrapper select {
+          flex: 1;
+          min-width: 0;
+          border: none;
+          outline: none;
+          background: transparent;
+          font-size: 13.5px;
+          color: #0b1f18;
+          font-weight: 600;
+          font-family: inherit;
+          padding: 0 24px 0 0;
+          cursor: pointer;
+          appearance: none;
+          -webkit-appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 6px center;
+          background-size: 12px;
+        }
+
+        /* ============================================================
+           Responsive
+           ============================================================ */
+        @media (max-width: 1100px) {
+          .filter-search {
+            flex: 1 1 100%;
+          }
+          .filter-selects {
+            flex: 1 1 100%;
+          }
+          .filter-select-wrapper {
+            flex: 1;
+            min-width: 0;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .requests-filter-bar {
+            gap: 10px;
+            margin-bottom: 18px;
+          }
+
+          .filter-search {
+            height: 46px;
+            padding: 0 4px 0 14px;
+            border-radius: 12px;
+          }
+
+          .filter-search input {
+            font-size: 13.5px;
+          }
+
+          .filter-search-btn {
+            height: 38px;
+            padding: 0 16px;
+            font-size: 12.5px;
+            border-radius: 10px;
+          }
+
+          .filter-search-btn .btn-text {
+            display: none;
+          }
+
+          .filter-search-btn i {
+            font-size: 13px;
+          }
+
+          .filter-selects {
+            gap: 8px;
+          }
+
+          .filter-select-wrapper {
+            height: 46px;
+            border-radius: 12px;
+            padding: 0 6px 0 12px;
+          }
+
+          .filter-select-wrapper select {
+            font-size: 13px;
+          }
+        }
+
+        @media (max-width: 500px) {
+          .requests-filter-bar {
+            gap: 8px;
+          }
+
+          .filter-search {
+            height: 44px;
+            border-radius: 11px;
+            padding: 0 4px 0 12px;
+          }
+
+          .filter-search input {
+            font-size: 13px;
+          }
+
+          .filter-search-btn {
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 9px;
+          }
+
+          .filter-search-btn i {
+            font-size: 12px;
+          }
+
+          .filter-selects {
+            flex-direction: column;
+            width: 100%;
+            gap: 8px;
+          }
+
+          .filter-select-wrapper {
+            width: 100%;
+            min-width: 0;
+            height: 44px;
+            border-radius: 11px;
+            padding: 0 6px 0 12px;
+          }
+
+          .filter-select-icon {
+            font-size: 11px;
+            margin-right: 8px;
+          }
+
+          .filter-select-wrapper select {
+            font-size: 13px;
+            padding-right: 20px;
+          }
+        }
+      `}</style>
+    </>
   );
 }

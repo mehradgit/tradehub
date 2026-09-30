@@ -20,7 +20,7 @@ export default async function RequestsPage({ searchParams }) {
 
   const where = {
     isVisible: true,
-    status: "APPROVED", 
+    status: "APPROVED",
   };
 
   if (category) {
@@ -72,56 +72,62 @@ export default async function RequestsPage({ searchParams }) {
   // const totalUrgent = ... (حذف شده)
 
   return (
-      <div className="container py-4">
-        {/* Breadcrumb */}
-        <nav aria-label="breadcrumb" className="mb-4">
-          <ol className="breadcrumb">
-            <li className="breadcrumb-item">
-              <Link href="/" style={{ color: "var(--primary)" }}>Home</Link>
-            </li>
-            <li className="breadcrumb-item active text-muted">Buying Requests</li>
-          </ol>
-        </nav>
-
-        {/* Page Header */}
-        <div className="page-header">
-          <h1>
-            <i className="fas fa-shopping-cart" style={{ color: "var(--primary)" }}></i>
+    <div className="container py-4">
+      {/* Breadcrumb */}
+      <nav
+        aria-label="breadcrumb"
+        className="mb-4 requests-page-breadcrumb"
+      >
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link href="/" style={{ color: "var(--primary)" }}>
+              Home
+            </Link>
+          </li>
+          <li className="breadcrumb-item active text-muted">
             Buying Requests
-            {/* ✅ تعداد درخواست‌ها حذف شد */}
-          </h1>
-          {/* ✅ دکمه Post New Request حذف شد */}
-        </div>
+          </li>
+        </ol>
+      </nav>
 
-        {/* ✅ نوار آمار حذف شد */}
-
-        {/* Filter Bar (با دراپ‌داون سلسله‌مراتبی) */}
-        <FilterBar
-          currentCategory={category}
-          currentSubCategory={subCategory}
-          currentSearch={search}
-          currentFilter={filter}
-        />
-
-        {/* Requests Grid */}
-        {requests.length > 0 ? (
-          <div className="requests-grid">
-            {requests.map((request) => (
-              <RequestCard key={request.id} request={request} />
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">
-            <i className="fas fa-inbox"></i>
-            <h3>No requests found</h3>
-            <p>Try adjusting your filters.</p>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Pagination currentPage={page} totalPages={totalPages} />
-        )}
+      {/* Header */}
+      <div className="requests-page-header">
+        <h1>
+          <i className="fas fa-shopping-cart"></i>
+          Buying Requests
+        </h1>
+        <p className="requests-page-subtitle">
+          Discover active purchase requirements from verified buyers
+        </p>
       </div>
+
+      {/* Filter Bar */}
+      <FilterBar
+        currentCategory={category}
+        currentSubCategory={subCategory}
+        currentSearch={search}
+        currentFilter={filter}
+      />
+
+      {/* Grid */}
+      {requests.length > 0 ? (
+        <div className="requests-grid">
+          {requests.map((request) => (
+            <RequestCard key={request.id} request={request} />
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          <i className="fas fa-inbox"></i>
+          <h3>No requests found</h3>
+          <p>Try adjusting your filters.</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination currentPage={page} totalPages={totalPages} />
+      )}
+    </div>
   );
 }
