@@ -58,7 +58,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             sameSite: "lax",
             path: "/",
             secure: true,
-            domain: ".foodtradelink.com",
+            // ✅ domain حذف شد — host-only cookie
           },
         },
         callbackUrl: {
@@ -68,7 +68,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             sameSite: "lax",
             path: "/",
             secure: true,
-            domain: ".foodtradelink.com",
           },
         },
         csrfToken: {
@@ -78,11 +77,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             sameSite: "lax",
             path: "/",
             secure: true,
-            // __Host- نباید domain داشته باشه
           },
         },
       }
-    : undefined, // در dev از پیش‌فرض استفاده کن
+    : undefined,
 
   providers: [
     Google({
@@ -292,8 +290,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (urlObj.origin === baseObj.origin) return url;
 
         // ساب‌دامین‌ها رو هم قبول کن
-        if (urlObj.hostname.endsWith(".foodtradelink.com"))
-          return url;
+        if (urlObj.hostname.endsWith(".foodtradelink.com")) return url;
       } catch {
         // URL نامعتبر
       }
