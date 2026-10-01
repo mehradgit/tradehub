@@ -9,7 +9,11 @@ import {
   hasRevealedSupplierInfo,
 } from "@/lib/accessControlService";
 
-// ====== دریافت داده‌های محصول ======
+const BASE_URL = "https://foodtradelink.com";
+
+// ============================================================
+// getProductData
+// ============================================================
 async function getProductData(productNumber) {
   const product = await prisma.product.findUnique({
     where: { productNumber, status: "APPROVED" },
@@ -93,28 +97,132 @@ async function getProductData(productNumber) {
     slug: product.user.slug,
   };
 
-  return { productData, supplierData };
+  return { productData, supplierData, rawProduct: product };
 }
 
+// ============================================================
+// generateMetadata — SEO پیشرفته
+// ============================================================
 export async function generateMetadata({ params }) {
-  const { productNumber } = await params;
+  const { productNumber, slug } = await params;
+  const num = parseInt(productNumber);
+  if (isNaN(num)) return { title: "Product Not Found" };
+
   const product = await prisma.product.findUnique({
-    where: { productNumber: parseInt(productNumber) },
-    select: { name: true, shortDesc: true },
+    where: { productNumber: num },
+    select: {
+      name: true,
+      shortDesc: true,
+      fullDesc: true,
+      images: true,
+      category: true,
+      subCategory: true,
+      country: true,
+      countryCode: true,
+      price: true,
+      currency: true,
+      unit: true,
+      slug: true,
+      status: true,
+      user: {
+        select: { companyName: true, name: true },
+      },
+    },
   });
+
   if (!product) {
-    return { title: "Product Not Found" };
+    return {
+      title: "Product Not Found",
+      description: "The product you're looking for does not exist.",
+      robots: { index: false, follow: false },
+    };
   }
+
+  const productUrl = `${BASE_URL}/products/${productNumber}/${product.slug}`;
+
+  // تصویر اصلی
+  const firstImage = Array.isArray(product.images) ? product.images[0] : null;
+  const imageUrl = firstImage
+    ? firstImage.startsWith("http")
+      ? firstImage
+      : `${BASE_URL}${firstImage}`
+    : `${BASE_URL}/og-default.png`;
+
+  // توضیحات
+  const rawDesc =
+    product.shortDesc ||
+    product.fullDesc?.replace(/<[^>]*>/g, "").trim() ||
+    `${product.name} - Buy wholesale from verified suppliers on FoodTradeHub.`;
+  const description = rawDesc.slice(0, 158);
+
+  // کلمات کلیدی
+  const keywords = [
+    product.name,
+    product.category,
+    product.subCategory,
+    product.country,
+    "wholesale",
+    "buy in bulk",
+    "B2B supplier",
+    "export",
+    `${product.name} price`,
+    `${product.name} supplier`,
+  ].filter(Boolean);
+
+  // اگر محصول APPROVED نبود، noindex
+  const isIndexable = product.status === "APPROVED";
+
   return {
-    title: `${product.name} | B2B Food Hub`,
-    description: product.shortDesc || `View details of ${product.name}`,
+    title: product.name,
+    description,
+    keywords,
+    alternates: {
+      canonical: productUrl,
+    },
+    openGraph: {
+      type: "website",
+      url: productUrl,
+      title: product.name,
+      description,
+      siteName: "FoodTradeHub",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: product.name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description,
+      images: [imageUrl],
+    },
+    robots: isIndexable
+      ? {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+          },
+        }
+      : { index: false, follow: false },
   };
 }
 
+// ============================================================
+// ProductPage
+// ============================================================
 export default async function ProductPage({ params }) {
-  const { productNumber } = await params;
+  const { productNumber, slug } = await params;
   const productNum = parseInt(productNumber);
-  const { productData, supplierData } = await getProductData(productNum);
+  const { productData, supplierData, rawProduct } =
+    await getProductData(productNum);
 
   // ====== بررسی دسترسی ======
   const session = await auth();
@@ -124,13 +232,11 @@ export default async function ProductPage({ params }) {
     { id: productData.id, userId: productData.userId }
   );
 
-  // ====== بررسی Reveal قبلی ======
   const alreadyRevealed =
     session?.user?.id && productData.userId !== session.user.id
       ? await hasRevealedSupplierInfo(session.user.id, productData.id)
       : false;
 
-  // ====== آیا باید خودکار باز شود؟ ======
   const shouldAutoReveal =
     supplierInfoPermission.allowed &&
     (supplierInfoPermission.reason === "owner" ||
@@ -141,15 +247,81 @@ export default async function ProductPage({ params }) {
       supplierInfoPermission.reason === "loggedIn" ||
       productSettings?.supplierInfo?.consumeQuotaOnReveal === false);
 
+  // ============================================================
+  // JSON-LD (Structured Data)
+  // ============================================================
+  const productUrl = `${BASE_URL}/products/${productNumber}/${slug}`;
+  const firstImage = Array.isArray(productData.images)
+    ? productData.images[0]
+    : null;
+  const jsonLdImage = firstImage
+    ? firstImage.startsWith("http")
+      ? firstImage
+      : `${BASE_URL}${firstImage}`
+    : `${BASE_URL}/og-default.png`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: productData.name,
+    description: productData.shortDesc,
+    image: [jsonLdImage],
+    sku: String(productNumber),
+    category: productData.category,
+    ...(productData.subCategory && { additionalType: productData.subCategory }),
+    ...(productData.country && {
+      countryOfOrigin: {
+        "@type": "Country",
+        name: productData.country,
+      },
+    }),
+    brand: {
+      "@type": "Brand",
+      name: supplierData.name,
+    },
+    offers: {
+      "@type": "Offer",
+      url: productUrl,
+      priceCurrency: productData.currency || "USD",
+      price: productData.price,
+      priceValidUntil: new Date(
+        Date.now() + 365 * 24 * 60 * 60 * 1000
+      ).toISOString().split("T")[0],
+      availability: "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
+      seller: {
+        "@type": "Organization",
+        name: supplierData.name,
+        ...(supplierData.country && {
+          address: {
+            "@type": "PostalAddress",
+            addressCountry: supplierData.country,
+          },
+        }),
+      },
+    },
+    ...(productData.certifications && {
+      hasCertification: productData.certifications,
+    }),
+  };
+
   return (
-    <div className="container py-4">
-      <ProductDetail
-        product={productData}
-        supplier={supplierData}
-        supplierInfoPermission={supplierInfoPermission}
-        alreadyRevealed={alreadyRevealed}
-        shouldAutoReveal={shouldAutoReveal}
+    <>
+      {/* ✅ Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-    </div>
+
+      <div className="container py-4">
+        <ProductDetail
+          product={productData}
+          supplier={supplierData}
+          supplierInfoPermission={supplierInfoPermission}
+          alreadyRevealed={alreadyRevealed}
+          shouldAutoReveal={shouldAutoReveal}
+        />
+      </div>
+    </>
   );
 }

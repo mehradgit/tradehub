@@ -9,7 +9,11 @@ import {
   hasRevealedBuyerInfo,
 } from "@/lib/accessControlService";
 
-// ====== getRequest (بدون تغییر) ======
+const BASE_URL = "https://foodtradelink.com";
+
+// ============================================================
+// getRequest
+// ============================================================
 async function getRequest(requestNumber) {
   const numericNumber = parseInt(requestNumber);
   if (isNaN(numericNumber)) return null;
@@ -64,7 +68,7 @@ async function getRequest(requestNumber) {
     }
   }
 
-  // Related
+  // Related requests
   const relatedRequests = await prisma.buyingRequest.findMany({
     where: {
       category: request.category,
@@ -89,26 +93,123 @@ async function getRequest(requestNumber) {
   return { request, relatedRequests, attachments, supplierCountries };
 }
 
-// ====== generateMetadata (بدون تغییر) ======
+// ============================================================
+// generateMetadata
+// ============================================================
 export async function generateMetadata({ params }) {
   const { requestNumber } = await params;
-  const numericNumber = parseInt(requestNumber);
-  if (isNaN(numericNumber)) return { title: "Request Not Found" };
+  const num = parseInt(requestNumber);
+  if (isNaN(num)) return { title: "Request Not Found" };
 
   const request = await prisma.buyingRequest.findUnique({
-    where: { requestNumber: numericNumber },
-    select: { title: true, category: true },
+    where: { requestNumber: num },
+    select: {
+      title: true,
+      description: true,
+      category: true,
+      subCategory: true,
+      quantity: true,
+      unit: true,
+      deliveryCountry: true,
+      buyerCountry: true,
+      budgetRange: true,
+      currency: true,
+      slug: true,
+      status: true,
+      isUrgent: true,
+      attachments: true,
+      createdAt: true,
+    },
   });
 
-  if (!request) return { title: "Request Not Found" };
+  if (!request) {
+    return {
+      title: "Request Not Found",
+      description: "The buying request you're looking for does not exist.",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const requestUrl = `${BASE_URL}/requests/${requestNumber}/${request.slug}`;
+
+  // تصویر
+  let imageUrl = `${BASE_URL}/og-default.png`;
+  if (Array.isArray(request.attachments) && request.attachments[0]) {
+    const img = request.attachments[0];
+    imageUrl = img.startsWith("http") ? img : `${BASE_URL}${img}`;
+  }
+
+  const description = (
+    request.description ||
+    `Buying request for ${request.title}. Quantity: ${request.quantity} ${request.unit}. Delivery: ${request.deliveryCountry}`
+  )
+    .replace(/<[^>]*>/g, "")
+    .trim()
+    .slice(0, 158);
+
+  const keywords = [
+    request.title,
+    request.category,
+    request.subCategory,
+    request.deliveryCountry,
+    request.buyerCountry,
+    "buying request",
+    "sourcing",
+    "procurement",
+    "B2B inquiry",
+  ].filter(Boolean);
+
+  const isIndexable = request.status === "APPROVED";
 
   return {
-    title: `${request.title} | B2B Food Hub`,
-    description: `View buying request details for ${request.title}`,
+    title: request.title,
+    description,
+    keywords,
+    alternates: {
+      canonical: requestUrl,
+    },
+    openGraph: {
+      type: "article",
+      url: requestUrl,
+      title: request.title,
+      description,
+      siteName: "FoodTradeHub",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: request.title,
+        },
+      ],
+      ...(request.createdAt && {
+        publishedTime: new Date(request.createdAt).toISOString(),
+      }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: request.title,
+      description,
+      images: [imageUrl],
+    },
+    robots: isIndexable
+      ? {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+          },
+        }
+      : { index: false, follow: false },
   };
 }
 
-// ====== صفحه ======
+// ============================================================
+// RequestPage
+// ============================================================
 export default async function RequestPage({ params }) {
   const { requestNumber } = await params;
   const data = await getRequest(requestNumber);
@@ -117,12 +218,12 @@ export default async function RequestPage({ params }) {
 
   const { request, relatedRequests, attachments, supplierCountries } = data;
 
-  // Access control
+  // ====== Access control ======
   const session = await auth();
   const requestSettings = await getSectionSettings("request");
   const buyerInfoPermission = await canViewBuyerInfo(
     session?.user?.id,
-    request,
+    request
   );
 
   const alreadyRevealed =
@@ -140,7 +241,7 @@ export default async function RequestPage({ params }) {
       buyerInfoPermission.reason === "loggedIn" ||
       requestSettings?.buyerInfo?.consumeQuotaOnReveal === false);
 
-  // ✅ Serialize for client component
+  // ====== Serialize ======
   const serializedRequest = {
     id: request.id,
     requestNumber: request.requestNumber,
@@ -175,7 +276,7 @@ export default async function RequestPage({ params }) {
       countryCode: request.user.countryCode,
       image: request.user.image,
       logo: request.user.logo,
-      profileNumber: request.user.profileNumber, 
+      profileNumber: request.user.profileNumber,
       slug: request.user.slug,
       createdAt: request.user.createdAt.toISOString(),
     },
@@ -192,15 +293,74 @@ export default async function RequestPage({ params }) {
     createdAt: r.createdAt.toISOString(),
   }));
 
+  // ============================================================
+  // JSON-LD
+  // ============================================================
+  const requestUrl = `${BASE_URL}/requests/${requestNumber}/${request.slug}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Demand",
+    name: request.title,
+    description: request.description,
+    url: requestUrl,
+    ...(request.category && { category: request.category }),
+    ...(request.createdAt && {
+      datePosted: new Date(request.createdAt).toISOString(),
+    }),
+    ...(request.deadline && {
+      validThrough: new Date(request.deadline).toISOString(),
+    }),
+    quantity: {
+      "@type": "QuantitativeValue",
+      value: request.quantity,
+      unitText: request.unit,
+    },
+    ...(request.deliveryCountry && {
+      availableAtOrFrom: {
+        "@type": "Place",
+        address: {
+          "@type": "PostalAddress",
+          addressCountry: request.deliveryCountry,
+        },
+      },
+    }),
+    ...(request.targetPrice && {
+      priceSpecification: {
+        "@type": "PriceSpecification",
+        price: request.targetPrice,
+        priceCurrency: request.currency || "USD",
+      },
+    }),
+    seller: {
+      "@type": "Organization",
+      name: request.user.companyName || request.user.name || "Buyer",
+      ...(request.user.country && {
+        address: {
+          "@type": "PostalAddress",
+          addressCountry: request.user.country,
+        },
+      }),
+    },
+  };
+
   return (
-    <RequestDetail
-      request={serializedRequest}
-      relatedRequests={serializedRelated}
-      attachments={attachments}
-      supplierCountries={supplierCountries}
-      buyerInfoPermission={buyerInfoPermission}
-      alreadyRevealed={alreadyRevealed}
-      shouldAutoReveal={shouldAutoReveal}
-    />
+    <>
+      {/* ✅ Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <RequestDetail
+        request={serializedRequest}
+        relatedRequests={serializedRelated}
+        attachments={attachments}
+        supplierCountries={supplierCountries}
+        buyerInfoPermission={buyerInfoPermission}
+        alreadyRevealed={alreadyRevealed}
+        shouldAutoReveal={shouldAutoReveal}
+      />
+    </>
   );
 }
