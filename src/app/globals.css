@@ -624,6 +624,29 @@ a:hover {
 .section-more:hover {
   gap: 10px;
 }
+/* Buyer Card */
+.buyer-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--light);
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-light);
+  flex-wrap: wrap;
+}
+.buyer-avatar {
+  width: 56px;
+  height: 56px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  flex-shrink: 0;
+}
 
 /* ====== CATEGORY TABS ====== */
 .category-tabs {
