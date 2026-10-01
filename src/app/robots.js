@@ -9,7 +9,7 @@ export default function robots() {
         allow: "/",
         disallow: [
           "/api/",
-          "/_next/",
+        //   "/_next/",
           "/admin/",
           "/dashboard/",
           "/login",
