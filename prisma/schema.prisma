@@ -27,7 +27,7 @@ model User {
   countryCode   String?
   businessType  String?
   phone         String?
-  bio           String?
+  bio String? @db.Text   
   address       String?
   website       String?
   companyEmail  String?
