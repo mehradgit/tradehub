@@ -35,16 +35,70 @@ const customAdapter = {
   },
 };
 
+const isProd = process.env.NODE_ENV === "production";
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: customAdapter,
   session: { strategy: "jwt" },
+
+  // ✅ حیاتی: اجازه دادن به Auth.js برای اعتماد به هدرهای X-Forwarded-*
+  // بدون این، پشت Nginx دامنه اشتباه تشخیص داده می‌شه و CSRF fail می‌ده
+  trustHost: true,
+
+  // ✅ کوکی‌های امن در پروداکشن
+  useSecureCookies: isProd,
+
+  // ✅ تنظیمات صریح کوکی‌ها برای جلوگیری از MissingCSRF
+  cookies: isProd
+    ? {
+        sessionToken: {
+          name: "__Secure-authjs.session-token",
+          options: {
+            httpOnly: true,
+            sameSite: "lax",
+            path: "/",
+            secure: true,
+            domain: ".foodtradelink.com",
+          },
+        },
+        callbackUrl: {
+          name: "__Secure-authjs.callback-url",
+          options: {
+            httpOnly: true,
+            sameSite: "lax",
+            path: "/",
+            secure: true,
+            domain: ".foodtradelink.com",
+          },
+        },
+        csrfToken: {
+          name: "__Host-authjs.csrf-token",
+          options: {
+            httpOnly: true,
+            sameSite: "lax",
+            path: "/",
+            secure: true,
+            // __Host- نباید domain داشته باشه
+          },
+        },
+      }
+    : undefined, // در dev از پیش‌فرض استفاده کن
+
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // ✅ اجبار به انتخاب حساب (جلوگیری از prompt=none که باعث گیر کردن می‌شه)
+      authorization: {
+        params: {
+          prompt: "select_account",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
     }),
 
-    // ✅ NEW: ورود با ایمیل و رمز عبور
+    // ====== ورود با ایمیل و رمز عبور ======
     Credentials({
       id: "credentials",
       name: "Credentials",
@@ -67,6 +121,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             emailVerified: true,
             registrationComplete: true,
             isAdmin: true,
+            logo: true,
+            image: true,
+            companyName: true,
           },
         });
 
@@ -84,6 +141,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
+          logo: user.logo,
+          image: user.image,
+          companyName: user.companyName,
           registrationComplete: user.registrationComplete,
           emailVerified: true,
           isAdmin: user.isAdmin,
@@ -91,7 +151,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       },
     }),
 
-    // ✅ حفظ provider قبلی برای auto-login بعد از verify-email
+    // ====== auto-login بعد از verify-email ======
     Credentials({
       id: "verify-token",
       name: "Verify Token",
@@ -118,13 +178,30 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           where: { identifier: email, token: credentials.token },
         });
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            emailVerified: true,
+            registrationComplete: true,
+            isAdmin: true,
+            logo: true,
+            image: true,
+            companyName: true,
+          },
+        });
+
         if (!user || !user.emailVerified) return null;
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
+          logo: user.logo,
+          image: user.image,
+          companyName: user.companyName,
           registrationComplete: user.registrationComplete,
           emailVerified: true,
           isAdmin: user.isAdmin,
@@ -132,51 +209,56 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       },
     }),
   ],
+
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      // ===== ۱. کاربر تازه لاگین کرده =====
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        token.logo = user.logo; // ✅ جدید
-        token.image = user.image; // ✅ جدید
-        token.companyName = user.companyName; // ✅ جدید
+        token.logo = user.logo ?? null;
+        token.image = user.image ?? null;
+        token.companyName = user.companyName ?? null;
         token.registrationComplete = user.registrationComplete ?? false;
         token.emailVerified = user.emailVerified ?? false;
         token.isAdmin = user.isAdmin ?? false;
       }
 
+      // ===== ۲. از سمت کلاینت update() صدا زده شده =====
       if (trigger === "update" && session) {
-        if (session.registrationComplete !== undefined) {
+        if (session.registrationComplete !== undefined)
           token.registrationComplete = session.registrationComplete;
-        }
-        // ✅ اگر بعد از edit-profile خواستی logo هم آپدیت بشه:
         if (session.logo !== undefined) token.logo = session.logo;
         if (session.image !== undefined) token.image = session.image;
         if (session.companyName !== undefined)
           token.companyName = session.companyName;
       }
 
-      // هر بار از DB بخون (fresh) — این‌طوری بعد از آپلود لوگو، در اولین رفرش آپدیت می‌شه
-      if (token.email) {
+      // ===== ۳. تازه‌سازی از DB فقط اگر لازم باشه =====
+      // نکته: برای جلوگیری از کندی در هر request، فقط اگر توکن تازه نیست
+      // یا اطلاعات اصلی نداره، از DB بخون
+      if (token.email && !token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
           select: {
+            id: true,
             isAdmin: true,
             registrationComplete: true,
-            logo: true, // ✅ جدید
-            image: true, // ✅ جدید
-            companyName: true, // ✅ جدید
-            name: true, // ✅ جدید
+            logo: true,
+            image: true,
+            companyName: true,
+            name: true,
           },
         });
         if (dbUser) {
+          token.id = dbUser.id;
           token.isAdmin = dbUser.isAdmin;
           token.registrationComplete = dbUser.registrationComplete;
-          token.logo = dbUser.logo; // ✅
-          token.image = dbUser.image; // ✅
-          token.companyName = dbUser.companyName; // ✅
-          token.name = dbUser.name ?? token.name; // ✅
+          token.logo = dbUser.logo;
+          token.image = dbUser.image;
+          token.companyName = dbUser.companyName;
+          token.name = dbUser.name ?? token.name;
         }
       }
 
@@ -188,9 +270,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.id = token.id;
         session.user.email = token.email;
         session.user.name = token.name;
-        session.user.logo = token.logo; // ✅ جدید
-        session.user.image = token.image; // ✅ جدید
-        session.user.companyName = token.companyName; // ✅ جدید
+        session.user.logo = token.logo ?? null;
+        session.user.image = token.image ?? null;
+        session.user.companyName = token.companyName ?? null;
         session.user.registrationComplete = token.registrationComplete ?? false;
         session.user.emailVerified = token.emailVerified ?? false;
         session.user.isAdmin = token.isAdmin ?? false;
@@ -198,13 +280,32 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       return session;
     },
 
-    async redirect({ url, baseUrl, user }) {
-      // ... همون کد قبلی
+    // ✅ این callback خالی بود — حالا درست شده
+    async redirect({ url, baseUrl }) {
+      // اگر URL نسبی بود، به baseUrl اضافه کن
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+
+      // اگر URL از همون دامنه بود، اجازه بده
+      try {
+        const urlObj = new URL(url);
+        const baseObj = new URL(baseUrl);
+        if (urlObj.origin === baseObj.origin) return url;
+
+        // ساب‌دامین‌ها رو هم قبول کن
+        if (urlObj.hostname.endsWith(".foodtradelink.com"))
+          return url;
+      } catch {
+        // URL نامعتبر
+      }
+
+      return baseUrl;
     },
   },
+
   pages: {
     signIn: "/login",
     error: "/login",
   },
+
   secret: process.env.AUTH_SECRET,
 });
