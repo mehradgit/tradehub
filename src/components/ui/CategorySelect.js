@@ -1,59 +1,59 @@
 // src/components/ui/CategorySelect.js
 "use client";
 
-import { useState } from "react";
-import { categories } from "@/lib/categories";
+import { useState, useEffect } from "react";
+import { useCategories } from "@/hooks/useCategories"; // ✅ جدید
 
 export default function CategorySelect({
-  categoryValue = "", // نام دسته (ذخیره‌شده در دیتابیس)
-  subCategoryValue = "", // نام زیردسته (ذخیره‌شده در دیتابیس)
-  onCategoryChange, // تابعی که نام دسته جدید را برمی‌گرداند
-  onSubCategoryChange, // تابعی که نام زیردسته جدید را برمی‌گرداند
+  categoryValue = "",
+  subCategoryValue = "",
+  onCategoryChange,
+  onSubCategoryChange,
   categoryRequired = false,
   subCategoryRequired = false,
 }) {
-  // ====== یافتن ID بر اساس نام برای نمایش اولیه ======
-  const findIdByName = (name) => {
-    const found = categories.find(c => c.name === name);
-    return found ? found.id : "";
-  };
+  const { categories } = useCategories(); // ✅ جدید
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState("");
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState(findIdByName(categoryValue));
-  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(findIdByName(subCategoryValue));
+  // وقتی categories لود شد، مقادیر اولیه رو ست کن
+  useEffect(() => {
+    if (categoryValue && categories.length > 0) {
+      const found = categories.find((c) => c.name === categoryValue);
+      if (found) setSelectedCategoryId(found.id);
+    }
+  }, [categoryValue, categories]);
 
-  // ====== استخراج دسته‌های اصلی ======
-  const mainCategories = categories.filter(c => c.parent === 0);
+  useEffect(() => {
+    if (subCategoryValue && categories.length > 0) {
+      const found = categories.find((c) => c.name === subCategoryValue);
+      if (found) setSelectedSubCategoryId(found.id);
+    }
+  }, [subCategoryValue, categories]);
 
-  // ====== استخراج زیردسته‌ها بر اساس دسته انتخاب‌شده ======
-  const subCategories = categories.filter(c => c.parent === selectedCategoryId);
+  const mainCategories = categories.filter((c) => c.parent === 0);
+  const subCategories = categories.filter(
+    (c) => c.parent === selectedCategoryId
+  );
 
-  // ====== هندلر تغییر دسته اصلی ======
   const handleMainChange = (e) => {
     const id = parseInt(e.target.value);
     setSelectedCategoryId(id);
-    
-    // پیدا کردن نام دسته و ارسال به والد
-    const categoryName = categories.find(c => c.id === id)?.name || "";
+    const categoryName = categories.find((c) => c.id === id)?.name || "";
     onCategoryChange(categoryName);
-
-    // ریست کردن زیردسته
     setSelectedSubCategoryId("");
     onSubCategoryChange("");
   };
 
-  // ====== هندلر تغییر زیردسته ======
   const handleSubChange = (e) => {
     const id = parseInt(e.target.value);
     setSelectedSubCategoryId(id);
-    
-    // پیدا کردن نام زیردسته و ارسال به والد
-    const subName = categories.find(c => c.id === id)?.name || "";
+    const subName = categories.find((c) => c.id === id)?.name || "";
     onSubCategoryChange(subName);
   };
 
   return (
     <div className="row g-3">
-      {/* ====== دسته اصلی ====== */}
       <div className="col-md-6">
         <label className="form-label fw-semibold">
           Category {categoryRequired && <span className="text-danger">*</span>}
@@ -73,10 +73,10 @@ export default function CategorySelect({
         </select>
       </div>
 
-      {/* ====== زیردسته ====== */}
       <div className="col-md-6">
         <label className="form-label fw-semibold">
-          Sub-Category {subCategoryRequired && <span className="text-danger">*</span>}
+          Sub-Category{" "}
+          {subCategoryRequired && <span className="text-danger">*</span>}
         </label>
         <select
           className="form-select"
@@ -93,7 +93,9 @@ export default function CategorySelect({
               </option>
             ))
           ) : (
-            <option value="" disabled>No sub-categories available</option>
+            <option value="" disabled>
+              No sub-categories available
+            </option>
           )}
         </select>
         {!selectedCategoryId && (

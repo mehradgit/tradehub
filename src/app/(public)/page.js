@@ -1,9 +1,9 @@
 // src/app/(public)/page.js
 import { prisma } from "@/lib/prisma";
+import { getActiveHomepageSections } from "@/lib/homepageService";
 import HeroSection from "@/components/home/HeroSection";
 import CategoriesSection from "@/components/home/CategoriesSection";
-import FeaturedProducts from "@/components/home/FeaturedProducts";
-import BuyingRequests from "@/components/home/BuyingRequests";
+import HomepageSection from "@/components/home/HomepageSection";
 import FeatureGroup from "@/components/home/FeatureGroup";
 import MarketplaceSection from "@/components/home/MarketplaceSection";
 import CtaSection from "@/components/home/CtaSection";
@@ -12,7 +12,7 @@ import CompanyAdsSection from "@/components/home/CompanyAdsSection";
 const BASE_URL = "https://foodtradelink.com";
 
 // ============================================================
-// Metadata اختصاصی صفحه اصلی
+// Metadata
 // ============================================================
 export const metadata = {
   title: "B2B Food Marketplace — Buy & Sell Wholesale Food Globally",
@@ -79,16 +79,95 @@ export const metadata = {
 };
 
 // ============================================================
-// HomePage
+// Fetch items per section
 // ============================================================
-export default async function HomePage() {
-  // ===== دریافت داده‌ها =====
-  const [products, requests, stats] = await Promise.all([
-    // محصولات ویژه (۵ عدد)
-    prisma.product
+async function fetchSectionData(section) {
+  const limit = section.limit || 6;
+
+  // ============================================================
+  // حالت Manual: fetch by IDs (حفظ ترتیب)
+  // ============================================================
+  if (section.mode === "manual") {
+    const ids = Array.isArray(section.itemIds) ? section.itemIds : [];
+    if (ids.length === 0) {
+      return { section, items: [] };
+    }
+
+    if (section.type === "products") {
+      const products = await prisma.product
+        .findMany({
+          where: {
+            id: { in: ids },
+            isVisible: true,
+            status: "APPROVED",
+          },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            unit: true,
+            images: true,
+            badge: true,
+            country: true,
+            countryCode: true,
+            origin: true,
+            slug: true,
+            productNumber: true,
+            user: { select: { companyName: true } },
+          },
+        })
+        .catch(() => []);
+
+      // حفظ ترتیب اصلی طبق itemIds
+      const map = new Map(products.map((p) => [p.id, p]));
+      const ordered = ids.map((id) => map.get(id)).filter(Boolean);
+      return { section, items: ordered };
+    }
+
+    const requests = await prisma.buyingRequest
       .findMany({
-        where: { isVisible: true, status: "APPROVED" },
-        take: 5,
+        where: {
+          id: { in: ids },
+          isVisible: true,
+          status: "APPROVED",
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          isUrgent: true,
+          buyerCountry: true,
+          deliveryCountry: true,
+          createdAt: true,
+          slug: true,
+          requestNumber: true,
+        },
+      })
+      .catch(() => []);
+
+    const map = new Map(requests.map((r) => [r.id, r]));
+    const ordered = ids.map((id) => map.get(id)).filter(Boolean);
+    return { section, items: ordered };
+  }
+
+  // ============================================================
+  // حالت Category یا Latest
+  // ============================================================
+  const where = { isVisible: true, status: "APPROVED" };
+
+  if (section.mode === "category" && section.category) {
+    where.category = section.category;
+    if (section.subCategory) {
+      where.subCategory = section.subCategory;
+    }
+  }
+
+  if (section.type === "products") {
+    const products = await prisma.product
+      .findMany({
+        where,
+        take: limit,
+        orderBy: { createdAt: "desc" },
         select: {
           id: true,
           name: true,
@@ -101,60 +180,102 @@ export default async function HomePage() {
           origin: true,
           slug: true,
           productNumber: true,
-          user: {
-            select: { companyName: true },
-          },
+          user: { select: { companyName: true } },
         },
-        orderBy: { createdAt: "desc" },
       })
-      .catch(() => []),
+      .catch(() => []);
 
-    // درخواست‌های خرید (۶ عدد)
-    prisma.buyingRequest
-      .findMany({
-        where: { isVisible: true, status: "APPROVED" },
-        take: 6,
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          isUrgent: true,
-          buyerCountry: true,
-          deliveryCountry: true,
-          createdAt: true,
-          slug: true,
-          requestNumber: true,
-        },
-        orderBy: { createdAt: "desc" },
-      })
-      .catch(() => []),
+    return { section, items: products };
+  }
 
-    // آمار سایت
-    prisma
-      .$transaction([
+  const requests = await prisma.buyingRequest
+    .findMany({
+      where,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        isUrgent: true,
+        buyerCountry: true,
+        deliveryCountry: true,
+        createdAt: true,
+        slug: true,
+        requestNumber: true,
+      },
+    })
+    .catch(() => []);
+
+  return { section, items: requests };
+}
+
+// ============================================================
+// Fetch stats
+// ============================================================
+async function fetchStats() {
+  try {
+    const [supplierCount, buyerCount, productCount] = await prisma.$transaction(
+      [
         prisma.user.count({ where: { role: "SUPPLIER" } }),
         prisma.user.count({ where: { role: "BUYER" } }),
         prisma.product.count({ where: { isVisible: true } }),
-      ])
-      .then(([supplierCount, buyerCount, productCount]) => ({
-        suppliers: supplierCount || 18500,
-        buyers: buyerCount || 4500,
-        products: productCount || 72000,
-        countries: 120,
-      }))
-      .catch(() => ({
-        suppliers: 18500,
-        buyers: 4500,
-        products: 72000,
-        countries: 120,
-      })),
+      ]
+    );
+
+    return {
+      suppliers: supplierCount || 18500,
+      buyers: buyerCount || 4500,
+      products: productCount || 72000,
+      countries: 120,
+    };
+  } catch {
+    return {
+      suppliers: 18500,
+      buyers: 4500,
+      products: 72000,
+      countries: 120,
+    };
+  }
+}
+
+// ============================================================
+// HomePage
+// ============================================================
+export default async function HomePage() {
+  // ۱. دریافت بخش‌های فعال
+  const sections = await getActiveHomepageSections();
+
+  // ۲. تفکیک بر اساس position
+  const topSections = sections.filter(
+    (s) => (s.position || "top") === "top"
+  );
+  const afterCompaniesSections = sections.filter(
+    (s) => s.position === "after-companies"
+  );
+  const beforeCtaSections = sections.filter(
+    (s) => s.position === "before-cta"
+  );
+
+  // ۳. Fetch داده‌ها برای همه‌ی بخش‌ها + آمار
+  const allSections = [
+    ...topSections,
+    ...afterCompaniesSections,
+    ...beforeCtaSections,
+  ];
+
+  const [sectionDataList, stats] = await Promise.all([
+    Promise.all(allSections.map(fetchSectionData)),
+    fetchStats(),
   ]);
 
-  // ============================================================
-  // JSON-LD اختصاصی صفحه اصلی
-  // ============================================================
+  const dataMap = Object.fromEntries(
+    sectionDataList.map((d) => [d.section.id, d])
+  );
 
-  // 1️⃣ WebPage — اطلاعات صفحه اصلی
+  // ============================================================
+  // JSON-LD
+  // ============================================================
   const webPageJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -164,12 +285,8 @@ export default async function HomePage() {
     description:
       "Global B2B food marketplace connecting verified suppliers, manufacturers, and buyers across 120+ countries.",
     inLanguage: "en-US",
-    isPartOf: {
-      "@id": `${BASE_URL}/#website`,
-    },
-    about: {
-      "@id": `${BASE_URL}/#organization`,
-    },
+    isPartOf: { "@id": `${BASE_URL}/#website` },
+    about: { "@id": `${BASE_URL}/#organization` },
     primaryImageOfPage: {
       "@type": "ImageObject",
       url: `${BASE_URL}/og-image.png`,
@@ -178,102 +295,74 @@ export default async function HomePage() {
     },
     datePublished: "2024-01-01T00:00:00+00:00",
     dateModified: new Date().toISOString(),
-    breadcrumb: {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Home",
-          item: `${BASE_URL}/`,
-        },
-      ],
-    },
   };
 
-  // 2️⃣ ItemList — محصولات ویژه
-  const featuredProductsJsonLd =
-    products.length > 0
-      ? {
-        "@context": "https://schema.org",
-        "@type": "ItemList",
-        name: "Featured Products",
-        description: "Featured wholesale food products from verified suppliers",
-        numberOfItems: products.length,
-        itemListElement: products.map((p, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          url: `${BASE_URL}/products/${p.productNumber}/${p.slug}`,
-          name: p.name,
-          image: Array.isArray(p.images) && p.images[0]
-            ? p.images[0].startsWith("http")
-              ? p.images[0]
-              : `${BASE_URL}${p.images[0]}`
-            : undefined,
-        })),
-      }
-      : null;
+  // ItemList برای بخش‌های Products
+  const productsItemLists = topSections
+    .concat(afterCompaniesSections, beforeCtaSections)
+    .filter((s) => s.type === "products" && dataMap[s.id]?.items?.length > 0)
+    .map((s) => ({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: s.title,
+      numberOfItems: dataMap[s.id].items.length,
+      itemListElement: dataMap[s.id].items.map((p, idx) => ({
+        "@type": "ListItem",
+        position: idx + 1,
+        url: `${BASE_URL}/products/${p.productNumber}/${p.slug}`,
+        name: p.name,
+      })),
+    }));
 
-  // 3️⃣ ItemList — درخواست‌های خرید فعال
-  const activeRequestsJsonLd =
-    requests.length > 0
-      ? {
-        "@context": "https://schema.org",
-        "@type": "ItemList",
-        name: "Active Buying Requests",
-        description: "Latest purchase requirements from verified buyers",
-        numberOfItems: requests.length,
-        itemListElement: requests.map((r, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          url: `${BASE_URL}/requests/${r.requestNumber}/${r.slug}`,
-          name: r.title,
-        })),
-      }
-      : null;
-
-  // 4️⃣ AggregateRating — نظرات (اگه دیتا داری)
-  // فعلاً کامنت شده چون دیتای واقعی نظرات توی دیتابیس نیست
-  // const aggregateRatingJsonLd = { ... };
+  // ItemList برای بخش‌های Requests
+  const requestsItemLists = topSections
+    .concat(afterCompaniesSections, beforeCtaSections)
+    .filter((s) => s.type === "requests" && dataMap[s.id]?.items?.length > 0)
+    .map((s) => ({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: s.title,
+      numberOfItems: dataMap[s.id].items.length,
+      itemListElement: dataMap[s.id].items.map((r, idx) => ({
+        "@type": "ListItem",
+        position: idx + 1,
+        url: `${BASE_URL}/requests/${r.requestNumber}/${r.slug}`,
+        name: r.title,
+      })),
+    }));
 
   return (
     <>
       {/* ============================================================
-         Structured Data — JSON-LD
+         Structured Data
          ============================================================ */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(webPageJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
       />
-
-      {featuredProductsJsonLd && (
+      {productsItemLists.map((jsonLd, idx) => (
         <script
+          key={`products-jsonld-${idx}`}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(featuredProductsJsonLd),
-          }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-      )}
-
-      {activeRequestsJsonLd && (
+      ))}
+      {requestsItemLists.map((jsonLd, idx) => (
         <script
+          key={`requests-jsonld-${idx}`}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(activeRequestsJsonLd),
-          }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-      )}
+      ))}
 
       {/* ============================================================
-         محتوای صفحه — بدون تغییر نسبت به قبل
+         ۱. Hero Section
          ============================================================ */}
-
-      {/* Hero Section */}
       <HeroSection stats={stats} />
 
-      {/* Trust Bar */}
+      {/* ============================================================
+         ۲. Trust Bar
+         ============================================================ */}
       <section className="trust">
         <div className="container">
           <div className="trust-grid">
@@ -297,42 +386,74 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Products & Requests */}
-      <div className="container py-3">
-        <div className="row g-4">
-          <div className="col-12">
-            <FeaturedProducts
-              products={products || []}
-              requests={requests || []}
-            />
-
-            {/* Categories Section */}
-            <div className="container">
-              <CategoriesSection />
-            </div>
-            <div className="container">
-              <CompanyAdsSection />
-            </div>
-            <BuyingRequests requests={requests || []} />
-          </div>
-        </div>
-
-        {/* ====== بخش‌های جدید ====== */}
-        <div className="container">
-          <FeatureGroup />
-
-          <FeaturedProducts
-            products={products || []}
-            requests={requests || []}
+      {/* ============================================================
+         ۳. بخش‌های position=top
+         ============================================================ */}
+      {topSections.map((section, idx) => (
+        <section key={section.id} className="container py-4">
+          <HomepageSection
+            section={section}
+            items={dataMap[section.id]?.items || []}
           />
 
-          <MarketplaceSection />
+          {/* Categories + Feature Group بعد از اولین بخش */}
+          {idx === 0 && (
+            <>
+              <div style={{ marginTop: 32 }}>
+                <CategoriesSection />
+              </div>
+              <div style={{ marginTop: 32 }}>
+                <FeatureGroup />
+              </div>
+            </>
+          )}
+        </section>
+      ))}
 
-          <BuyingRequests requests={requests || []} />
+      {/* ============================================================
+         ۴. Trusted Partners (CompanyAdsSection)
+         ============================================================ */}
+      <section className="container">
+        <CompanyAdsSection />
+      </section>
 
-          <CtaSection />
-        </div>
-      </div>
+      {/* ============================================================
+         ۵. بخش‌های position=after-companies — زیر Trusted Partners
+         ============================================================ */}
+      {afterCompaniesSections.map((section) => (
+        <section key={section.id} className="container py-4">
+          <HomepageSection
+            section={section}
+            items={dataMap[section.id]?.items || []}
+          />
+        </section>
+      ))}
+
+      {/* ============================================================
+         ۶. Marketplace (Suppliers + Buyers)
+         ============================================================ */}
+      <section className="container py-4">
+        <MarketplaceSection />
+      </section>
+
+      {/* ============================================================
+         ۷. بخش‌های position=before-cta
+         ============================================================ */}
+      {beforeCtaSections.map((section) => (
+        <section key={section.id} className="container py-4">
+          <HomepageSection
+            section={section}
+            items={dataMap[section.id]?.items || []}
+          />
+        </section>
+      ))}
+
+      {/* ============================================================
+         ۸. CTA
+         ============================================================ */}
+      <section className="container">
+        <CtaSection />
+      </section>
     </>
   );
 }

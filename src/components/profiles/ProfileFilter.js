@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { categories } from "@/lib/categories";
+import { useCategories } from "@/hooks/useCategories"
 
 export default function ProfileFilter({
   currentRole,
@@ -11,6 +11,7 @@ export default function ProfileFilter({
   currentSearch,
 }) {
   const router = useRouter();
+  const { categories } = useCategories();
   const [searchInput, setSearchInput] = useState(currentSearch || "");
 
   // ✅ ساخت لیست سلسله‌مراتبی از دسته‌ها
