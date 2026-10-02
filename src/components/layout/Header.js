@@ -7,8 +7,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
+import HeaderSearch from "@/components/layout/HeaderSearch";   // ✅ خط جدید
 
 export default function Header() {
+  // ... بدون تغییر
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -18,12 +20,10 @@ export default function Header() {
   const triggerRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // برای رندر Portal فقط در سمت کلاینت
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // محاسبه موقعیت dropdown
   const updateDropdownPosition = () => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
@@ -34,7 +34,6 @@ export default function Header() {
     }
   };
 
-  // بستن با کلیک بیرون + Escape
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -64,7 +63,6 @@ export default function Header() {
     };
   }, [isUserMenuOpen]);
 
-  // بستن هنگام تغییر مسیر
   useEffect(() => {
     setIsUserMenuOpen(false);
   }, [pathname]);
@@ -106,7 +104,7 @@ export default function Header() {
     return pathname.startsWith(href);
   };
 
-  // ====== محتوای Dropdown ======
+  // ====== محتوای Dropdown (بدون تغییر) ======
   const dropdownContent = (
     <div
       ref={dropdownRef}
@@ -120,7 +118,6 @@ export default function Header() {
     >
       {session ? (
         <>
-          {/* ==== User Header ==== */}
           <div className="dropdown-user-header">
             <div
               className="dropdown-avatar"
@@ -130,11 +127,7 @@ export default function Header() {
                   : "linear-gradient(135deg, #13795b, #1d9a71)",
               }}
             >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={displayName} />
-              ) : (
-                initials
-              )}
+              {avatarUrl ? <img src={avatarUrl} alt={displayName} /> : initials}
             </div>
             <div className="dropdown-user-info">
               <div className="dropdown-user-name">{displayName}</div>
@@ -142,7 +135,6 @@ export default function Header() {
             </div>
           </div>
 
-          {/* ==== Nav Links (Mobile Only) ==== */}
           <div className="dropdown-nav-section dropdown-mobile-only">
             <div className="dropdown-section-label">Navigation</div>
             {navLinks.map((link) => (
@@ -150,8 +142,9 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsUserMenuOpen(false)}
-                className={`dropdown-item ${isActiveLink(link.href) ? "active" : ""
-                  }`}
+                className={`dropdown-item ${
+                  isActiveLink(link.href) ? "active" : ""
+                }`}
               >
                 <i className={`fas ${link.icon}`}></i>
                 <span>{link.label}</span>
@@ -159,7 +152,6 @@ export default function Header() {
             ))}
           </div>
 
-          {/* ==== User Menu ==== */}
           <div className="dropdown-menu-section">
             <div className="dropdown-section-label">Account</div>
             <DropdownItem
@@ -206,7 +198,6 @@ export default function Header() {
             />
           </div>
 
-          {/* ==== Sign Out ==== */}
           <div className="dropdown-footer">
             <button
               type="button"
@@ -220,7 +211,6 @@ export default function Header() {
         </>
       ) : (
         <>
-          {/* ==== Guest Header ==== */}
           <div className="dropdown-guest-header">
             <div className="dropdown-guest-icon">
               <i className="fas fa-user-circle"></i>
@@ -231,7 +221,6 @@ export default function Header() {
             </div>
           </div>
 
-          {/* ==== Nav Links (Mobile Only) ==== */}
           <div className="dropdown-nav-section dropdown-mobile-only">
             <div className="dropdown-section-label">Navigation</div>
             {navLinks.map((link) => (
@@ -239,8 +228,9 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsUserMenuOpen(false)}
-                className={`dropdown-item ${isActiveLink(link.href) ? "active" : ""
-                  }`}
+                className={`dropdown-item ${
+                  isActiveLink(link.href) ? "active" : ""
+                }`}
               >
                 <i className={`fas ${link.icon}`}></i>
                 <span>{link.label}</span>
@@ -248,7 +238,6 @@ export default function Header() {
             ))}
           </div>
 
-          {/* ==== Guest Actions ==== */}
           <div className="dropdown-menu-section">
             <Link
               href="/login"
@@ -278,7 +267,11 @@ export default function Header() {
         <div className="container">
           <nav className="header-nav">
             {/* ===== Logo ===== */}
-            <Link href="/" className="header-logo" aria-label="FoodTradeLink — Home">
+            <Link
+              href="/"
+              className="header-logo"
+              aria-label="FoodTradeLink — Home"
+            >
               <Image
                 src="/images/logo-foodtradelink.png"
                 alt="FoodTradeLink — Global B2B Food Marketplace"
@@ -288,14 +281,16 @@ export default function Header() {
                 className="logo-img"
               />
             </Link>
+
             {/* ===== Nav Links (Desktop only) ===== */}
             <ul className="header-nav-links">
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className={`header-nav-link ${isActiveLink(link.href) ? "active" : ""
-                      }`}
+                    className={`header-nav-link ${
+                      isActiveLink(link.href) ? "active" : ""
+                    }`}
                   >
                     {link.label}
                   </Link>
@@ -303,8 +298,11 @@ export default function Header() {
               ))}
             </ul>
 
-            {/* ===== User Menu Button ===== */}
+            {/* ===== Header Actions ===== */}
             <div className="header-actions">
+              {/* ✅ دکمه سرچ + نوار — اضافه شده */}
+              <HeaderSearch />
+
               {status !== "loading" && (
                 <button
                   ref={triggerRef}
@@ -312,8 +310,9 @@ export default function Header() {
                   onClick={handleToggleUserMenu}
                   aria-label="User menu"
                   aria-expanded={isUserMenuOpen}
-                  className={`user-menu-trigger ${isUserMenuOpen ? "active" : ""
-                    }`}
+                  className={`user-menu-trigger ${
+                    isUserMenuOpen ? "active" : ""
+                  }`}
                 >
                   <div
                     className="trigger-avatar"
@@ -337,7 +336,9 @@ export default function Header() {
                   </span>
 
                   <i
-                    className={`fas fa-chevron-${isUserMenuOpen ? "up" : "down"} trigger-chevron`}
+                    className={`fas fa-chevron-${
+                      isUserMenuOpen ? "up" : "down"
+                    } trigger-chevron`}
                   ></i>
                 </button>
               )}
@@ -347,9 +348,7 @@ export default function Header() {
       </header>
 
       {/* Dropdown Portal */}
-      {mounted &&
-        isUserMenuOpen &&
-        createPortal(dropdownContent, document.body)}
+      {mounted && isUserMenuOpen && createPortal(dropdownContent, document.body)}
     </>
   );
 }
