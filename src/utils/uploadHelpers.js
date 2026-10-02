@@ -5,18 +5,24 @@
  * @param {File} file - فایل تصویر
  * @param {string} type - نوع فایل (profiles, products, etc.)
  * @param {function} onProgress - تابع برای دریافت درصد پیشرفت (۰ تا ۱۰۰)
+ * @param {string|null} purpose - هدف آپلود در نوع profiles:
+ *                                  "logo" | "cover" | "gallery" | null
  * @returns {Promise} - نتیجه آپلود
  */
-export function uploadFileWithProgress(file, type, onProgress) {
+export function uploadFileWithProgress(file, type, onProgress, purpose = null) {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("type", type);
 
+    // ✅ فقط برای type="profiles" معنی داره
+    if (purpose) {
+      formData.append("purpose", purpose);
+    }
+
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/upload");
 
-    // رویداد پیشرفت آپلود
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
         const percent = Math.round((event.loaded / event.total) * 100);
@@ -50,16 +56,10 @@ export function uploadFileWithProgress(file, type, onProgress) {
   });
 }
 
-/**
- * بررسی حجم فایل (به مگابایت)
- */
 export function getFileSizeMB(file) {
   return file.size / (1024 * 1024);
 }
 
-/**
- * فرمت کردن حجم فایل برای نمایش
- */
 export function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";

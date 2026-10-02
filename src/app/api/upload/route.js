@@ -9,26 +9,32 @@ import {
   getUserActivePlan,
   canAddProductImage,
   canAddRequestImage,
-  canAddProfileImage,
 } from "@/lib/planService";
 
 export async function POST(request) {
   try {
     const session = await auth();
     if (!session) {
-      return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
+      return new Response(
+        JSON.stringify({ message: "Unauthorized" }),
+        { status: 401 }
+      );
     }
 
     const formData = await request.formData();
     const file = formData.get("file");
     const type = formData.get("type") || "profiles";
+    const purpose = formData.get("purpose"); // "logo" | "cover" | "gallery" | null
     const targetId = formData.get("targetId");
 
     if (!file) {
-      return new Response(JSON.stringify({ message: "No file uploaded" }), { status: 400 });
+      return new Response(
+        JSON.stringify({ message: "No file uploaded" }),
+        { status: 400 }
+      );
     }
 
-    // ✅ انواع مجاز
+    // ===== انواع مجاز =====
     const allowedTypes = ["profiles", "products", "requests", "tickets"];
     if (!allowedTypes.includes(type)) {
       return new Response(
@@ -37,30 +43,39 @@ export async function POST(request) {
       );
     }
 
-    // ✅ اعتبارسنجی نوع فایل
+    // ===== اعتبارسنجی نوع فایل =====
     if (!file.type.startsWith("image/")) {
-      return new Response(JSON.stringify({ message: "File must be an image" }), { status: 400 });
+      return new Response(
+        JSON.stringify({ message: "File must be an image" }),
+        { status: 400 }
+      );
     }
 
-    // ✅ محدودیت حجم بر اساس نوع (تیکت‌ها ۵MB، بقیه ۳MB)
+    // ===== محدودیت حجم بر اساس نوع =====
     const maxSize = type === "tickets" ? 5 * 1024 * 1024 : 3 * 1024 * 1024;
     if (file.size > maxSize) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
       const limitMB = (maxSize / (1024 * 1024)).toFixed(0);
       return new Response(
-        JSON.stringify({ message: `File size (${sizeMB}MB) exceeds the ${limitMB}MB limit` }),
+        JSON.stringify({
+          message: `File size (${sizeMB}MB) exceeds the ${limitMB}MB limit`,
+        }),
         { status: 400 }
       );
     }
 
-    // ====== بررسی محدودیت‌های پلن ======
+    // ============================================================
+    // ✅ بررسی محدودیت‌های پلن (فقط برای products و requests)
+    // ============================================================
     const { plan } = await getUserActivePlan(session.user.id);
 
     if (type === "products" && targetId) {
       const canAdd = await canAddProductImage(targetId, plan);
       if (!canAdd) {
         return new Response(
-          JSON.stringify({ message: `You have reached the image limit per product (${plan.maxImagesPerProduct}).` }),
+          JSON.stringify({
+            message: `You have reached the image limit per product (${plan.maxImagesPerProduct}).`,
+          }),
           { status: 403 }
         );
       }
@@ -68,22 +83,20 @@ export async function POST(request) {
       const canAdd = await canAddRequestImage(targetId, plan);
       if (!canAdd) {
         return new Response(
-          JSON.stringify({ message: `You have reached the image limit per request (${plan.maxImagesPerRequest}).` }),
-          { status: 403 }
-        );
-      }
-    } else if (type === "profiles") {
-      const canAdd = await canAddProfileImage(session.user.id, plan);
-      if (!canAdd) {
-        return new Response(
-          JSON.stringify({ message: `You have reached the profile image limit (${plan.maxProfileImages}).` }),
+          JSON.stringify({
+            message: `You have reached the image limit per request (${plan.maxImagesPerRequest}).`,
+          }),
           { status: 403 }
         );
       }
     }
-    // ✅ تیکت‌ها محدودیت پلن ندارند (آزاد برای همه)
+    // ⚠️ برای type === "profiles" هیچ چکی اینجا نمی‌کنیم.
+    //    چرا؟ چون کاربر ممکنه عکسی رو حذف کرده باشه ولی هنوز Save نکرده باشه.
+    //    چک نهایی در PUT /api/user/update-profile انجام می‌شه.
 
-    // ====== ادامه پردازش تصویر ======
+    // ============================================================
+    // پردازش تصویر
+    // ============================================================
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -123,7 +136,9 @@ export async function POST(request) {
         path: relativePath,
         originalSize: buffer.length,
         compressedSize: processedBuffer.length,
-        saved: ((1 - processedBuffer.length / buffer.length) * 100).toFixed(1) + "%",
+        saved:
+          ((1 - processedBuffer.length / buffer.length) * 100).toFixed(1) +
+          "%",
       }),
       { status: 200 }
     );

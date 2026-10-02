@@ -25,6 +25,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
     { label: "Products", icon: "fa-box", href: "/admin/products" },
     { label: "Requests", icon: "fa-box", href: "/admin/requests" },
     { label: "Categories", icon: "fa-layer-group", href: "/admin/categories" },
+    { label: "Homepage", icon: "fa-house-chimney", href: "/admin/homepage" },
     {
       label: "Inquiries",
       icon: "fa-inbox",

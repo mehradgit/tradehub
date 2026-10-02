@@ -3,7 +3,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { categories } from "@/lib/categories";
+import { useCategories } from "@/hooks/useCategories"
+
 
 export default function FilterBar({
   currentCategory,
@@ -13,6 +14,7 @@ export default function FilterBar({
 }) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(currentSearch || "");
+  const { categories } = useCategories();
 
   const categoryOptions = useMemo(() => {
     const options = [{ value: "", label: "All Categories", isParent: false }];

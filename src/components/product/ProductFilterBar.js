@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { categories } from "@/lib/categories";
+import { useCategories } from "@/hooks/useCategories"
 
 export default function ProductFilterBar({
   currentCategory,
@@ -13,7 +13,7 @@ export default function ProductFilterBar({
 }) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(currentSearch || "");
-
+  const { categories } = useCategories();
   const categoryOptions = useMemo(() => {
     const options = [{ value: "", label: "All Categories", isParent: false }];
     const parents = categories.filter((c) => c.parent === 0);

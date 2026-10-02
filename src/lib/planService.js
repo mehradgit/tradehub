@@ -33,7 +33,6 @@ export async function getUserActivePlan(userId) {
 
 // بررسی محدودیت محصولات
 export async function canAddProduct(userId, plan) {
-  console.log("Plan object:", plan); // برای دیباگ
   if (plan?.maxProducts === -1) return true;
   const limit = plan?.maxProducts ?? 5; // fallback اگر undefined بود
 
@@ -41,7 +40,6 @@ export async function canAddProduct(userId, plan) {
     where: { userId, isVisible: true },
   });
 
-  console.log("Product count:", productCount, "Limit:", limit);
   return productCount < limit;
 }
 // ====== بررسی محدودیت عکس‌های یک محصول ======
