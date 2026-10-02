@@ -8280,7 +8280,7 @@ a:hover {
 }
 
 .site-header .logo-img {
-  height: 48px;
+  /* height: 48px; */
   width: auto;
   display: block;
 }
