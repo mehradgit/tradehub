@@ -3555,9 +3555,10 @@ a:hover {
    ============================================================ */
 
 .hero-new {
+  position: relative;
   overflow: hidden;
-  width: 100%;
-  max-width: 100%;
+  padding: 85px 0 100px; /* ← مهم: padding-bottom 100px */
+  background: linear-gradient(125deg, #eff9f4, #f8fbf9 55%, #e9f5ef);
 }
 
 .hero-new .container {
@@ -3738,10 +3739,15 @@ a:hover {
   }
 
   .hero-new::before {
-    width: 320px;
-    height: 320px;
-    right: -120px;
-    top: -150px;
+    content: "";
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    right: -180px;
+    top: -250px;
+    border-radius: 50%;
+    background: rgba(31, 154, 112, 0.08);
+    pointer-events: none;
   }
 
   .hero-new h1 {
@@ -3831,12 +3837,14 @@ a:hover {
   }
 }
 
-/* ====== TRUST BAR ====== */
+/* ============================================================
+   TRUST BAR — مطابق فایل نمونه
+============================================================ */
 .trust {
-  margin-top: -48px;
+  margin-top: -48px; /* ← Trust روی Hero سوار می‌شود */
   position: relative;
   z-index: 2;
-  padding: 0 24px;
+  /* ❌ padding: 0 24px حذف شد چون .container خودش padding داره */
 }
 
 .trust-grid {
@@ -3845,10 +3853,8 @@ a:hover {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 15px;
   border-radius: 20px;
-  background: white;
+  background: #ffffff;
   box-shadow: 0 12px 35px rgba(19, 58, 46, 0.08);
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }
@@ -3868,111 +3874,70 @@ a:hover {
   display: block;
   color: #13795b;
   font-size: 25px;
-  line-height: 1.2;
-  font-family: "Manrope", sans-serif;
   font-weight: 800;
+  font-family: "Manrope", sans-serif;
+  line-height: 1.2;
   word-wrap: break-word;
 }
 
 .trust-item span {
+  display: block;
+  margin-top: 4px;
   color: #71807b;
   font-size: 13px;
   line-height: 1.4;
-  display: block;
-  margin-top: 4px;
   word-wrap: break-word;
 }
 
-/* ====== TABLET (۴ ستون باقی می‌مونه ولی پدینگ کمتر) ====== */
+/* ===== Responsive ===== */
 @media (max-width: 900px) {
   .trust {
     margin-top: -40px;
-    padding: 0 18px;
   }
-
   .trust-grid {
     padding: 20px;
     gap: 12px;
   }
-
   .trust-item {
     padding: 10px;
   }
-
   .trust-item strong {
     font-size: 22px;
   }
-
   .trust-item span {
     font-size: 12px;
   }
 }
 
-/* ====== MOBILE (۲ ستونه) ====== */
 @media (max-width: 650px) {
   .trust {
     margin-top: -32px;
-    padding: 0 16px;
   }
-
   .trust-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 16px;
     gap: 8px;
     border-radius: 16px;
   }
-
   .trust-item {
     padding: 14px 10px;
     border-right: 1px solid #e2e9e5;
     border-bottom: 1px solid #e2e9e5;
   }
-
-  /* آیتم‌های ستون راست (۲ و ۴): بدون border-right */
   .trust-item:nth-child(even) {
     border-right: 0;
   }
-
-  /* آیتم‌های ردیف آخر (۳ و ۴): بدون border-bottom */
   .trust-item:nth-child(3),
   .trust-item:nth-child(4) {
     border-bottom: 0;
   }
-
   .trust-item strong {
     font-size: 20px;
   }
-
   .trust-item span {
     font-size: 11.5px;
   }
 }
-
-/* ====== SMALL MOBILE ====== */
-@media (max-width: 400px) {
-  .trust {
-    margin-top: -24px;
-    padding: 0 12px;
-  }
-
-  .trust-grid {
-    padding: 12px;
-    gap: 6px;
-  }
-
-  .trust-item {
-    padding: 10px 6px;
-  }
-
-  .trust-item strong {
-    font-size: 18px;
-  }
-
-  .trust-item span {
-    font-size: 10.5px;
-  }
-}
-
 /* ====== CATEGORIES ====== */
 .categories-section {
   padding-top: 85px;

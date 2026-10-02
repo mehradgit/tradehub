@@ -3,7 +3,7 @@ $outputFile  = Join-Path $projectPath "project-source.txt"
 
 $excludeDirs = @(
     "node_modules", ".next", ".git", "dist", "build",
-    ".vercel", ".idea", ".vscode", ".agents", ".claude"
+    ".vercel", ".idea", ".vscode", ".agents", ".claude","prisma"
 )
 
 $excludeExts = @(

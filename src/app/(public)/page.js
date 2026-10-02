@@ -7,6 +7,7 @@ import BuyingRequests from "@/components/home/BuyingRequests";
 import FeatureGroup from "@/components/home/FeatureGroup";
 import MarketplaceSection from "@/components/home/MarketplaceSection";
 import CtaSection from "@/components/home/CtaSection";
+import CompanyAdsSection from "@/components/home/CompanyAdsSection";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -194,41 +195,41 @@ export default async function HomePage() {
   const featuredProductsJsonLd =
     products.length > 0
       ? {
-          "@context": "https://schema.org",
-          "@type": "ItemList",
-          name: "Featured Products",
-          description: "Featured wholesale food products from verified suppliers",
-          numberOfItems: products.length,
-          itemListElement: products.map((p, index) => ({
-            "@type": "ListItem",
-            position: index + 1,
-            url: `${BASE_URL}/products/${p.productNumber}/${p.slug}`,
-            name: p.name,
-            image: Array.isArray(p.images) && p.images[0]
-              ? p.images[0].startsWith("http")
-                ? p.images[0]
-                : `${BASE_URL}${p.images[0]}`
-              : undefined,
-          })),
-        }
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Featured Products",
+        description: "Featured wholesale food products from verified suppliers",
+        numberOfItems: products.length,
+        itemListElement: products.map((p, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${BASE_URL}/products/${p.productNumber}/${p.slug}`,
+          name: p.name,
+          image: Array.isArray(p.images) && p.images[0]
+            ? p.images[0].startsWith("http")
+              ? p.images[0]
+              : `${BASE_URL}${p.images[0]}`
+            : undefined,
+        })),
+      }
       : null;
 
   // 3️⃣ ItemList — درخواست‌های خرید فعال
   const activeRequestsJsonLd =
     requests.length > 0
       ? {
-          "@context": "https://schema.org",
-          "@type": "ItemList",
-          name: "Active Buying Requests",
-          description: "Latest purchase requirements from verified buyers",
-          numberOfItems: requests.length,
-          itemListElement: requests.map((r, index) => ({
-            "@type": "ListItem",
-            position: index + 1,
-            url: `${BASE_URL}/requests/${r.requestNumber}/${r.slug}`,
-            name: r.title,
-          })),
-        }
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Active Buying Requests",
+        description: "Latest purchase requirements from verified buyers",
+        numberOfItems: requests.length,
+        itemListElement: requests.map((r, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${BASE_URL}/requests/${r.requestNumber}/${r.slug}`,
+          name: r.title,
+        })),
+      }
       : null;
 
   // 4️⃣ AggregateRating — نظرات (اگه دیتا داری)
@@ -309,7 +310,9 @@ export default async function HomePage() {
             <div className="container">
               <CategoriesSection />
             </div>
-
+            <div className="container">
+              <CompanyAdsSection />
+            </div>
             <BuyingRequests requests={requests || []} />
           </div>
         </div>

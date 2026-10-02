@@ -493,7 +493,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               }}
             >
               <i className="fas fa-shield-alt"></i>
-              Secure payment powered by YekPay
+              Secure payment powered by FoodTradeLink
             </div>
           </div>
         </div>
