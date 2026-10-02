@@ -46,6 +46,10 @@ export default function EditProfilePage() {
   const [existingLogo, setExistingLogo] = useState(null);
   const [existingCover, setExistingCover] = useState(null);
 
+  // ===== Gallery limit from user's plan =====
+  // null = هنوز لود نشده | -1 = نامحدود | n = عدد
+  const [galleryLimit, setGalleryLimit] = useState(null);
+
   const [uploadProgress, setUploadProgress] = useState({
     logo: 0,
     coverImage: 0,
@@ -109,6 +113,24 @@ export default function EditProfilePage() {
     fetchUserProfile();
   }, [session, status, router]);
 
+  // ===== Fetch gallery limit from user's plan =====
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    fetch("/api/user/subscription")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const limit = data?.plan?.maxProfileImages;
+        if (typeof limit === "number") {
+          setGalleryLimit(limit);
+        }
+      })
+      .catch(() => {
+        // اگه خطا داد، محدودیت رو نامحدود فرض کن (سرور موقع Save چک می‌کنه)
+        setGalleryLimit(-1);
+      });
+  }, [status]);
+
   // ===== Handlers =====
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -120,7 +142,7 @@ export default function EditProfilePage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Single file (logo / cover)
+    // ==================== SINGLE FILE (logo / cover) ====================
     if (fieldName !== "galleryImages") {
       const file = files[0];
 
@@ -137,6 +159,9 @@ export default function EditProfilePage() {
         return;
       }
 
+      // ✅ تعیین purpose بر اساس fieldName
+      const purpose = fieldName === "logo" ? "logo" : "cover";
+
       try {
         setIsUploading((prev) => ({ ...prev, [fieldName]: true }));
         setUploadProgress((prev) => ({ ...prev, [fieldName]: 0 }));
@@ -146,6 +171,7 @@ export default function EditProfilePage() {
           "profiles",
           (percent) =>
             setUploadProgress((prev) => ({ ...prev, [fieldName]: percent })),
+          purpose                                  // ✅ جدید
         );
 
         setFormData((prev) => ({ ...prev, [fieldName]: result.path }));
@@ -161,7 +187,7 @@ export default function EditProfilePage() {
       return;
     }
 
-    // Gallery (multiple)
+    // ==================== GALLERY (multiple) ====================
     setIsUploading((prev) => ({ ...prev, gallery: true }));
     setUploadProgress((prev) => ({ ...prev, gallery: 0 }));
 
@@ -182,6 +208,7 @@ export default function EditProfilePage() {
           "profiles",
           (percent) =>
             setUploadProgress((prev) => ({ ...prev, gallery: percent })),
+          "gallery"                                 // ✅ جدید
         );
         uploadedPaths.push(result.path);
       }
@@ -290,6 +317,15 @@ export default function EditProfilePage() {
   const currentCover = formData.coverImage || existingCover;
   const currentLogo = formData.logo || existingLogo;
 
+  // ===== Gallery limit calculations =====
+  const currentGalleryCount = formData.galleryImages.length;
+  const isUnlimited = galleryLimit === -1;
+  const isLimitKnown = galleryLimit !== null && galleryLimit !== -1;
+  const remainingSlots = isLimitKnown
+    ? Math.max(0, galleryLimit - currentGalleryCount)
+    : Infinity;
+  const isGalleryFull = isLimitKnown && currentGalleryCount >= galleryLimit;
+
   return (
     <>
       <div className="ep-page">
@@ -330,9 +366,8 @@ export default function EditProfilePage() {
             <div className="ep-hero-preview">
               {/* Cover */}
               <div
-                className={`ep-cover ${
-                  currentCover ? "has-image" : "placeholder"
-                }`}
+                className={`ep-cover ${currentCover ? "has-image" : "placeholder"
+                  }`}
                 onClick={() => coverInputRef.current.click()}
               >
                 {currentCover ? (
@@ -675,11 +710,58 @@ export default function EditProfilePage() {
               <h3 className="ep-card-title">
                 <i className="fas fa-images"></i>
                 Gallery Images
+                {isUnlimited && (
+                  <span className="ep-count-badge">Unlimited</span>
+                )}
+                {isLimitKnown && (
+                  <span
+                    className={`ep-count-badge ${isGalleryFull ? "is-full" : ""}`}
+                  >
+                    {currentGalleryCount}/{galleryLimit}
+                  </span>
+                )}
               </h3>
               <p className="ep-card-sub">
                 Showcase your facilities, products, and team
               </p>
             </div>
+
+            {/* ===== Limit Info ===== */}
+            {isLimitKnown && (
+              <div
+                className={`ep-limit-info ${isGalleryFull ? "warning" : ""}`}
+              >
+                <i
+                  className={`fas ${isGalleryFull
+                      ? "fa-exclamation-triangle"
+                      : "fa-info-circle"
+                    }`}
+                ></i>
+                <span>
+                  {isGalleryFull ? (
+                    <>
+                      You&apos;ve reached the maximum of{" "}
+                      <strong>{galleryLimit}</strong> gallery image
+                      {galleryLimit !== 1 ? "s" : ""} on your plan. Remove an
+                      image or{" "}
+                      <Link
+                        href="/plans"
+                        style={{ color: "inherit", textDecoration: "underline" }}
+                      >
+                        upgrade your plan
+                      </Link>{" "}
+                      to add more.
+                    </>
+                  ) : (
+                    <>
+                      You can add <strong>{remainingSlots}</strong> more image
+                      {remainingSlots !== 1 ? "s" : ""} (
+                      {currentGalleryCount} of {galleryLimit} used).
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
 
             <div className="ep-gallery-grid">
               {formData.galleryImages.map((img, index) => (
@@ -699,12 +781,22 @@ export default function EditProfilePage() {
               {/* Add button */}
               <button
                 type="button"
-                className="ep-gallery-add"
+                className={`ep-gallery-add ${isGalleryFull ? "is-full" : ""}`}
                 onClick={() => galleryInputRef.current.click()}
-                disabled={isUploading.gallery}
+                disabled={isUploading.gallery || isGalleryFull}
+                title={
+                  isGalleryFull
+                    ? `Gallery limit reached (${galleryLimit} images)`
+                    : "Add more images"
+                }
               >
                 {isUploading.gallery ? (
                   <div className="ep-spinner-small" />
+                ) : isGalleryFull ? (
+                  <>
+                    <i className="fas fa-lock"></i>
+                    <span>Limit Reached</span>
+                  </>
                 ) : (
                   <>
                     <i className="fas fa-plus"></i>
@@ -933,6 +1025,64 @@ export default function EditProfilePage() {
           color: #94a3b8;
           margin: 0;
           padding-left: 36px;
+        }
+
+        .ep-count-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 22px;
+          height: 22px;
+          padding: 0 8px;
+          margin-left: auto;
+          background: #eaf7f1;
+          color: #0b5b43;
+          border-radius: 50px;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .ep-count-badge.is-full {
+          background: #fef2f2;
+          color: #dc2626;
+        }
+
+        /* ============================================================
+           Limit info message
+           ============================================================ */
+        .ep-limit-info {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 12px 14px;
+          background: #eaf7f1;
+          border: 1px solid #a7f3d0;
+          border-radius: 10px;
+          font-size: 12.5px;
+          line-height: 1.55;
+          color: #0b5b43;
+          margin-top: -4px;
+        }
+
+        .ep-limit-info i {
+          flex-shrink: 0;
+          margin-top: 2px;
+          font-size: 13px;
+        }
+
+        .ep-limit-info strong {
+          font-weight: 800;
+          color: #0b1b18;
+        }
+
+        .ep-limit-info.warning {
+          background: #fef2f2;
+          border-color: #fecaca;
+          color: #991b1b;
+        }
+
+        .ep-limit-info.warning strong {
+          color: #7f1d1d;
         }
 
         /* ============================================================
@@ -1257,6 +1407,21 @@ export default function EditProfilePage() {
           font-size: 22px;
         }
 
+        /* ✅ Add button - full state */
+        .ep-gallery-add.is-full {
+          border-color: #fecaca;
+          background: #fef2f2;
+          color: #dc2626;
+          cursor: not-allowed;
+          opacity: 1;
+        }
+
+        .ep-gallery-add.is-full:hover {
+          border-color: #fecaca;
+          background: #fef2f2;
+          color: #dc2626;
+        }
+
         /* ============================================================
            Buttons
            ============================================================ */
@@ -1446,6 +1611,11 @@ export default function EditProfilePage() {
           .ep-card-sub {
             font-size: 11.5px;
             padding-left: 0;
+          }
+
+          .ep-limit-info {
+            font-size: 12px;
+            padding: 10px 12px;
           }
         }
 

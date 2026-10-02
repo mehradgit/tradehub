@@ -1,7 +1,7 @@
-// src/app/products/new/page.js
+// src/app/(public)/products/new/page.js
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -18,6 +18,10 @@ export default function NewProductPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // ====== Image limit from plan ======
+  // null = هنوز لود نشده | -1 = نامحدود | n = عدد
+  const [imageLimit, setImageLimit] = useState(null);
 
   // ====== فرم دیتا ======
   const [formData, setFormData] = useState({
@@ -47,13 +51,15 @@ export default function NewProductPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleCategoryChange = (value) => {
     setFormData((prev) => ({ ...prev, category: value, subCategory: "" }));
   };
+
   const handleSubCategoryChange = (value) => {
     setFormData((prev) => ({ ...prev, subCategory: value }));
   };
-  // ====== تغییرات Full Description (Rich Text) ======
+
   const handleFullDescChange = useCallback((value) => {
     setFormData((prev) => ({ ...prev, fullDesc: value }));
   }, []);
@@ -85,6 +91,7 @@ export default function NewProductPage() {
   const handleImageUpload = (e) => {
     const files = e.target.files;
     if (!files) return;
+
     const newImages = [...formData.images];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -113,7 +120,6 @@ export default function NewProductPage() {
 
   // ====== مرحله بعد ======
   const handleNextStep = () => {
-    // اعتبارسنجی مرحله اول
     if (
       !formData.name ||
       !formData.category ||
@@ -147,7 +153,6 @@ export default function NewProductPage() {
     setError("");
 
     try {
-      // تبدیل specs به object
       const specsObj = formData.specs.reduce((acc, { attribute, value }) => {
         if (attribute && value) {
           acc[attribute] = value;
@@ -168,8 +173,8 @@ export default function NewProductPage() {
         stock: formData.stock ? parseInt(formData.stock) : undefined,
         leadTime: formData.leadTime ? parseInt(formData.leadTime) : undefined,
         images: formData.images,
-        badge: undefined, // کاربر می‌تواند بعداً اضافه کند
-        country: undefined, // از کاربر گرفته نمی‌شود
+        badge: undefined,
+        country: undefined,
         countryCode: formData.countryCode,
         origin: formData.origin || undefined,
         certifications: formData.certifications || undefined,
@@ -178,7 +183,7 @@ export default function NewProductPage() {
         isVisible: formData.isVisible,
         specs: specsObj,
       };
-      // console.log(origin, countryCode, "country,countryCode");
+
       const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -201,6 +206,23 @@ export default function NewProductPage() {
     }
   };
 
+  // ====== Fetch image limit from plan ======
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    fetch("/api/user/subscription")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const limit = data?.plan?.maxImagesPerProduct;
+        if (typeof limit === "number") {
+          setImageLimit(limit);
+        }
+      })
+      .catch(() => {
+        setImageLimit(-1);
+      });
+  }, [status]);
+
   // ====== اگر کاربر لاگین نیست ======
   if (status === "loading") {
     return (
@@ -217,6 +239,15 @@ export default function NewProductPage() {
     router.push("/login");
     return null;
   }
+
+  // ===== Image limit calculations =====
+  const currentImageCount = formData.images.length;
+  const isUnlimited = imageLimit === -1;
+  const isLimitKnown = imageLimit !== null && imageLimit !== -1;
+  const remainingSlots = isLimitKnown
+    ? Math.max(0, imageLimit - currentImageCount)
+    : Infinity;
+  const isImageFull = isLimitKnown && currentImageCount >= imageLimit;
 
   return (
     <div className="container py-4">
@@ -279,6 +310,7 @@ export default function NewProductPage() {
                   categoryRequired
                 />
               </div>
+
               <div className="form-group">
                 <label>
                   Short Description <span className="required">*</span>
@@ -412,24 +444,101 @@ export default function NewProductPage() {
                 </div>
               </div>
 
+              {/* ============================================================
+                  PRODUCT IMAGES - با محدودیت هوشمند
+                  ============================================================ */}
               <h3 className="fw-bold mt-4 mb-3">
                 <i
                   className="fas fa-images me-2"
                   style={{ color: "var(--primary)" }}
                 ></i>
                 Product Images
+                {isUnlimited && (
+                  <span className="np-count-badge">Unlimited</span>
+                )}
+                {isLimitKnown && (
+                  <span
+                    className={`np-count-badge ${isImageFull ? "is-full" : ""}`}
+                  >
+                    {currentImageCount}/{imageLimit}
+                  </span>
+                )}
               </h3>
+
+              {/* ===== Limit Info ===== */}
+              {isLimitKnown && (
+                <div
+                  className={`np-limit-info ${isImageFull ? "warning" : ""}`}
+                >
+                  <i
+                    className={`fas ${isImageFull
+                        ? "fa-exclamation-triangle"
+                        : "fa-info-circle"
+                      }`}
+                  ></i>
+                  <span>
+                    {isImageFull ? (
+                      <>
+                        You&apos;ve reached the maximum of{" "}
+                        <strong>{imageLimit}</strong> image
+                        {imageLimit !== 1 ? "s" : ""} per product on your plan.
+                        Remove an image or{" "}
+                        <Link
+                          href="/plans"
+                          style={{
+                            color: "inherit",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          upgrade your plan
+                        </Link>{" "}
+                        to add more.
+                      </>
+                    ) : (
+                      <>
+                        You can add <strong>{remainingSlots}</strong> more
+                        image{remainingSlots !== 1 ? "s" : ""} (
+                        {currentImageCount} of {imageLimit} used).
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Product Images</label>
                 <div
                   className="image-upload-area"
-                  onClick={() => fileInputRef.current.click()}
+                  onClick={() => {
+                    if (!isImageFull) {
+                      fileInputRef.current.click();
+                    }
+                  }}
+                  style={{
+                    cursor: isImageFull ? "not-allowed" : "pointer",
+                    opacity: isImageFull ? 0.6 : 1,
+                  }}
                 >
                   <i className="fas fa-cloud-upload-alt"></i>
-                  <p>Drag &amp; drop images here or click to browse</p>
-                  <button type="button" className="btn btn-secondary">
-                    <i className="fas fa-folder-open"></i> Choose Files
+                  <p>
+                    {isImageFull
+                      ? "Image limit reached"
+                      : "Drag & drop images here or click to browse"}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={isImageFull}
+                  >
+                    {isImageFull ? (
+                      <>
+                        <i className="fas fa-lock me-1"></i> Limit Reached
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-folder-open"></i> Choose Files
+                      </>
+                    )}
                   </button>
                   <input
                     type="file"
@@ -438,6 +547,7 @@ export default function NewProductPage() {
                     multiple
                     accept="image/*"
                     onChange={handleImageUpload}
+                    disabled={isImageFull}
                   />
                   <div className="help-text">
                     Accepted formats: JPG, PNG, WEBP. Max 5MB each.
@@ -683,6 +793,68 @@ export default function NewProductPage() {
           )}
         </form>
       </div>
+
+      {/* ============================================================
+         Styles
+         ============================================================ */}
+      <style jsx>{`
+        /* ===== Count badge ===== */
+        .np-count-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 22px;
+          height: 22px;
+          padding: 0 8px;
+          margin-left: 10px;
+          background: #eaf7f1;
+          color: #0b5b43;
+          border-radius: 50px;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .np-count-badge.is-full {
+          background: #fef2f2;
+          color: #dc2626;
+        }
+
+        /* ===== Limit info message ===== */
+        .np-limit-info {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 12px 14px;
+          background: #eaf7f1;
+          border: 1px solid #a7f3d0;
+          border-radius: 10px;
+          font-size: 12.5px;
+          line-height: 1.55;
+          color: #0b5b43;
+          margin-bottom: 16px;
+        }
+
+        .np-limit-info i {
+          flex-shrink: 0;
+          margin-top: 2px;
+          font-size: 13px;
+        }
+
+        .np-limit-info strong {
+          font-weight: 800;
+          color: #0b1b18;
+        }
+
+        .np-limit-info.warning {
+          background: #fef2f2;
+          border-color: #fecaca;
+          color: #991b1b;
+        }
+
+        .np-limit-info.warning strong {
+          color: #7f1d1d;
+        }
+      `}</style>
     </div>
   );
 }

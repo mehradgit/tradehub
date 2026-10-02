@@ -1,7 +1,7 @@
 // src/components/dashboard/EditProductForm.js
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -18,6 +18,10 @@ export default function EditProductForm({ product }) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
+
+  // ===== Image limit from plan =====
+  // null = هنوز لود نشده | -1 = نامحدود | n = عدد
+  const [imageLimit, setImageLimit] = useState(null);
 
   // ===== Form State =====
   const [formData, setFormData] = useState({
@@ -46,6 +50,21 @@ export default function EditProductForm({ product }) {
   );
   const [newImages, setNewImages] = useState([]);
 
+  // ===== Fetch image limit =====
+  useEffect(() => {
+    fetch("/api/user/subscription")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const limit = data?.plan?.maxImagesPerProduct;
+        if (typeof limit === "number") {
+          setImageLimit(limit);
+        }
+      })
+      .catch(() => {
+        setImageLimit(-1);
+      });
+  }, []);
+
   // ===== Handlers =====
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -63,9 +82,30 @@ export default function EditProductForm({ product }) {
     }));
   };
 
+  // ===== Image limit calculations =====
+  const totalImages = existingImages.length + newImages.length;
+  const isUnlimited = imageLimit === -1;
+  const isLimitKnown = imageLimit !== null && imageLimit !== -1;
+  const remainingSlots = isLimitKnown
+    ? Math.max(0, imageLimit - totalImages)
+    : Infinity;
+  const isImageFull = isLimitKnown && totalImages >= imageLimit;
+
+  // ===== Image Upload =====
   const handleImageUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    // ✅ چک کلاینت: تعداد انتخابی نباید از ظرفیت باقی‌مانده بیشتر باشه
+    if (isLimitKnown && files.length > remainingSlots) {
+      toast.warning(
+        `You can only add ${remainingSlots} more image${
+          remainingSlots !== 1 ? "s" : ""
+        }. You selected ${files.length}.`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
 
     setUploading(true);
     setUploadProgress(0);
@@ -82,6 +122,9 @@ export default function EditProductForm({ product }) {
           toast.warning(`Skipping ${file.name}: exceeds 5MB.`);
           continue;
         }
+
+        // ⚠️ نکته: targetId رو پاس نمی‌دیم تا سرور چک نکنه.
+        // چک اصلی در PUT /api/products/[id] انجام می‌شه (هنگام Save).
         const result = await uploadFileWithProgress(
           file,
           "products",
@@ -151,7 +194,6 @@ export default function EditProductForm({ product }) {
     }
   };
 
-  const totalImages = existingImages.length + newImages.length;
   const isEmpty = existingImages.length === 0 && newImages.length === 0;
 
   return (
@@ -412,19 +454,68 @@ export default function EditProductForm({ product }) {
           </section>
 
           {/* ============================================================
-             SECTION 4: Images
+             SECTION 4: Images - با محدودیت هوشمند
              ============================================================ */}
           <section className="ep-card">
             <div className="ep-card-head">
               <h3 className="ep-card-title">
                 <i className="fas fa-images"></i>
                 Product Images
-                <span className="ep-count-badge">{totalImages}</span>
+                {isUnlimited && (
+                  <span className="ep-count-badge">Unlimited</span>
+                )}
+                {isLimitKnown && (
+                  <span
+                    className={`ep-count-badge ${isImageFull ? "is-full" : ""}`}
+                  >
+                    {totalImages}/{imageLimit}
+                  </span>
+                )}
               </h3>
               <p className="ep-card-sub">
                 First image will be used as the main thumbnail
               </p>
             </div>
+
+            {/* ===== Limit Info ===== */}
+            {isLimitKnown && (
+              <div
+                className={`ep-limit-info ${isImageFull ? "warning" : ""}`}
+              >
+                <i
+                  className={`fas ${isImageFull
+                      ? "fa-exclamation-triangle"
+                      : "fa-info-circle"
+                    }`}
+                ></i>
+                <span>
+                  {isImageFull ? (
+                    <>
+                      You&apos;ve reached the maximum of{" "}
+                      <strong>{imageLimit}</strong> image
+                      {imageLimit !== 1 ? "s" : ""} per product on your plan.
+                      Remove an image or{" "}
+                      <Link
+                        href="/plans"
+                        style={{
+                          color: "inherit",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        upgrade your plan
+                      </Link>{" "}
+                      to add more.
+                    </>
+                  ) : (
+                    <>
+                      You can add <strong>{remainingSlots}</strong> more image
+                      {remainingSlots !== 1 ? "s" : ""} ({totalImages} of{" "}
+                      {imageLimit} used).
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
 
             {/* Images Grid */}
             {!isEmpty ? (
@@ -470,12 +561,22 @@ export default function EditProductForm({ product }) {
                 {/* Add Button */}
                 <button
                   type="button"
-                  className="ep-img-add"
+                  className={`ep-img-add ${isImageFull ? "is-full" : ""}`}
                   onClick={() => fileInputRef.current.click()}
-                  disabled={uploading}
+                  disabled={uploading || isImageFull}
+                  title={
+                    isImageFull
+                      ? `Image limit reached (${imageLimit} images)`
+                      : "Add more images"
+                  }
                 >
                   {uploading ? (
                     <div className="ep-spinner-small" />
+                  ) : isImageFull ? (
+                    <>
+                      <i className="fas fa-lock"></i>
+                      <span>Limit Reached</span>
+                    </>
                   ) : (
                     <>
                       <i className="fas fa-plus"></i>
@@ -487,7 +588,15 @@ export default function EditProductForm({ product }) {
             ) : (
               <div
                 className="ep-img-empty"
-                onClick={() => fileInputRef.current.click()}
+                onClick={() => {
+                  if (!isImageFull && !uploading) {
+                    fileInputRef.current.click();
+                  }
+                }}
+                style={{
+                  cursor: isImageFull ? "not-allowed" : "pointer",
+                  opacity: isImageFull ? 0.6 : 1,
+                }}
               >
                 <i className="fas fa-cloud-upload-alt"></i>
                 <h4>No images yet</h4>
@@ -495,9 +604,18 @@ export default function EditProductForm({ product }) {
                 <button
                   type="button"
                   className="ep-btn ep-btn-primary ep-btn-sm"
+                  disabled={isImageFull}
                 >
-                  <i className="fas fa-folder-open"></i>
-                  Choose Files
+                  {isImageFull ? (
+                    <>
+                      <i className="fas fa-lock"></i> Limit Reached
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-folder-open"></i>
+                      Choose Files
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -514,6 +632,7 @@ export default function EditProductForm({ product }) {
               multiple
               style={{ display: "none" }}
               onChange={handleImageUpload}
+              disabled={isImageFull}
             />
 
             <div className="ep-img-hint">
@@ -732,6 +851,7 @@ export default function EditProductForm({ product }) {
           padding-left: 36px;
         }
 
+        /* ===== Count badge ===== */
         .ep-count-badge {
           display: inline-flex;
           align-items: center;
@@ -745,6 +865,47 @@ export default function EditProductForm({ product }) {
           border-radius: 50px;
           font-size: 11px;
           font-weight: 800;
+        }
+
+        .ep-count-badge.is-full {
+          background: #fef2f2;
+          color: #dc2626;
+        }
+
+        /* ===== Limit info message ===== */
+        .ep-limit-info {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 12px 14px;
+          background: #eaf7f1;
+          border: 1px solid #a7f3d0;
+          border-radius: 10px;
+          font-size: 12.5px;
+          line-height: 1.55;
+          color: #0b5b43;
+          margin-top: -4px;
+        }
+
+        .ep-limit-info i {
+          flex-shrink: 0;
+          margin-top: 2px;
+          font-size: 13px;
+        }
+
+        .ep-limit-info strong {
+          font-weight: 800;
+          color: #0b1b18;
+        }
+
+        .ep-limit-info.warning {
+          background: #fef2f2;
+          border-color: #fecaca;
+          color: #991b1b;
+        }
+
+        .ep-limit-info.warning strong {
+          color: #7f1d1d;
         }
 
         /* ============================================================
@@ -965,6 +1126,21 @@ export default function EditProductForm({ product }) {
 
         .ep-img-add i {
           font-size: 20px;
+        }
+
+        /* ===== Add button - full state ===== */
+        .ep-img-add.is-full {
+          border-color: #fecaca;
+          background: #fef2f2;
+          color: #dc2626;
+          cursor: not-allowed;
+          opacity: 1;
+        }
+
+        .ep-img-add.is-full:hover {
+          border-color: #fecaca;
+          background: #fef2f2;
+          color: #dc2626;
         }
 
         /* Empty State */
@@ -1280,6 +1456,11 @@ export default function EditProductForm({ product }) {
           .ep-toggle-row {
             padding: 14px;
             gap: 12px;
+          }
+
+          .ep-limit-info {
+            font-size: 12px;
+            padding: 10px 12px;
           }
         }
 

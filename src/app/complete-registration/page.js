@@ -86,6 +86,10 @@ function CompleteRegistrationContent() {
     return saved?.existingCover || null;
   });
 
+  // ===== Gallery limit from user's plan =====
+  // null = هنوز لود نشده | -1 = نامحدود | n = عدد
+  const [galleryLimit, setGalleryLimit] = useState(null);
+
   const [uploadProgress, setUploadProgress] = useState({
     logo: 0,
     coverImage: 0,
@@ -167,7 +171,7 @@ function CompleteRegistrationContent() {
       return;
     }
 
-    // اگر session نداری ولی email/token داری → منتظر auto-login بمون
+    // اگر session نداریم ولی email/token داریم → منتظر auto-login بمون
     if (!session && (emailFromUrl || tokenFromUrl)) {
       return;
     }
@@ -253,7 +257,27 @@ function CompleteRegistrationContent() {
   }, [session, status, router]);
 
   // ============================================================
-  // ۴. ذخیره خودکار در sessionStorage
+  // ۴. Fetch gallery limit from user's plan
+  // ============================================================
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    fetch("/api/user/subscription")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const limit = data?.plan?.maxProfileImages;
+        if (typeof limit === "number") {
+          setGalleryLimit(limit);
+        }
+      })
+      .catch(() => {
+        // اگه خطا داد، محدودیت رو نامحدود فرض کن (سرور موقع Save چک می‌کنه)
+        setGalleryLimit(-1);
+      });
+  }, [status]);
+
+  // ============================================================
+  // ۵. ذخیره خودکار در sessionStorage
   // ============================================================
   useEffect(() => {
     if (isInitialized.current) {
@@ -266,7 +290,7 @@ function CompleteRegistrationContent() {
   }, [formData, existingLogo, existingCover]);
 
   // ============================================================
-  // ۵. تغییرات فیلدها
+  // ۶. تغییرات فیلدها
   // ============================================================
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -288,7 +312,7 @@ function CompleteRegistrationContent() {
   };
 
   // ============================================================
-  // ۶. آپلود تصاویر
+  // ۷. آپلود تصاویر
   // ============================================================
   const handleFileChange = async (e, fieldName) => {
     const files = e.target.files;
@@ -313,6 +337,9 @@ function CompleteRegistrationContent() {
         return;
       }
 
+      // ✅ تعیین purpose بر اساس fieldName
+      const purpose = fieldName === "logo" ? "logo" : "cover";
+
       try {
         setIsUploading((prev) => ({ ...prev, [fieldName]: true }));
         setUploadProgress((prev) => ({ ...prev, [fieldName]: 0 }));
@@ -323,6 +350,7 @@ function CompleteRegistrationContent() {
           (percent) => {
             setUploadProgress((prev) => ({ ...prev, [fieldName]: percent }));
           },
+          purpose                                  // ✅ جدید
         );
 
         setFormData((prev) => ({ ...prev, [fieldName]: result.path }));
@@ -361,6 +389,7 @@ function CompleteRegistrationContent() {
           (percent) => {
             setUploadProgress((prev) => ({ ...prev, gallery: percent }));
           },
+          "gallery"                                 // ✅ جدید
         );
         uploadedPaths.push(result.path);
       }
@@ -382,7 +411,7 @@ function CompleteRegistrationContent() {
   };
 
   // ============================================================
-  // ۷. حذف تصاویر
+  // ۸. حذف تصاویر
   // ============================================================
   const removeImage = (fieldName, index = null, isExisting = false) => {
     if (fieldName === "galleryImages" && index !== null) {
@@ -408,7 +437,7 @@ function CompleteRegistrationContent() {
   };
 
   // ============================================================
-  // ۸. ارسال فرم
+  // ۹. ارسال فرم
   // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -475,7 +504,7 @@ function CompleteRegistrationContent() {
   };
 
   // ============================================================
-  // ۹. حالت‌های بارگذاری
+  // ۱۰. حالت‌های بارگذاری
   // ============================================================
   if (status === "loading" || autoLoggingIn || fetching) {
     return (
@@ -497,8 +526,17 @@ function CompleteRegistrationContent() {
   if (hasRedirected) return null;
   if (!session && !emailFromUrl) return null;
 
+  // ===== Gallery limit calculations =====
+  const currentGalleryCount = formData.galleryImages.length;
+  const isUnlimited = galleryLimit === -1;
+  const isLimitKnown = galleryLimit !== null && galleryLimit !== -1;
+  const remainingSlots = isLimitKnown
+    ? Math.max(0, galleryLimit - currentGalleryCount)
+    : Infinity;
+  const isGalleryFull = isLimitKnown && currentGalleryCount >= galleryLimit;
+
   // ============================================================
-  // ۱۰. رندر فرم
+  // ۱۱. رندر فرم
   // ============================================================
   return (
     <Layout>
@@ -906,15 +944,95 @@ function CompleteRegistrationContent() {
 
             {/* گالری */}
             <div className="form-group mb-3">
-              <label className="form-label fw-semibold">Gallery Images</label>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <label className="form-label fw-semibold mb-0">
+                  Gallery Images
+                </label>
+                {isUnlimited && (
+                  <span className="ep-count-badge">Unlimited</span>
+                )}
+                {isLimitKnown && (
+                  <span
+                    className={`ep-count-badge ${isGalleryFull ? "is-full" : ""}`}
+                  >
+                    {currentGalleryCount}/{galleryLimit}
+                  </span>
+                )}
+              </div>
+
+              {/* ===== Limit Info ===== */}
+              {isLimitKnown && (
+                <div
+                  className={`ep-limit-info ${isGalleryFull ? "warning" : ""}`}
+                >
+                  <i
+                    className={`fas ${isGalleryFull
+                        ? "fa-exclamation-triangle"
+                        : "fa-info-circle"
+                      }`}
+                  ></i>
+                  <span>
+                    {isGalleryFull ? (
+                      <>
+                        You&apos;ve reached the maximum of{" "}
+                        <strong>{galleryLimit}</strong> gallery image
+                        {galleryLimit !== 1 ? "s" : ""} on the free plan.
+                        Remove an image or{" "}
+                        <a
+                          href="/plans"
+                          style={{
+                            color: "inherit",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          upgrade your plan
+                        </a>{" "}
+                        to add more.
+                      </>
+                    ) : (
+                      <>
+                        You can add <strong>{remainingSlots}</strong> more image
+                        {remainingSlots !== 1 ? "s" : ""} (
+                        {currentGalleryCount} of {galleryLimit} used).
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
+
               <div
                 className="image-upload-area"
-                onClick={() => galleryInputRef.current.click()}
+                onClick={() => {
+                  if (!isGalleryFull && !isUploading.gallery) {
+                    galleryInputRef.current.click();
+                  }
+                }}
+                style={{
+                  cursor: isGalleryFull ? "not-allowed" : "pointer",
+                  opacity: isGalleryFull ? 0.6 : 1,
+                }}
               >
                 <i className="fas fa-images fa-2x text-muted"></i>
-                <p className="mt-2">Click or drag to upload multiple images</p>
-                <button type="button" className="btn btn-secondary btn-sm">
-                  Choose Images
+                <p className="mt-2">
+                  {isGalleryFull
+                    ? "Gallery limit reached"
+                    : "Click or drag to upload multiple images"}
+                </p>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${isGalleryFull
+                      ? "btn-secondary"
+                      : "btn-secondary"
+                    }`}
+                  disabled={isGalleryFull}
+                >
+                  {isGalleryFull ? (
+                    <>
+                      <i className="fas fa-lock me-1"></i> Limit Reached
+                    </>
+                  ) : (
+                    "Choose Images"
+                  )}
                 </button>
               </div>
               <input
@@ -924,6 +1042,7 @@ function CompleteRegistrationContent() {
                 multiple
                 style={{ display: "none" }}
                 onChange={(e) => handleFileChange(e, "galleryImages")}
+                disabled={isGalleryFull}
               />
               <UploadProgress
                 progress={uploadProgress.gallery}
@@ -971,9 +1090,8 @@ function CompleteRegistrationContent() {
               <div className="row g-3">
                 <div className="col-6">
                   <div
-                    className={`p-3 text-center border rounded-3 cursor-pointer ${
-                      formData.role === "BUYER" ? "border-primary bg-light" : ""
-                    }`}
+                    className={`p-3 text-center border rounded-3 cursor-pointer ${formData.role === "BUYER" ? "border-primary bg-light" : ""
+                      }`}
                     onClick={() =>
                       setFormData((prev) => ({ ...prev, role: "BUYER" }))
                     }
@@ -988,11 +1106,10 @@ function CompleteRegistrationContent() {
                 </div>
                 <div className="col-6">
                   <div
-                    className={`p-3 text-center border rounded-3 cursor-pointer ${
-                      formData.role === "SUPPLIER"
+                    className={`p-3 text-center border rounded-3 cursor-pointer ${formData.role === "SUPPLIER"
                         ? "border-primary bg-light"
                         : ""
-                    }`}
+                      }`}
                     onClick={() =>
                       setFormData((prev) => ({ ...prev, role: "SUPPLIER" }))
                     }
@@ -1029,6 +1146,67 @@ function CompleteRegistrationContent() {
           </form>
         </div>
       </div>
+
+      {/* ============================================================
+         Styles
+         ============================================================ */}
+      <style jsx>{`
+        /* ===== Count badge ===== */
+        .ep-count-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 22px;
+          height: 22px;
+          padding: 0 8px;
+          background: #eaf7f1;
+          color: #0b5b43;
+          border-radius: 50px;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .ep-count-badge.is-full {
+          background: #fef2f2;
+          color: #dc2626;
+        }
+
+        /* ===== Limit info message ===== */
+        .ep-limit-info {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 12px 14px;
+          background: #eaf7f1;
+          border: 1px solid #a7f3d0;
+          border-radius: 10px;
+          font-size: 12.5px;
+          line-height: 1.55;
+          color: #0b5b43;
+          margin-bottom: 12px;
+        }
+
+        .ep-limit-info i {
+          flex-shrink: 0;
+          margin-top: 2px;
+          font-size: 13px;
+        }
+
+        .ep-limit-info strong {
+          font-weight: 800;
+          color: #0b1b18;
+        }
+
+        .ep-limit-info.warning {
+          background: #fef2f2;
+          border-color: #fecaca;
+          color: #991b1b;
+        }
+
+        .ep-limit-info.warning strong {
+          color: #7f1d1d;
+        }
+      `}</style>
     </Layout>
   );
 }
