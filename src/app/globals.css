@@ -9458,3 +9458,20 @@ a:hover {
 .safe-text::before {
   content: attr(data-text);
 }
+
+/* src/app/globals.css */
+
+/* ============================================================
+   Bottom Nav spacing — جلوگیری از پوشیده شدن محتوا
+============================================================ */
+@media (max-width: 768px) {
+  body {
+    /* ارتفاع bottom nav + safe area */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* یا اگه می‌خوای فقط روی Layout اعمال بشه: */
+  /* .footer {
+    margin-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  } */
+}
