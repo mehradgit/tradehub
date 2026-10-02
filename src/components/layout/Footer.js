@@ -1,5 +1,6 @@
 // src/components/layout/Footer.js
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -7,11 +8,13 @@ export default function Footer() {
       <div className="container">
         <div className="footer-grid">
           <div>
-            <Link href="/" className="logo" style={{ color: "white", textDecoration: "none" }}>
-              <div className="logo-icon">
-                <i className="fa-solid fa-leaf"></i>
-              </div>
-              Food<span>TradeHub</span>
+            <Link href="/" className="footer-logo">
+              <Image
+                src="/images/logo-foodtradelink-white.svg"
+                alt="FoodTradeLink"
+                width={200}
+                height={50}
+              />
             </Link>
             <p style={{ marginTop: "18px", color: "rgba(255,255,255,0.67)", fontSize: "14px", maxWidth: "360px" }}>
               A global B2B marketplace connecting food suppliers, manufacturers, exporters, wholesalers and buyers.

@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 const PLAN_DISPLAY = {
   Basic: { name: "Basic", color: "basic", icon: "fa-leaf" },
@@ -157,13 +158,13 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <aside className={`sidebar ${isOpen ? "open" : ""}`}>
       <div className="brand">
-        <div className="brand-icon">
-          <i className="fas fa-leaf"></i>
-        </div>
-        <div>
-          <div className="brand-title">FoodTradeHub</div>
-          <div className="brand-subtitle">B2B Food Marketplace</div>
-        </div>
+        <Image
+          src="/images/logo-foodtradelink.svg"
+          alt="FoodTradeLink"
+          width={220}
+          height={60}
+          className="sidebar-logo"
+        />
       </div>
 
       <nav className="nav-section">

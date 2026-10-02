@@ -8275,11 +8275,21 @@ a:hover {
 .site-header .header-logo {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   text-decoration: none;
   flex-shrink: 0;
 }
 
+.site-header .logo-img {
+  /* height: 48px; */
+  width: auto;
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .site-header .logo-img {
+    height: 40px;
+  }
+}
 .site-header .logo-icon {
   width: 42px;
   height: 42px;

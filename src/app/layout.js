@@ -41,28 +41,26 @@ const poppins = localFont({
 });
 
 // ============================================================
-// Metadata — SEO سراسری
+// Metadata
 // ============================================================
 export const metadata = {
   metadataBase: new URL("https://foodtradelink.com"),
 
-  // ✅ عنوان و توضیحات پیش‌فرض
   title: {
-    default: "FoodTradeHub · Global B2B Food Marketplace",
-    template: "%s | FoodTradeHub",
+    default: "FoodTradeLink · Global B2B Food Marketplace",
+    template: "%s | FoodTradeLink",
   },
   description:
-    "The largest global B2B food marketplace. Connect with verified suppliers, manufacturers, and buyers across 120+ countries. Trade food products without borders.",
+    "FoodTradeLink is the largest global B2B food marketplace. Connect with verified suppliers, manufacturers, and buyers across 120+ countries. Trade food products without borders.",
 
-  // ✅ اطلاعات عمومی
-  applicationName: "FoodTradeHub",
-  authors: [{ name: "FoodTradeHub", url: "https://foodtradelink.com" }],
-  creator: "FoodTradeHub",
-  publisher: "FoodTradeHub",
+  applicationName: "FoodTradeLink",
+  authors: [{ name: "FoodTradeLink", url: "https://foodtradelink.com" }],
+  creator: "FoodTradeLink",
+  publisher: "FoodTradeLink",
 
-  // ✅ کلمات کلیدی
   keywords: [
     "B2B food marketplace",
+    "FoodTradeLink",
     "wholesale food",
     "food suppliers",
     "food exporters",
@@ -70,17 +68,16 @@ export const metadata = {
     "bulk food trading",
     "organic products",
     "international food sourcing",
-    "food distribution",
     "verified suppliers",
+    "food distribution",
   ],
 
-  // ✅ OpenGraph (فیسبوک، لینکدین، واتساپ، تلگرام)
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://foodtradelink.com",
-    siteName: "FoodTradeHub",
-    title: "FoodTradeHub · Global B2B Food Marketplace",
+    siteName: "FoodTradeLink",
+    title: "FoodTradeLink · Global B2B Food Marketplace",
     description:
       "Connect with verified suppliers and buyers across 120+ countries. Trade food products without borders.",
     images: [
@@ -88,30 +85,23 @@ export const metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "FoodTradeHub — Global B2B Food Marketplace",
+        alt: "FoodTradeLink — Global B2B Food Marketplace",
       },
     ],
   },
 
-  // ✅ Twitter Card
   twitter: {
     card: "summary_large_image",
-    title: "FoodTradeHub · Global B2B Food Marketplace",
+    title: "FoodTradeLink · Global B2B Food Marketplace",
     description:
       "Connect with verified suppliers and buyers across 120+ countries.",
     images: ["/og-image.png"],
-    creator: "@foodtradelink",
   },
 
-  // ✅ Canonical
   alternates: {
     canonical: "/",
-    languages: {
-      "en-US": "/",
-    },
   },
 
-  // ✅ Robots
   robots: {
     index: true,
     follow: true,
@@ -124,30 +114,22 @@ export const metadata = {
     },
   },
 
-  // ✅ Format detection (جلوگیری از تبدیل خودکار شماره تلفن به لینک در iOS)
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
 
-  // ✅ Icons
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
+  // ⚠️ این بخش رو حذف کن چون Next.js خودش از فایل‌های
+  // favicon.ico و icon.png و apple-icon.png استفاده می‌کنه
+  // icons: { ... },
 
-  // ✅ Manifest (PWA)
   manifest: "/manifest.json",
 
-  // ✅ Verification — کد واقعی از Search Console
-  // اگه فعلاً نداری، این بخش رو کامنت کن
   // verification: {
-  //   google: "your-real-verification-code-from-search-console",
+  //   google: "your-real-code",
   // },
 
-  // ✅ سایر
   category: "Business",
 };
 
@@ -155,27 +137,22 @@ export const metadata = {
 // RootLayout
 // ============================================================
 export default function RootLayout({ children }) {
-  // ===== JSON-LD: Organization =====
+  // JSON-LD Organization
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "FoodTradeHub",
-    alternateName: "FoodTradeHub B2B Marketplace",
+    name: "FoodTradeLink",
+    alternateName: "FoodTradeLink B2B Marketplace",
     url: "https://foodtradelink.com",
     logo: {
       "@type": "ImageObject",
-      url: "https://foodtradelink.com/og-image.png",
+      url: "https://foodtradelink.com/web-app-manifest-512x512.png",
       width: 512,
       height: 512,
     },
     description:
       "Global B2B marketplace connecting verified food suppliers, manufacturers, and buyers across 120+ countries.",
     foundingDate: "2024",
-    sameAs: [
-      // اگه سوشال مدیا داری، اینجا اضافه کن
-      // "https://www.linkedin.com/company/foodtradelink",
-      // "https://twitter.com/foodtradelink",
-    ],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "Customer Support",
@@ -190,18 +167,17 @@ export default function RootLayout({ children }) {
     },
   };
 
-  // ===== JSON-LD: WebSite (برای Search Box در گوگل) =====
+  // JSON-LD WebSite
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "FoodTradeHub",
+    name: "FoodTradeLink",
     url: "https://foodtradelink.com",
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate:
-          "https://foodtradelink.com/search?q={search_term_string}",
+        urlTemplate: "https://foodtradelink.com/search?q={search_term_string}",
       },
       "query-input": "required name=search_term_string",
     },
@@ -213,7 +189,6 @@ export default function RootLayout({ children }) {
       className={`${inter.variable} ${poppins.variable} ${dmSans.variable} ${manrope.variable}`}
     >
       <head>
-        {/* ✅ Preconnect برای Google Analytics */}
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
       </head>
@@ -237,15 +212,13 @@ export default function RootLayout({ children }) {
 
         <BootstrapClient />
 
-        {/* ✅ Structured Data — Organization */}
+        {/* Structured Data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationJsonLd),
           }}
         />
-
-        {/* ✅ Structured Data — WebSite */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -254,7 +227,6 @@ export default function RootLayout({ children }) {
         />
       </body>
 
-      {/* ✅ Google Analytics */}
       {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
       )}

@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import Image from "next/image";
 
 export default function Header() {
   const { data: session, status } = useSession();
@@ -149,9 +150,8 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsUserMenuOpen(false)}
-                className={`dropdown-item ${
-                  isActiveLink(link.href) ? "active" : ""
-                }`}
+                className={`dropdown-item ${isActiveLink(link.href) ? "active" : ""
+                  }`}
               >
                 <i className={`fas ${link.icon}`}></i>
                 <span>{link.label}</span>
@@ -239,9 +239,8 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsUserMenuOpen(false)}
-                className={`dropdown-item ${
-                  isActiveLink(link.href) ? "active" : ""
-                }`}
+                className={`dropdown-item ${isActiveLink(link.href) ? "active" : ""
+                  }`}
               >
                 <i className={`fas ${link.icon}`}></i>
                 <span>{link.label}</span>
@@ -279,24 +278,24 @@ export default function Header() {
         <div className="container">
           <nav className="header-nav">
             {/* ===== Logo ===== */}
-            <Link href="/" className="header-logo">
-              <div className="logo-icon">
-                <i className="fas fa-utensils"></i>
-              </div>
-              <span className="logo-text">
-                Food<span>TradeHub</span>
-              </span>
+            <Link href="/" className="header-logo" aria-label="FoodTradeLink — Home">
+              <Image
+                src="/images/logo-foodtradelink.png"
+                alt="FoodTradeLink — Global B2B Food Marketplace"
+                width={240}
+                height={60}
+                priority
+                className="logo-img"
+              />
             </Link>
-
             {/* ===== Nav Links (Desktop only) ===== */}
             <ul className="header-nav-links">
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className={`header-nav-link ${
-                      isActiveLink(link.href) ? "active" : ""
-                    }`}
+                    className={`header-nav-link ${isActiveLink(link.href) ? "active" : ""
+                      }`}
                   >
                     {link.label}
                   </Link>
@@ -313,9 +312,8 @@ export default function Header() {
                   onClick={handleToggleUserMenu}
                   aria-label="User menu"
                   aria-expanded={isUserMenuOpen}
-                  className={`user-menu-trigger ${
-                    isUserMenuOpen ? "active" : ""
-                  }`}
+                  className={`user-menu-trigger ${isUserMenuOpen ? "active" : ""
+                    }`}
                 >
                   <div
                     className="trigger-avatar"
