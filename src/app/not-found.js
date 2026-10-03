@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Page Not Found | FoodTradeHub",
+  title: "Page Not Found | FoodTradeLink",
 };
 
 export default function NotFound() {

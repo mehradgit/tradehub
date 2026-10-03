@@ -18,7 +18,7 @@ export const metadata = {
   title: "B2B Food Marketplace — Buy & Sell Wholesale Food Globally",
 
   description:
-    "FoodTradeHub is a global B2B food marketplace connecting verified suppliers, manufacturers, and buyers. Source wholesale food products from 120+ countries with confidence.",
+    "FoodTradeLink  is a global B2B food marketplace connecting verified suppliers, manufacturers, and buyers. Source wholesale food products from 120+ countries with confidence.",
 
   keywords: [
     "B2B food marketplace",
@@ -43,7 +43,7 @@ export const metadata = {
     type: "website",
     locale: "en_US",
     url: `${BASE_URL}/`,
-    siteName: "FoodTradeHub",
+    siteName: "FoodTradeLink",
     title: "B2B Food Marketplace — Buy & Sell Wholesale Food Globally",
     description:
       "Connect with verified food suppliers and buyers across 120+ countries. Trade wholesale food products without borders.",
@@ -52,14 +52,14 @@ export const metadata = {
         url: `${BASE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "FoodTradeHub — Global B2B Food Marketplace",
+        alt: "FoodTradeLink — Global B2B Food Marketplace",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "B2B Food Marketplace — FoodTradeHub",
+    title: "B2B Food Marketplace — FoodTradeLink",
     description:
       "Connect with verified food suppliers and buyers across 120+ countries.",
     images: [`${BASE_URL}/og-image.png`],
@@ -281,7 +281,7 @@ export default async function HomePage() {
     "@type": "WebPage",
     "@id": `${BASE_URL}/#webpage`,
     url: `${BASE_URL}/`,
-    name: "FoodTradeHub — Global B2B Food Marketplace",
+    name: "FoodTradeLink — Global B2B Food Marketplace",
     description:
       "Global B2B food marketplace connecting verified suppliers, manufacturers, and buyers across 120+ countries.",
     inLanguage: "en-US",

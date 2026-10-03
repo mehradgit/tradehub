@@ -152,7 +152,7 @@ export async function generateMetadata({ params }) {
   const rawDesc =
     product.shortDesc ||
     product.fullDesc?.replace(/<[^>]*>/g, "").trim() ||
-    `${product.name} - Buy wholesale from verified suppliers on FoodTradeHub.`;
+    `${product.name} - Buy wholesale from verified suppliers on FoodTradeLink.`;
   const description = rawDesc.slice(0, 158);
 
   // کلمات کلیدی
@@ -184,7 +184,7 @@ export async function generateMetadata({ params }) {
       url: productUrl,
       title: product.name,
       description,
-      siteName: "FoodTradeHub",
+      siteName: "FoodTradeLink",
       images: [
         {
           url: imageUrl,

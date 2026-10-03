@@ -2,9 +2,9 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "About Us | FoodTradeHub",
+  title: "About Us | FoodTradeLink",
   description:
-    "FoodTradeHub is a global B2B marketplace connecting verified food suppliers, manufacturers, and buyers across 120+ countries.",
+    "FoodTradeLink  is a global B2B marketplace connecting verified food suppliers, manufacturers, and buyers across 120+ countries.",
 };
 
 export default function AboutPage() {
@@ -16,7 +16,7 @@ export default function AboutPage() {
           <div className="about-hero-inner">
             <span className="about-eyebrow">
               <i className="fa-solid fa-leaf"></i>
-              About FoodTradeHub
+              About FoodTradeLink 
             </span>
             <h1>
               Connecting the World's Food
@@ -68,7 +68,7 @@ export default function AboutPage() {
               </span>
               <h2>Built by people who understand food trade.</h2>
               <p>
-                FoodTradeHub was founded with one goal: to remove the friction
+                FoodTradeLink was founded with one goal: to remove the friction
                 from cross-border food trading. Traditional B2B platforms were
                 either too complex, too expensive, or too opaque for small and
                 mid-sized businesses. We set out to change that.

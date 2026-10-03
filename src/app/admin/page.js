@@ -69,7 +69,7 @@ export default async function AdminDashboard() {
         <div className="admin-hero-inner">
           <div>
             <div className="hi">🌿 Good morning, {session.user.name || "Admin"} 👋</div>
-            <h1>Welcome to FoodTradeHub</h1>
+            <h1>Welcome to FoodTradeLink</h1>
             <p>
               Manage your marketplace, connect with global partners
               <br />

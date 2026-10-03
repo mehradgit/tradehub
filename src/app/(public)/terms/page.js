@@ -2,9 +2,9 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service | FoodTradeHub",
+  title: "Terms of Service | FoodTradeLink",
   description:
-    "Read the terms and conditions that govern your use of the FoodTradeHub B2B marketplace.",
+    "Read the terms and conditions that govern your use of the FoodTradeLink B2B marketplace.",
 };
 
 export default function TermsOfServicePage() {
@@ -23,7 +23,7 @@ export default function TermsOfServicePage() {
             Terms of <span>Service</span>
           </h1>
           <p>
-            These terms govern your access to and use of the FoodTradeHub
+            These terms govern your access to and use of the FoodTradeLink
             platform. Please read them carefully before using our services.
           </p>
           <div className="terms-last-updated">
@@ -72,7 +72,7 @@ export default function TermsOfServicePage() {
                   Acceptance of Terms
                 </h2>
                 <p>
-                  By accessing, registering for, or using FoodTradeHub (the
+                  By accessing, registering for, or using FoodTradeLink (the
                   "Platform", "Service", "we", "our", or "us"), you agree to
                   be bound by these Terms of Service ("Terms"), our{" "}
                   <Link href="/privacy">Privacy Policy</Link>, and all
@@ -127,7 +127,7 @@ export default function TermsOfServicePage() {
                   Eligibility
                 </h2>
                 <p>
-                  To use FoodTradeHub, you must:
+                  To use FoodTradeLink, you must:
                 </p>
                 <ul>
                   <li>Be at least 18 years old</li>
@@ -275,7 +275,7 @@ export default function TermsOfServicePage() {
                 </h2>
                 <h3>7.1 Plans</h3>
                 <p>
-                  FoodTradeHub offers both <strong>free</strong> (Basic) and{" "}
+                  FoodTradeLink offers both <strong>free</strong> (Basic) and{" "}
                   <strong>paid</strong> plans (Bronze, Silver, Gold). Each plan
                   provides different limits on:
                 </p>
@@ -325,7 +325,7 @@ export default function TermsOfServicePage() {
                   Access Control &amp; Quotas
                 </h2>
                 <p>
-                  FoodTradeHub uses a <strong>quota-based system</strong> to
+                  FoodTradeLink uses a <strong>quota-based system</strong> to
                   manage access to certain information (such as buyer or
                   supplier contact details). Revealing such information may
                   consume a portion of your monthly quota, depending on the
@@ -346,14 +346,14 @@ export default function TermsOfServicePage() {
                   Intellectual Property
                 </h2>
                 <p>
-                  All content on FoodTradeHub (logos, design, text, graphics,
+                  All content on FoodTradeLink (logos, design, text, graphics,
                   software) is owned by us or our licensors and is protected
                   by intellectual property laws. You may not copy, modify,
                   distribute, or create derivative works without our express
                   written consent.
                 </p>
                 <p>
-                  The FoodTradeHub name and logo are trademarks of our company.
+                  The FoodTradeLink name and logo are trademarks of our company.
                 </p>
               </section>
 
@@ -365,7 +365,7 @@ export default function TermsOfServicePage() {
                 </h2>
                 <p>
                   You retain ownership of any content you upload. However, by
-                  posting content, you grant FoodTradeHub a{" "}
+                  posting content, you grant FoodTradeLink a{" "}
                   <strong>
                     worldwide, non-exclusive, royalty-free, transferable
                   </strong>{" "}
@@ -386,7 +386,7 @@ export default function TermsOfServicePage() {
                   Disclaimer of Warranties
                 </h2>
                 <p>
-                  FoodTradeHub is provided{" "}
+                  FoodTradeLink is provided{" "}
                   <strong>"as is" and "as available"</strong> without any
                   warranties of any kind, express or implied, including but not
                   limited to:
@@ -404,7 +404,7 @@ export default function TermsOfServicePage() {
                   entering into any business transaction.
                 </p>
                 <p>
-                  FoodTradeHub is a <strong>facilitator</strong>, not a party
+                  FoodTradeLink is a <strong>facilitator</strong>, not a party
                   to any transaction between Users.
                 </p>
               </section>
@@ -416,7 +416,7 @@ export default function TermsOfServicePage() {
                   Limitation of Liability
                 </h2>
                 <p>
-                  To the maximum extent permitted by law, FoodTradeHub shall
+                  To the maximum extent permitted by law, FoodTradeLink shall
                   not be liable for:
                 </p>
                 <ul>
@@ -440,7 +440,7 @@ export default function TermsOfServicePage() {
                 </h2>
                 <p>
                   You agree to indemnify, defend, and hold harmless
-                  FoodTradeHub, its officers, directors, employees, and agents
+                  FoodTradeLink, its officers, directors, employees, and agents
                   from any claims, damages, losses, or expenses (including
                   attorney fees) arising from:
                 </p>
@@ -528,8 +528,8 @@ export default function TermsOfServicePage() {
                     <i className="fa-solid fa-envelope"></i>
                     <div>
                       <span>Email</span>
-                      <a href="mailto:support@foodtradehub.com">
-                        support@foodtradehub.com
+                      <a href="mailto:support@FoodTradeLink.com">
+                        support@FoodTradeLink.com
                       </a>
                     </div>
                   </div>
