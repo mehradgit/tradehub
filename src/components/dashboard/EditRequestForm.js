@@ -24,6 +24,7 @@ export default function EditRequestForm({ request }) {
     title: request.title || "",
     category: request.category || "",
     subCategory: request.subCategory || "",
+    productType: request.productType || "",
     description: request.description || "",
     quantity: request.quantity || "",
     unit: request.unit || "kg",
@@ -64,14 +65,29 @@ export default function EditRequestForm({ request }) {
     }));
   };
 
-  const handleCategoryChange = (category, subCategory) => {
+  const handleCategoryChange = (category) => {
     setFormData((prev) => ({
       ...prev,
       category: category || "",
-      subCategory: subCategory || "",
+      subCategory: "",
+      productType: "",
     }));
   };
 
+  const handleSubCategoryChange = (subCategory) => {
+    setFormData((prev) => ({
+      ...prev,
+      subCategory: subCategory || "",
+      productType: "",
+    }));
+  };
+
+  const handleProductTypeChange = (productType) => {
+    setFormData((prev) => ({
+      ...prev,
+      productType: productType || "",
+    }));
+  };
   const handleImageUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -214,10 +230,10 @@ export default function EditRequestForm({ request }) {
               <CategorySelect
                 categoryValue={formData.category}
                 subCategoryValue={formData.subCategory}
+                productTypeValue={formData.productType}
                 onCategoryChange={handleCategoryChange}
-                onSubCategoryChange={(sub) =>
-                  setFormData((prev) => ({ ...prev, subCategory: sub || "" }))
-                }
+                onSubCategoryChange={handleSubCategoryChange}
+                onProductTypeChange={handleProductTypeChange}
                 categoryRequired={true}
               />
             </div>

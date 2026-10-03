@@ -78,6 +78,7 @@ model Product {
   name           String
   category       String
   subCategory    String?
+  productType    String?
   shortDesc      String   @db.VarChar(255)
   fullDesc       String?  @db.Text
   price          Float
@@ -119,6 +120,7 @@ model BuyingRequest {
   category        String
   views      Int      @default(0)
   subCategory     String?
+  productType     String?
   description     String @db.Text
   quantity        Int
   unit            String   @default("kg")

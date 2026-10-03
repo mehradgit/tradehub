@@ -28,14 +28,14 @@ export default function CategoryManager({
     () =>
       categories
         .filter((c) => c.parent === 0)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
     [categories]
   );
 
   const getSubs = (parentId) =>
     categories
       .filter((c) => c.parent === parentId)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   // ====== modal ======
   const openCreate = (parentId = 0) => {
@@ -115,8 +115,10 @@ export default function CategoryManager({
 
   const handleDelete = async (category) => {
     const subs = getSubs(category.id);
-    const productCount = productCounts[category.name] || 0;
-    const requestCount = requestCounts[category.name] || 0;
+
+    // âœ… شمارش با ID (نه name)
+    const productCount = productCounts[category.id] || 0;
+    const requestCount = requestCounts[category.id] || 0;
 
     if (productCount > 0 || requestCount > 0) {
       toast.error(
@@ -216,8 +218,10 @@ export default function CategoryManager({
       >
         {mainCategories.map((cat) => {
           const subs = getSubs(cat.id);
-          const productCount = productCounts[cat.name] || 0;
-          const requestCount = requestCounts[cat.name] || 0;
+
+          // âœ… شمارش با ID
+          const productCount = productCounts[cat.id] || 0;
+          const requestCount = requestCounts[cat.id] || 0;
 
           return (
             <div
@@ -259,7 +263,7 @@ export default function CategoryManager({
                     )}
                   </div>
                   <div className="admin-subtitle">
-                    {subs.length} subcategories · {productCount} products ·{" "}
+                    {subs.length} subcategories آ· {productCount} products آ·{" "}
                     {requestCount} requests
                   </div>
                 </div>
@@ -321,8 +325,27 @@ export default function CategoryManager({
                         fontSize: 12,
                         fontWeight: 600,
                       }}
+                      title={
+                        sub.productTypes?.length
+                          ? `${sub.productTypes.length} product types`
+                          : ""
+                      }
                     >
                       {sub.name}
+                      {sub.productTypes?.length > 0 && (
+                        <span
+                          style={{
+                            fontSize: 9,
+                            background: "white",
+                            padding: "1px 6px",
+                            borderRadius: 50,
+                            color: "#13795b",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {sub.productTypes.length}
+                        </span>
+                      )}
                       <button
                         onClick={() => openEdit(sub)}
                         style={chipBtnStyle}
@@ -394,10 +417,10 @@ export default function CategoryManager({
               {modal.mode === "create" && modal.parentId !== 0
                 ? `Under: ${
                     categories.find((c) => c.id === modal.parentId)?.name ||
-                    "—"
+                    "â€”"
                   }`
                 : modal.mode === "edit"
-                  ? `ID: #${modal.category?.id}`
+                  ? `ID: ${modal.category?.id}`
                   : "Enter the name for the new category"}
             </p>
 
@@ -439,6 +462,53 @@ export default function CategoryManager({
                 Font Awesome class name (مثل fa-leaf یا fa-crown)
               </div>
             </div>
+
+            {/* âœ… نمایش فقط-خواندنی productTypes در حالت edit */}
+            {modal.mode === "edit" &&
+              modal.category?.parent !== 0 &&
+              modal.category?.productTypes?.length > 0 && (
+                <div
+                  style={{
+                    marginBottom: 20,
+                    padding: 12,
+                    background: "#f9fbfa",
+                    borderRadius: 10,
+                    border: "1px solid #eef2f0",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#71807b",
+                      marginBottom: 6,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Product Types ({modal.category.productTypes.length})
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#33413d",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {modal.category.productTypes.join(", ")}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10.5,
+                      color: "#94a3b8",
+                      marginTop: 6,
+                    }}
+                  >
+                    <i className="fa-solid fa-info-circle me-1"></i>
+                    To edit product types, modify the JSON file directly.
+                  </div>
+                </div>
+              )}
 
             <div
               style={{

@@ -28,6 +28,7 @@ export default function EditProductForm({ product }) {
     name: product.name || "",
     category: product.category || "",
     subCategory: product.subCategory || "",
+    productType: product.productType || "",
     shortDesc: product.shortDesc || "",
     fullDesc: product.fullDesc || "",
     price: product.price || "",
@@ -74,14 +75,29 @@ export default function EditProductForm({ product }) {
     }));
   };
 
-  const handleCategoryChange = (category, subCategory) => {
+  const handleCategoryChange = (category) => {
     setFormData((prev) => ({
       ...prev,
       category: category || "",
-      subCategory: subCategory || "",
+      subCategory: "",          // âœ… ریست شدن
+      productType: "",          // âœ… ریست شدن
     }));
   };
 
+  const handleSubCategoryChange = (subCategory) => {
+    setFormData((prev) => ({
+      ...prev,
+      subCategory: subCategory || "",
+      productType: "",          // âœ… ریست شدن
+    }));
+  };
+
+  const handleProductTypeChange = (productType) => {
+    setFormData((prev) => ({
+      ...prev,
+      productType: productType || "",
+    }));
+  };
   // ===== Image limit calculations =====
   const totalImages = existingImages.length + newImages.length;
   const isUnlimited = imageLimit === -1;
@@ -99,8 +115,7 @@ export default function EditProductForm({ product }) {
     // ✅ چک کلاینت: تعداد انتخابی نباید از ظرفیت باقی‌مانده بیشتر باشه
     if (isLimitKnown && files.length > remainingSlots) {
       toast.warning(
-        `You can only add ${remainingSlots} more image${
-          remainingSlots !== 1 ? "s" : ""
+        `You can only add ${remainingSlots} more image${remainingSlots !== 1 ? "s" : ""
         }. You selected ${files.length}.`
       );
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -249,10 +264,10 @@ export default function EditProductForm({ product }) {
               <CategorySelect
                 categoryValue={formData.category}
                 subCategoryValue={formData.subCategory}
+                productTypeValue={formData.productType}
                 onCategoryChange={handleCategoryChange}
-                onSubCategoryChange={(sub) =>
-                  setFormData((prev) => ({ ...prev, subCategory: sub || "" }))
-                }
+                onSubCategoryChange={handleSubCategoryChange}
+                onProductTypeChange={handleProductTypeChange}
                 categoryRequired={true}
               />
             </div>
@@ -484,8 +499,8 @@ export default function EditProductForm({ product }) {
               >
                 <i
                   className={`fas ${isImageFull
-                      ? "fa-exclamation-triangle"
-                      : "fa-info-circle"
+                    ? "fa-exclamation-triangle"
+                    : "fa-info-circle"
                     }`}
                 ></i>
                 <span>

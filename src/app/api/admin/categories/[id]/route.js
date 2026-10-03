@@ -13,16 +13,17 @@ export async function PUT(request, { params }) {
 
   try {
     const { id } = await params;
-    const categoryId = parseInt(id);
-    if (isNaN(categoryId)) {
+
+    // âœ… ID حالا رشته است
+    if (!id || typeof id !== "string") {
       return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
     }
 
     const body = await request.json();
-    const { name, icon, isActive } = body;
+    const { name, icon, isActive, productTypes } = body;
 
     const categories = await getCategories();
-    const index = categories.findIndex((c) => c.id === categoryId);
+    const index = categories.findIndex((c) => c.id === id);
     if (index === -1) {
       return NextResponse.json(
         { message: "Category not found" },
@@ -43,7 +44,7 @@ export async function PUT(request, { params }) {
       const parentId = categories[index].parent;
       const duplicate = categories.find(
         (c) =>
-          c.id !== categoryId &&
+          c.id !== id &&
           c.parent === parentId &&
           c.name.trim().toLowerCase() === trimmed.toLowerCase()
       );
@@ -59,6 +60,20 @@ export async function PUT(request, { params }) {
 
     if (icon !== undefined) categories[index].icon = icon;
     if (isActive !== undefined) categories[index].isActive = !!isActive;
+
+    // âœ… آپدیت productTypes (فقط برای زیردسته‌ها معنا دارد)
+    if (productTypes !== undefined) {
+      if (Array.isArray(productTypes)) {
+        categories[index].productTypes = productTypes
+          .map((s) => String(s).trim())
+          .filter(Boolean);
+      } else if (typeof productTypes === "string") {
+        categories[index].productTypes = productTypes
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
 
     await saveCategories(categories);
 
@@ -84,8 +99,9 @@ export async function DELETE(request, { params }) {
 
   try {
     const { id } = await params;
-    const categoryId = parseInt(id);
-    if (isNaN(categoryId)) {
+
+    // âœ… ID رشته است
+    if (!id || typeof id !== "string") {
       return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
     }
 
@@ -93,7 +109,7 @@ export async function DELETE(request, { params }) {
     const cascade = searchParams.get("cascade") === "true";
 
     const categories = await getCategories();
-    const target = categories.find((c) => c.id === categoryId);
+    const target = categories.find((c) => c.id === id);
     if (!target) {
       return NextResponse.json(
         { message: "Category not found" },
@@ -101,16 +117,16 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // چک: آیا محصول/درخواستی از این اسم استفاده می‌کند؟
+    // âœ… چک: آیا محصول/درخواستی از این ID استفاده می‌کند؟
     const [productCount, requestCount] = await Promise.all([
       prisma.product.count({
         where: {
-          OR: [{ category: target.name }, { subCategory: target.name }],
+          OR: [{ category: id }, { subCategory: id }],
         },
       }),
       prisma.buyingRequest.count({
         where: {
-          OR: [{ category: target.name }, { subCategory: target.name }],
+          OR: [{ category: id }, { subCategory: id }],
         },
       }),
     ]);
@@ -130,17 +146,17 @@ export async function DELETE(request, { params }) {
     let removedCount = 1;
 
     if (cascade) {
-      // حذف خود دسته + همه‌ی زیردسته‌ها
-      const subs = categories.filter((c) => c.parent === categoryId);
+      // حذف خود + تمام زیردسته‌ها
+      const subs = categories.filter((c) => c.parent === id);
       removedCount += subs.length;
       updated = categories.filter(
-        (c) => c.id !== categoryId && c.parent !== categoryId
+        (c) => c.id !== id && c.parent !== id
       );
     } else {
-      // فقط خود دسته، زیردسته‌ها → parent = 0
+      // فقط خود، زیردسته‌ها → parent = 0
       updated = categories
-        .filter((c) => c.id !== categoryId)
-        .map((c) => (c.parent === categoryId ? { ...c, parent: 0 } : c));
+        .filter((c) => c.id !== id)
+        .map((c) => (c.parent === id ? { ...c, parent: 0 } : c));
     }
 
     await saveCategories(updated);
