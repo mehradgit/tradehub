@@ -9018,6 +9018,343 @@ a:hover {
 /* ============================================================
    HEADER DROPDOWN
    ============================================================ */
+.header-dropdown {
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e8edf0;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+  animation: headerDropdownFadeIn 0.2s ease;
+  scrollbar-width: thin;
+}
+
+.header-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+
+.header-dropdown::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 4px;
+}
+
+@keyframes headerDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== User Header ===== */
+.header-dropdown .dropdown-user-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0faf6, #eaf7f1);
+  border-bottom: 1px solid #e8edf0;
+}
+
+.header-dropdown .dropdown-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 800;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid white;
+  box-shadow: 0 4px 12px rgba(19, 121, 91, 0.2);
+  font-family: "Manrope", sans-serif;
+}
+
+.header-dropdown .dropdown-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.header-dropdown .dropdown-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-dropdown .dropdown-user-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0b1f18;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: "Manrope", sans-serif;
+}
+
+.header-dropdown .dropdown-user-email {
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+/* ===== Guest Header ===== */
+.header-dropdown .dropdown-guest-header {
+  padding: 22px 16px 18px;
+  background: linear-gradient(135deg, #f0faf6, #eaf7f1);
+  border-bottom: 1px solid #e8edf0;
+  text-align: center;
+}
+
+.header-dropdown .dropdown-guest-icon {
+  font-size: 40px;
+  color: #13795b;
+  margin-bottom: 8px;
+}
+
+.header-dropdown .dropdown-guest-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0b1f18;
+  font-family: "Manrope", sans-serif;
+}
+
+.header-dropdown .dropdown-guest-sub {
+  font-size: 12.5px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* ===== Sections ===== */
+.header-dropdown .dropdown-nav-section,
+.header-dropdown .dropdown-menu-section {
+  padding: 10px 8px;
+}
+
+.header-dropdown .dropdown-nav-section {
+  border-bottom: 1px solid #f1f5f7;
+}
+
+.header-dropdown .dropdown-section-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 6px 12px;
+}
+
+/* ===== Dropdown Item ===== */
+.header-dropdown .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.header-dropdown .dropdown-item i {
+  width: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #64748b;
+  transition: color 0.15s ease;
+}
+
+.header-dropdown .dropdown-item:hover {
+  background: #f0faf6;
+  color: #13795b;
+}
+
+.header-dropdown .dropdown-item:hover i {
+  color: #13795b;
+}
+
+.header-dropdown .dropdown-item.active {
+  background: #eaf7f1;
+  color: #0b5b43;
+}
+
+.header-dropdown .dropdown-item.active i {
+  color: #13795b;
+}
+
+/* ===== Footer ===== */
+.header-dropdown .dropdown-footer {
+  padding: 8px;
+  border-top: 1px solid #f1f5f7;
+}
+
+.header-dropdown .dropdown-signout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+  text-align: left;
+}
+
+.header-dropdown .dropdown-signout i {
+  width: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.header-dropdown .dropdown-signout:hover {
+  background: #fef2f2;
+}
+
+/* ===== Buttons for Guest ===== */
+.header-dropdown .dropdown-btn-primary,
+.header-dropdown .dropdown-btn-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin: 4px 8px;
+}
+
+.header-dropdown .dropdown-btn-primary {
+  background: linear-gradient(135deg, #13795b, #0d9469);
+  color: white;
+  box-shadow: 0 6px 16px rgba(19, 121, 91, 0.25);
+}
+
+.header-dropdown .dropdown-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(19, 121, 91, 0.35);
+}
+
+.header-dropdown .dropdown-btn-outline {
+  background: white;
+  color: #13795b;
+  border: 1.5px solid #13795b;
+}
+
+.header-dropdown .dropdown-btn-outline:hover {
+  background: #f0faf6;
+  transform: translateY(-1px);
+}
+
+/* ===== Mobile-only section ===== */
+.header-dropdown .dropdown-mobile-only {
+  display: none;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* تبلت / موبایل: مخفی کردن nav links */
+@media (max-width: 992px) {
+  .site-header .header-nav-links {
+    display: none;
+  }
+
+  .header-dropdown .dropdown-mobile-only {
+    display: block;
+  }
+}
+
+/* تبلت */
+@media (max-width: 900px) {
+  .site-header .header-nav {
+    height: 66px;
+  }
+
+  .site-header .logo-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .site-header .logo-text {
+    font-size: 18px;
+  }
+
+  .site-header .trigger-name {
+    display: none;
+  }
+
+  .site-header .user-menu-trigger {
+    padding: 4px;
+    border-radius: 50%;
+  }
+
+  .site-header .trigger-chevron {
+    display: none;
+  }
+}
+
+/* موبایل */
+@media (max-width: 600px) {
+  .site-header .header-nav {
+    height: 60px;
+    gap: 12px;
+  }
+
+  .site-header .logo-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .site-header .logo-text {
+    font-size: 16px;
+  }
+
+  .site-header .trigger-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+
+  .header-dropdown {
+    width: calc(100vw - 24px);
+    max-width: 340px;
+  }
+}
+
+@media (max-width: 400px) {
+  .site-header .logo-text {
+    font-size: 15px;
+  }
+
+  .site-header .logo-text span {
+    display: none;
+  }
+}
 
 /* ============================================================
    SKELETON LOADER
