@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // ====== ثابت‌ها ======
-const APP_NAME = "FoodHub";
+const APP_NAME = "FoodTradeLink";
 const BASE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
 // ====== قالب پایه ایمیل ======
@@ -40,7 +40,7 @@ export async function sendVerificationEmail(email, verificationUrl) {
   const mailOptions = {
     from: `"${APP_NAME}" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: "Verify Your Email Address — FoodTradeHub",
+    subject: "Verify Your Email Address — FoodTradeLink",
     html: emailLayout(`
       <div style="text-align: center; padding: 20px 0;">
         <div style="width: 72px; height: 72px; margin: 0 auto 20px; border-radius: 50%;
@@ -341,7 +341,7 @@ export async function sendPasswordResetEmail(email, resetUrl) {
   const mailOptions = {
     from: `"${APP_NAME}" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: "Reset Your Password — FoodTradeHub",
+    subject: "Reset Your Password — FoodTradeLink",
     html: emailLayout(`
       <div style="text-align: center; padding: 20px 0;">
         <div style="width: 72px; height: 72px; margin: 0 auto 20px; border-radius: 50%;

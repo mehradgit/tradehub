@@ -62,7 +62,7 @@ export default function Error({ error, reset }) {
                 Contact Support
               </Link>
               <a
-                href="mailto:support@foodtradehub.com"
+                href="mailto:support@FoodTradeLink.com"
                 className="err-link"
               >
                 <i className="fas fa-envelope"></i>

@@ -98,7 +98,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
           <i className="fa-solid fa-leaf"></i>
         </div>
         <div>
-          <b>FoodTradeHub</b>
+          <b>FoodTradeLink</b>
           <span>B2B Food Marketplace</span>
         </div>
       </div>

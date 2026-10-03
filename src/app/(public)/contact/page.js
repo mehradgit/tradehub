@@ -2,9 +2,9 @@
 import ContactForm from "@/components/home/ContactForm";
 
 export const metadata = {
-  title: "Contact Us | FoodTradeHub",
+  title: "Contact Us | FoodTradeLink",
   description:
-    "Get in touch with FoodTradeHub. Our team in Muscat, Oman is here to help you with any questions about global food trade.",
+    "Get in touch with FoodTradeLink. Our team in Muscat, Oman is here to help you with any questions about global food trade.",
 };
 
 export default function ContactPage() {
@@ -75,11 +75,11 @@ export default function ContactPage() {
                 <div>
                   <strong>Email</strong>
                   <a href="mailto:info@foodtradehub.com">
-                    info@foodtradehub.com
+                    info@FoodTradeLink.com
                   </a>
                   <br />
                   <a href="mailto:support@foodtradehub.com">
-                    support@foodtradehub.com
+                    support@FoodTradeLink.com
                   </a>
                 </div>
               </div>
@@ -160,7 +160,7 @@ export default function ContactPage() {
               </div>
             </div>
             <iframe
-              title="FoodTradeHub Office Location"
+              title="FoodTradeLink Office Location"
               src="https://www.openstreetmap.org/export/embed.html?bbox=58.40%2C23.57%2C58.48%2C23.62&layer=mapnik&marker=23.5950%2C58.4400"
               style={{
                 width: "100%",

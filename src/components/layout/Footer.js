@@ -53,7 +53,7 @@ export default function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <span>© 2026 FoodTradeHub. All rights reserved.</span>
+          <span>© 2026 FoodTradeLink. All rights reserved.</span>
           <span>Global B2B Food Marketplace</span>
         </div>
       </div>

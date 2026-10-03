@@ -13,7 +13,7 @@ export default function GlobalError({ error, reset }) {
   return (
     <html lang="en">
       <head>
-        <title>Critical Error | FoodTradeHub</title>
+        <title>Critical Error | FoodTradeLink</title>
       </head>
       <body style={{ margin: 0, padding: 0 }}>
         <div className="gerr-page">
@@ -137,8 +137,8 @@ export default function GlobalError({ error, reset }) {
                 </svg>
                 <span>
                   If this keeps happening, please contact us at{" "}
-                  <a href="mailto:support@foodtradehub.com">
-                    support@foodtradehub.com
+                  <a href="mailto:support@FoodTradeLink.com">
+                    support@FoodTradeLink.com
                   </a>
                 </span>
               </div>

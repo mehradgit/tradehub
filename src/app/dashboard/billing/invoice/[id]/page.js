@@ -174,7 +174,7 @@ export default async function InvoicePage({ params }) {
                     fontFamily: "Manrope, sans-serif",
                   }}
                 >
-                  FoodTradeHub
+                  FoodTradeLink
                 </div>
                 <div
                   style={{
@@ -533,14 +533,14 @@ export default async function InvoicePage({ params }) {
           <div>
             For any questions about this invoice, contact{" "}
             <a
-              href="mailto:support@foodtradehub.com"
+              href="mailto:support@FoodTradeLink.com"
               style={{
                 color: "var(--d-primary, #0f9e6e)",
                 fontWeight: 700,
                 textDecoration: "none",
               }}
             >
-              support@foodtradehub.com
+              support@FoodTradeLink.com
             </a>
           </div>
         </div>
