@@ -36,10 +36,8 @@ export async function POST(request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // ✅ دریافت پلن و اشتراک فعال
     const { plan, subscription } = await getUserActivePlan(session.user.id);
 
-    // بررسی محدودیت تعداد محصولات
     if (!(await canAddProduct(session.user.id, plan))) {
       return NextResponse.json(
         {
@@ -75,7 +73,6 @@ export async function POST(request) {
       specs,
     } = body;
 
-    // بررسی محدودیت تعداد تصاویر برای این محصول
     if (
       images.length > plan.maxImagesPerProduct &&
       plan.maxImagesPerProduct !== -1
@@ -91,7 +88,6 @@ export async function POST(request) {
     const productNumber = generateNumber();
     const slug = generateSlug(name);
 
-    // اعتبارسنجی اولیه
     if (!name || !category || !shortDesc || !price || !moq) {
       return NextResponse.json(
         { message: "Missing required fields" },
@@ -99,7 +95,6 @@ export async function POST(request) {
       );
     }
 
-    // ====== پردازش تصاویر ======
     const imagePaths = [];
     for (const img of images) {
       if (img.startsWith("data:image")) {
@@ -112,7 +107,6 @@ export async function POST(request) {
       }
     }
 
-    // ایجاد محصول
     const product = await prisma.product.create({
       data: {
         name,
@@ -134,16 +128,18 @@ export async function POST(request) {
         certifications: certifications || null,
         packaging: packaging || null,
         shippingTerms: shippingTerms || null,
-        isVisible: isVisible !== undefined ? isVisible : true,
-        isVisible: false, // ✅ تا تأیید نشود، در سایت نمایش داده نمی‌شود
-        status: "PENDING", // ✅ در انتظار تأیید
+        isVisible: false,
+        status: "PENDING",
         userId,
         productNumber,
         slug,
       },
     });
 
-    // ✅ برای محصولات، سهمیه ماهانه افزایش نمی‌یابد
+    // ✅ Invalidate caches
+    revalidatePath("/");
+    revalidatePath("/products");
+
     return NextResponse.json(
       {
         message: "Product created successfully",

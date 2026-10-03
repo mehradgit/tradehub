@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { getUserActivePlan } from "@/lib/planService";
+import { revalidatePath } from "next/cache"; // ✅ جدید
 
-// ====== GET: دریافت یک محصول ======
+// ===== GET =====
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
@@ -40,7 +41,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// ====== PUT: ویرایش کامل محصول ======
+// ===== PUT: ویرایش کامل =====
 export async function PUT(request, { params }) {
   try {
     const session = await auth();
@@ -48,7 +49,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params; // ✅ await params
+    const { id } = await params;
     const userId = session.user.id;
     const body = await request.json();
 
@@ -69,13 +70,11 @@ export async function PUT(request, { params }) {
       certifications,
       origin,
       isVisible,
-      images, // آرایه تصاویر پس از ویرایش (موجود + جدید)
+      images,
     } = body;
 
-    // ====== دریافت پلن فعال کاربر ======
     const { plan } = await getUserActivePlan(userId);
 
-    // ====== بررسی محدودیت تعداد تصاویر ======
     if (
       images &&
       images.length > plan.maxImagesPerProduct &&
@@ -89,10 +88,9 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // بررسی مالکیت محصول
     const existingProduct = await prisma.product.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, productNumber: true, slug: true },
     });
 
     if (!existingProduct) {
@@ -106,7 +104,6 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // به‌روزرسانی محصول
     const updated = await prisma.product.update({
       where: { id },
       data: {
@@ -127,9 +124,16 @@ export async function PUT(request, { params }) {
         origin: origin || null,
         images: images || [],
         status: "PENDING",
-        isVisible: false, // در انتظار تأیید مجدد
+        isVisible: false,
       },
     });
+
+    // ✅ Invalidate caches
+    revalidatePath("/");
+    revalidatePath("/products");
+    revalidatePath(
+      `/products/${existingProduct.productNumber}/${existingProduct.slug}`,
+    );
 
     return NextResponse.json(
       { message: "Product updated successfully", product: updated },
@@ -144,7 +148,7 @@ export async function PUT(request, { params }) {
   }
 }
 
-// ====== PATCH: به‌روزرسانی جزئی (visibility) ======
+// ===== PATCH: visibility toggle =====
 export async function PATCH(request, { params }) {
   try {
     const session = await auth();
@@ -159,7 +163,7 @@ export async function PATCH(request, { params }) {
 
     const product = await prisma.product.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, productNumber: true, slug: true },
     });
 
     if (!product) {
@@ -178,6 +182,11 @@ export async function PATCH(request, { params }) {
       data: { isVisible },
     });
 
+    // ✅ Invalidate caches
+    revalidatePath("/");
+    revalidatePath("/products");
+    revalidatePath(`/products/${product.productNumber}/${product.slug}`);
+
     return NextResponse.json(
       { message: "Product updated successfully", product: updated },
       { status: 200 },
@@ -191,7 +200,7 @@ export async function PATCH(request, { params }) {
   }
 }
 
-// ====== DELETE: حذف محصول ======
+// ===== DELETE =====
 export async function DELETE(request, { params }) {
   try {
     const session = await auth();
@@ -204,7 +213,7 @@ export async function DELETE(request, { params }) {
 
     const product = await prisma.product.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, productNumber: true, slug: true },
     });
 
     if (!product) {
@@ -219,6 +228,14 @@ export async function DELETE(request, { params }) {
     }
 
     await prisma.product.delete({ where: { id } });
+
+    // ✅ Invalidate caches — این خط حیاتی است
+    revalidatePath("/");
+    revalidatePath("/products");
+    revalidatePath(`/products/${product.productNumber}/${product.slug}`);
+
+    // اگر این محصول در homepage section از نوع manual بوده،
+    // بهتر است itemIds هم پاک شود (اختیاری — بخش پایین توضیح داده شده)
 
     return NextResponse.json(
       { message: "Product deleted successfully" },

@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache"; // ✅
 import {
   createNotification,
   NOTIFICATION_TYPES,
@@ -21,19 +22,25 @@ export async function PATCH(request, { params }) {
     if (!["approve", "reject"].includes(action)) {
       return NextResponse.json(
         { message: "Invalid action" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const product = await prisma.product.findUnique({
       where: { id },
-      select: { id: true, name: true, userId: true },
+      select: {
+        id: true,
+        name: true,
+        userId: true,
+        productNumber: true,
+        slug: true,
+      },
     });
 
     if (!product) {
       return NextResponse.json(
         { message: "Product not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -50,7 +57,6 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    // ✅ نوتیفیکیشن برای صاحب محصول
     createNotification({
       userId: product.userId,
       type: isApproving
@@ -66,6 +72,11 @@ export async function PATCH(request, { params }) {
       metadata: { productId: product.id },
     });
 
+    // ✅ Invalidate caches
+    revalidatePath("/");
+    revalidatePath("/products");
+    revalidatePath(`/products/${product.productNumber}/${product.slug}`);
+
     return NextResponse.json({
       message: isApproving
         ? "Product approved successfully"
@@ -76,7 +87,7 @@ export async function PATCH(request, { params }) {
     console.error("Product approval error:", error);
     return NextResponse.json(
       { message: "Failed to update product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

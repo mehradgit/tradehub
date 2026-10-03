@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache"; // ✅
 import {
   createNotification,
   NOTIFICATION_TYPES,
@@ -21,19 +22,25 @@ export async function PATCH(request, { params }) {
     if (!["approve", "reject"].includes(action)) {
       return NextResponse.json(
         { message: "Invalid action" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const buyingRequest = await prisma.buyingRequest.findUnique({
       where: { id },
-      select: { id: true, title: true, userId: true },
+      select: {
+        id: true,
+        title: true,
+        userId: true,
+        requestNumber: true,
+        slug: true,
+      },
     });
 
     if (!buyingRequest) {
       return NextResponse.json(
         { message: "Request not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -50,7 +57,6 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    // ✅ نوتیفیکیشن برای صاحب درخواست
     createNotification({
       userId: buyingRequest.userId,
       type: isApproving
@@ -68,6 +74,13 @@ export async function PATCH(request, { params }) {
       metadata: { requestId: buyingRequest.id },
     });
 
+    // ✅ Invalidate caches
+    revalidatePath("/");
+    revalidatePath("/requests");
+    revalidatePath(
+      `/requests/${buyingRequest.requestNumber}/${buyingRequest.slug}`,
+    );
+
     return NextResponse.json({
       message: isApproving
         ? "Request approved successfully"
@@ -78,7 +91,7 @@ export async function PATCH(request, { params }) {
     console.error("Request approval error:", error);
     return NextResponse.json(
       { message: "Failed to update request" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

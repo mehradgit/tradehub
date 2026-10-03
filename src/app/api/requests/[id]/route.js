@@ -2,8 +2,9 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache"; // ✅
 
-// ====== GET: دریافت یک درخواست (برای فرم ویرایش) ======
+// ===== GET =====
 export async function GET(request, { params }) {
   try {
     const session = await auth();
@@ -23,7 +24,6 @@ export async function GET(request, { params }) {
       );
     }
 
-    // فقط مالک می‌تواند ببیند
     if (buyingRequest.userId !== session.user.id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
@@ -38,7 +38,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// ====== PUT: ویرایش کامل درخواست ======
+// ===== PUT =====
 export async function PUT(request, { params }) {
   try {
     const session = await auth();
@@ -64,12 +64,10 @@ export async function PUT(request, { params }) {
       deliveryCountry,
       packagingReq,
       certifications,
-      // ✅ فیلدهای جدید
       paymentTerms,
       targetPrice,
       isPriceNegotiable,
       supplierCountries,
-      // =================
       attachments,
       isUrgent,
       isVisible,
@@ -77,7 +75,7 @@ export async function PUT(request, { params }) {
 
     const existing = await prisma.buyingRequest.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, requestNumber: true, slug: true },
     });
 
     if (!existing) {
@@ -107,7 +105,6 @@ export async function PUT(request, { params }) {
         deliveryCountry,
         packagingReq: packagingReq || null,
         certifications: certifications || null,
-        // ✅ فیلدهای جدید
         paymentTerms: paymentTerms || null,
         targetPrice:
           isPriceNegotiable === false && targetPrice
@@ -116,14 +113,17 @@ export async function PUT(request, { params }) {
         isPriceNegotiable:
           isPriceNegotiable !== undefined ? isPriceNegotiable : true,
         supplierCountries: supplierCountries || ["WORLDWIDE"],
-        // =================
         attachments: attachments || [],
         isUrgent: isUrgent !== undefined ? isUrgent : false,
         isVisible: isVisible !== undefined ? isVisible : true,
-        // ✅ پس از ویرایش، وضعیت به PENDING برمیگردد تا ادمین دوباره تأیید کند
         status: "PENDING",
       },
     });
+
+    // ✅ Invalidate caches
+    revalidatePath("/");
+    revalidatePath("/requests");
+    revalidatePath(`/requests/${existing.requestNumber}/${existing.slug}`);
 
     return NextResponse.json(
       { message: "Request updated successfully", request: updated },
@@ -138,7 +138,7 @@ export async function PUT(request, { params }) {
   }
 }
 
-// ====== PATCH: به‌روزرسانی جزئی (فقط visibility) ======
+// ===== PATCH =====
 export async function PATCH(request, { params }) {
   try {
     const session = await auth();
@@ -153,7 +153,7 @@ export async function PATCH(request, { params }) {
 
     const existing = await prisma.buyingRequest.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, requestNumber: true, slug: true },
     });
 
     if (!existing) {
@@ -172,6 +172,10 @@ export async function PATCH(request, { params }) {
       data: { isVisible },
     });
 
+    revalidatePath("/");
+    revalidatePath("/requests");
+    revalidatePath(`/requests/${existing.requestNumber}/${existing.slug}`);
+
     return NextResponse.json(
       { message: "Request updated successfully", request: updated },
       { status: 200 },
@@ -185,7 +189,7 @@ export async function PATCH(request, { params }) {
   }
 }
 
-// ====== DELETE: حذف درخواست ======
+// ===== DELETE =====
 export async function DELETE(request, { params }) {
   try {
     const session = await auth();
@@ -198,7 +202,7 @@ export async function DELETE(request, { params }) {
 
     const existing = await prisma.buyingRequest.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, requestNumber: true, slug: true },
     });
 
     if (!existing) {
@@ -213,6 +217,11 @@ export async function DELETE(request, { params }) {
     }
 
     await prisma.buyingRequest.delete({ where: { id } });
+
+    // ✅ Invalidate caches
+    revalidatePath("/");
+    revalidatePath("/requests");
+    revalidatePath(`/requests/${existing.requestNumber}/${existing.slug}`);
 
     return NextResponse.json(
       { message: "Request deleted successfully" },
