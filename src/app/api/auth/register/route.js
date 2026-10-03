@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { sendVerificationEmail } from "@/lib/email";
 import { generateNumber, generateSlug } from "@/utils/generate";
 import { verifyCaptcha } from "@/lib/captcha";
+import { dispatchEvent } from "@/lib/eventService";
 
 // ====== base URL ======
 function getBaseUrl() {
@@ -178,7 +179,9 @@ export async function POST(request) {
       console.log(verificationUrl);
       console.log("========================================\n");
     }
-
+    dispatchEvent("user.registered", { userId: user.id }).catch((err) => {
+      console.error("[Register] welcome event failed:", err);
+    });
     return NextResponse.json(
       {
         message:
