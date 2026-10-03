@@ -37,7 +37,7 @@ export default function CategoriesSection() {
       <div className="categories-grid">
         {mainCategories.map((category, index) => (
           <Link
-            href={`/products?category=${encodeURIComponent(category.name)}`}
+            href={`/products?category=${encodeURIComponent(category.id)}`}
             key={category.id}
             className="category-card"
           >

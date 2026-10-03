@@ -19,14 +19,14 @@ export default function ProductFilterBar({
     const parents = categories.filter((c) => c.parent === 0);
     parents.forEach((parent) => {
       options.push({
-        value: parent.name,
+        value: parent.id,
         label: parent.name,
         isParent: true,
       });
       const children = categories.filter((c) => c.parent === parent.id);
       children.forEach((child) => {
         options.push({
-          value: `${parent.name}|${child.name}`,
+          value: `${parent.id}|${child.id}`,
           label: `    ${child.name}`,
           isParent: false,
         });

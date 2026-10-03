@@ -28,6 +28,7 @@ export default function NewProductPage() {
     name: "",
     category: "",
     subCategory: "",
+    productType: "",
     shortDesc: "",
     fullDesc: "",
     price: "",
@@ -53,11 +54,19 @@ export default function NewProductPage() {
   };
 
   const handleCategoryChange = (value) => {
-    setFormData((prev) => ({ ...prev, category: value, subCategory: "" }));
+    setFormData((prev) => ({ ...prev, category: value, subCategory: "", productType: "", }));
   };
 
   const handleSubCategoryChange = (value) => {
-    setFormData((prev) => ({ ...prev, subCategory: value }));
+    setFormData((prev) => ({
+      ...prev,
+      subCategory: value,
+      productType: "",
+    }));
+  };
+
+  const handleProductTypeChange = (value) => {
+    setFormData((prev) => ({ ...prev, productType: value }));
   };
 
   const handleFullDescChange = useCallback((value) => {
@@ -164,6 +173,7 @@ export default function NewProductPage() {
         name: formData.name,
         category: formData.category,
         subCategory: formData.subCategory || undefined,
+        productType: formData.productType || undefined,
         shortDesc: formData.shortDesc,
         fullDesc: formData.fullDesc || undefined,
         price: parseFloat(formData.price),
@@ -305,8 +315,10 @@ export default function NewProductPage() {
                 <CategorySelect
                   categoryValue={formData.category}
                   subCategoryValue={formData.subCategory}
+                  productTypeValue={formData.productType}
                   onCategoryChange={handleCategoryChange}
                   onSubCategoryChange={handleSubCategoryChange}
+                  onProductTypeChange={handleProductTypeChange}
                   categoryRequired
                 />
               </div>
@@ -472,8 +484,8 @@ export default function NewProductPage() {
                 >
                   <i
                     className={`fas ${isImageFull
-                        ? "fa-exclamation-triangle"
-                        : "fa-info-circle"
+                      ? "fa-exclamation-triangle"
+                      : "fa-info-circle"
                       }`}
                   ></i>
                   <span>

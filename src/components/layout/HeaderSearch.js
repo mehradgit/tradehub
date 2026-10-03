@@ -1,51 +1,52 @@
 // src/components/layout/HeaderSearch.js
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-
-/* ============================================================
-   Categories — دقیقاً مطابق ساختار پروژه (globals.css)
-============================================================ */
-const CATEGORIES = [
-  { value: "", label: "All Categories", icon: "fa-border-all" },
-  { value: "Protein", label: "Protein", icon: "fa-drumstick-bite" },
-  {
-    value: "Legumes, Grains, and Other Foods",
-    label: "Legumes, Grains & Other Foods",
-    icon: "fa-wheat-awn",
-  },
-  {
-    value: "Dairy and Breakfast",
-    label: "Dairy & Breakfast",
-    icon: "fa-mug-hot",
-  },
-  { value: "Frozen Foods", label: "Frozen Foods", icon: "fa-snowflake" },
-  { value: "Condiments", label: "Condiments", icon: "fa-pepper-hot" },
-  {
-    value: "Canned and Ready-Made Food",
-    label: "Canned & Ready-Made Food",
-    icon: "fa-jar",
-  },
-  {
-    value: "Sweets and Snacks",
-    label: "Sweets & Snacks",
-    icon: "fa-cookie-bite",
-  },
-];
+import { useCategories } from "@/hooks/useCategories";
 
 export default function HeaderSearch() {
   const router = useRouter();
+  const { categories } = useCategories();   // âœ… دسته‌ها از DB
 
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+  const [selectedCategory, setSelectedCategory] = useState({
+    value: "",
+    label: "All Categories",
+    icon: "fa-border-all",
+  });
   const [query, setQuery] = useState("");
 
   const inputRef = useRef(null);
   const categoryRef = useRef(null);
 
-  /* ====== Toggle search bar ====== */
+  // ============================================================
+  // âœ… ساخت لیست دسته‌ها داینامیک از DB
+  // ============================================================
+  const categoryOptions = useMemo(() => {
+    const options = [
+      { value: "", label: "All Categories", icon: "fa-border-all" },
+    ];
+
+    const parents = categories
+      .filter((c) => c.parent === 0 && c.isActive !== false)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+    parents.forEach((cat) => {
+      options.push({
+        value: cat.id,                          // âœ… ID به جای name
+        label: cat.name,
+        icon: cat.icon ? `fa-${cat.icon}` : "fa-tag",
+      });
+    });
+
+    return options;
+  }, [categories]);
+
+  // ============================================================
+  // Toggle search bar
+  // ============================================================
   const handleToggle = () => {
     setIsOpen((prev) => {
       const next = !prev;
@@ -59,7 +60,9 @@ export default function HeaderSearch() {
     setDropdownOpen(false);
   };
 
-  /* ====== Submit → /search?q=...&category=... ====== */
+  // ============================================================
+  // Submit → /search?q=...&category=...
+  // ============================================================
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
 
@@ -77,7 +80,6 @@ export default function HeaderSearch() {
     closeSearch();
   };
 
-  /* ====== Keyboard ====== */
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -88,7 +90,9 @@ export default function HeaderSearch() {
     }
   };
 
-  /* ====== Focus input when opened ====== */
+  // ============================================================
+  // Focus input when opened
+  // ============================================================
   useEffect(() => {
     if (isOpen) {
       const t = setTimeout(() => inputRef.current?.focus(), 350);
@@ -96,7 +100,9 @@ export default function HeaderSearch() {
     }
   }, [isOpen]);
 
-  /* ====== Close dropdown on outside click ====== */
+  // ============================================================
+  // Close dropdown on outside click
+  // ============================================================
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (categoryRef.current && !categoryRef.current.contains(e.target)) {
@@ -125,7 +131,7 @@ export default function HeaderSearch() {
         <i className="fa-solid fa-xmark hs-icon-close" />
       </button>
 
-      {/* ==================== SEARCH BAR (fixed زیر هدر) ==================== */}
+      {/* ==================== SEARCH BAR ==================== */}
       <div
         id="hs-search-bar"
         className={`hs-bar ${isOpen ? "open" : ""}`}
@@ -169,7 +175,7 @@ export default function HeaderSearch() {
 
               {dropdownOpen && (
                 <ul className="hs-category-menu" role="listbox">
-                  {CATEGORIES.map((cat) => (
+                  {categoryOptions.map((cat) => (
                     <li
                       key={cat.value || "all"}
                       role="option"

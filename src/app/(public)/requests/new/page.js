@@ -53,13 +53,25 @@ export default function NewRequestPage() {
   };
 
   // ====== تغییرات دستهبندی ======
-  const handleCategoryChange = (category, subCategory) => {
+  const handleCategoryChange = (category) => {
     setFormData((prev) => ({
       ...prev,
       category,
-      subCategory: subCategory || "",
+      subCategory: "",
+      productType: "",
     }));
-    if (error) setError("");
+  };
+
+  const handleSubCategoryChange = (sub) => {
+    setFormData((prev) => ({
+      ...prev,
+      subCategory: sub || "",
+      productType: "",
+    }));
+  };
+
+  const handleProductTypeChange = (pt) => {
+    setFormData((prev) => ({ ...prev, productType: pt || "" }));
   };
 
   // ====== تغییرات کشور تأمینکننده ======
@@ -265,10 +277,10 @@ export default function NewRequestPage() {
                 <CategorySelect
                   categoryValue={formData.category}
                   subCategoryValue={formData.subCategory}
+                  productTypeValue={formData.productType}
                   onCategoryChange={handleCategoryChange}
-                  onSubCategoryChange={(sub) =>
-                    setFormData((prev) => ({ ...prev, subCategory: sub }))
-                  }
+                  onSubCategoryChange={handleSubCategoryChange}
+                  onProductTypeChange={handleProductTypeChange}
                   categoryRequired
                 />
               </div>

@@ -1,49 +1,61 @@
 // src/components/home/HeroSection.js
 "use client";
 
-import HeroSearch from "./HeroSearch";
+import Link from "next/link";
 
 export default function HeroSection({ stats }) {
   return (
     <section className="hero-new">
       <div className="container">
         <div className="hero-new-grid">
-          <div>
+          {/* ====== متن + CTA ====== */}
+          <div className="hero-content">
             <div className="eyebrow">
               <i className="fa-solid fa-globe"></i>
               GLOBAL B2B FOOD MARKETPLACE
             </div>
 
             <h1>
-              Trade Food Products <br />
-              <span>Without Borders.</span>
+              Smarter Connections. <br />
+              <span>Better Food Trade.</span>
             </h1>
 
-            <p>
-              Connect with verified food suppliers, manufacturers, wholesalers
-              and buyers from around the world. Discover products, send
-              inquiries and grow your international food business.
+            <p className="hero-description">
+              Connect with verified food buyers and suppliers worldwide.
+              Discover products, compare opportunities, and build trusted
+              international trade relationships — all in one place.
             </p>
 
-            {/* ✅ کامپوننت جدید سرچ */}
-            <HeroSearch />
+            {/* ====== دکمه‌های CTA ====== */}
+            <div className="hero-actions">
+              <Link href="/profiles" className="btn-hero-primary">
+                <i className="fa-solid fa-magnifying-glass"></i>
+                Find Suppliers
+              </Link>
+              <Link href="/requests/new" className="btn-hero-secondary">
+                <i className="fa-solid fa-cart-plus"></i>
+                Post a Buy Request
+              </Link>
+            </div>
 
-            <div className="hero-stats">
-              <div className="hero-stat">
-                <strong>{stats?.suppliers || "18,500"}+</strong>
-                <span>Verified Suppliers</span>
+            {/* ====== ویژگی‌ها ====== */}
+            <div className="hero-features">
+              <div className="hero-feature">
+                <i className="fa-solid fa-circle-check"></i>
+                <span>Verified Businesses</span>
               </div>
-              <div className="hero-stat">
-                <strong>{stats?.products || "72,000"}+</strong>
-                <span>Food Products</span>
+              <div className="hero-feature">
+                <i className="fa-solid fa-circle-check"></i>
+                <span>Global Marketplace</span>
               </div>
-              <div className="hero-stat">
-                <strong>{stats?.countries || "120"}+</strong>
-                <span>Countries</span>
+              <div className="hero-feature">
+                <i className="fa-solid fa-circle-check"></i>
+                <span>Direct Communication</span>
               </div>
             </div>
           </div>
 
+          {/* ====== تصویر ====== */}
           <div className="hero-image">
             <img src="/images/hero.jpg" alt="Global food marketplace" />
             <div className="floating-card">

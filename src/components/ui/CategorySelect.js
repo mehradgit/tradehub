@@ -2,65 +2,91 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCategories } from "@/hooks/useCategories"; // ✅ جدید
+import { useCategories } from "@/hooks/useCategories";
 
 export default function CategorySelect({
   categoryValue = "",
   subCategoryValue = "",
+  productTypeValue = "",
   onCategoryChange,
   onSubCategoryChange,
+  onProductTypeChange,
   categoryRequired = false,
   subCategoryRequired = false,
+  productTypeRequired = false,
 }) {
-  const { categories } = useCategories(); // ✅ جدید
+  const { categories } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState("");
 
-  // وقتی categories لود شد، مقادیر اولیه رو ست کن
+  // ====== Sync با props ======
   useEffect(() => {
     if (categoryValue && categories.length > 0) {
-      const found = categories.find((c) => c.name === categoryValue);
+      const found = categories.find(
+        (c) => c.id === categoryValue || c.name === categoryValue
+      );
       if (found) setSelectedCategoryId(found.id);
     }
   }, [categoryValue, categories]);
 
   useEffect(() => {
     if (subCategoryValue && categories.length > 0) {
-      const found = categories.find((c) => c.name === subCategoryValue);
+      const found = categories.find(
+        (c) => c.id === subCategoryValue || c.name === subCategoryValue
+      );
       if (found) setSelectedSubCategoryId(found.id);
     }
   }, [subCategoryValue, categories]);
 
-  const mainCategories = categories.filter((c) => c.parent === 0);
-  const subCategories = categories.filter(
-    (c) => c.parent === selectedCategoryId
-  );
+  // ====== لیست‌ها ======
+  const mainCategories = categories
+    .filter((c) => c.parent === 0)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
+  const subCategories = categories
+    .filter((c) => c.parent === selectedCategoryId)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+  const selectedSub = categories.find((c) => c.id === selectedSubCategoryId);
+  const productTypes = selectedSub?.productTypes || [];
+
+  // ====== Handlerها ======
   const handleMainChange = (e) => {
-    const id = parseInt(e.target.value);
+    const id = e.target.value;
     setSelectedCategoryId(id);
-    const categoryName = categories.find((c) => c.id === id)?.name || "";
-    onCategoryChange(categoryName);
+    const name = categories.find((c) => c.id === id)?.name || "";
+    onCategoryChange?.(name, id);
     setSelectedSubCategoryId("");
-    onSubCategoryChange("");
+    onSubCategoryChange?.("", "");
+    onProductTypeChange?.("");
   };
 
   const handleSubChange = (e) => {
-    const id = parseInt(e.target.value);
+    const id = e.target.value;
     setSelectedSubCategoryId(id);
-    const subName = categories.find((c) => c.id === id)?.name || "";
-    onSubCategoryChange(subName);
+    const name = categories.find((c) => c.id === id)?.name || "";
+    onSubCategoryChange?.(name, id);
+    onProductTypeChange?.("");
   };
+
+  const handleProductTypeChange = (e) => {
+    onProductTypeChange?.(e.target.value);
+  };
+
+  // ====== محاسبه عرض ستون‌ها ======
+  const hasProductType = productTypes.length > 0;
+  const colClass = hasProductType ? "col-md-4" : "col-md-6";
 
   return (
     <div className="row g-3">
-      <div className="col-md-6">
+      {/* سطح ۱: Category */}
+      <div className={colClass}>
         <label className="form-label fw-semibold">
           Category {categoryRequired && <span className="text-danger">*</span>}
         </label>
         <select
           className="form-select"
-          value={selectedCategoryId || ""}
+          value={selectedCategoryId}
           onChange={handleMainChange}
           required={categoryRequired}
         >
@@ -73,14 +99,15 @@ export default function CategorySelect({
         </select>
       </div>
 
-      <div className="col-md-6">
+      {/* سطح ۲: Sub-Category */}
+      <div className={colClass}>
         <label className="form-label fw-semibold">
           Sub-Category{" "}
           {subCategoryRequired && <span className="text-danger">*</span>}
         </label>
         <select
           className="form-select"
-          value={selectedSubCategoryId || ""}
+          value={selectedSubCategoryId}
           onChange={handleSubChange}
           disabled={!selectedCategoryId}
           required={subCategoryRequired}
@@ -94,16 +121,36 @@ export default function CategorySelect({
             ))
           ) : (
             <option value="" disabled>
-              No sub-categories available
+              {selectedCategoryId
+                ? "No sub-categories available"
+                : "Select a category first"}
             </option>
           )}
         </select>
-        {!selectedCategoryId && (
-          <div className="text-muted small mt-1">
-            Please select a category first.
-          </div>
-        )}
       </div>
+
+      {/* سطح ۳: Product Type (فقط اگر زیردسته productTypes داشته باشد) */}
+      {hasProductType && (
+        <div className="col-md-4">
+          <label className="form-label fw-semibold">
+            Product Type{" "}
+            {productTypeRequired && <span className="text-danger">*</span>}
+          </label>
+          <select
+            className="form-select"
+            value={productTypeValue}
+            onChange={handleProductTypeChange}
+            required={productTypeRequired}
+          >
+            <option value="">Select product type</option>
+            {productTypes.map((pt) => (
+              <option key={pt} value={pt}>
+                {pt}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }

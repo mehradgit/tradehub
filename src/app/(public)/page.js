@@ -8,6 +8,7 @@ import FeatureGroup from "@/components/home/FeatureGroup";
 import MarketplaceSection from "@/components/home/MarketplaceSection";
 import CtaSection from "@/components/home/CtaSection";
 import CompanyAdsSection from "@/components/home/CompanyAdsSection";
+import WhyFoodTradeLink from "@/components/home/WhyFoodTradeLink";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -359,7 +360,7 @@ export default async function HomePage() {
          ۱. Hero Section
          ============================================================ */}
       <HeroSection stats={stats} />
-
+      <WhyFoodTradeLink />
       {/* ============================================================
          ۲. Trust Bar
          ============================================================ */}
