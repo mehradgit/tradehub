@@ -12,6 +12,7 @@ import HeaderSearch from "@/components/layout/HeaderSearch";
 export default function Header() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isJoinMenuOpen, setIsJoinMenuOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
@@ -27,7 +28,9 @@ export default function Header() {
     setMounted(true);
   }, []);
 
-  // ====== موقعیت dropdown کاربر ======
+  // ============================================================
+  // موقعیت dropdown کاربر
+  // ============================================================
   const updateDropdownPosition = () => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
@@ -38,7 +41,9 @@ export default function Header() {
     }
   };
 
-  // ====== موقعیت dropdown Join Free ======
+  // ============================================================
+  // موقعیت dropdown Join Free
+  // ============================================================
   const updateJoinMenuPosition = () => {
     if (joinTriggerRef.current) {
       const rect = joinTriggerRef.current.getBoundingClientRect();
@@ -49,9 +54,12 @@ export default function Header() {
     }
   };
 
-  // ====== Click outside ======
+  // ============================================================
+  // Click outside + Escape
+  // ============================================================
   useEffect(() => {
     const handleClickOutside = (e) => {
+      // User menu
       if (
         triggerRef.current &&
         !triggerRef.current.contains(e.target) &&
@@ -60,6 +68,8 @@ export default function Header() {
       ) {
         setIsUserMenuOpen(false);
       }
+
+      // Join Free menu
       if (
         joinTriggerRef.current &&
         !joinTriggerRef.current.contains(e.target) &&
@@ -69,6 +79,7 @@ export default function Header() {
         setIsJoinMenuOpen(false);
       }
     };
+
     const handleEscape = (e) => {
       if (e.key === "Escape") {
         setIsUserMenuOpen(false);
@@ -84,6 +95,7 @@ export default function Header() {
       window.addEventListener("scroll", updateDropdownPosition, true);
       window.addEventListener("scroll", updateJoinMenuPosition, true);
     }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
@@ -94,11 +106,17 @@ export default function Header() {
     };
   }, [isUserMenuOpen, isJoinMenuOpen]);
 
+  // ============================================================
+  // بستن dropdownها هنگام تغییر مسیر
+  // ============================================================
   useEffect(() => {
     setIsUserMenuOpen(false);
     setIsJoinMenuOpen(false);
   }, [pathname]);
 
+  // ============================================================
+  // Toggle handlers
+  // ============================================================
   const handleToggleUserMenu = () => {
     if (!isUserMenuOpen) updateDropdownPosition();
     setIsUserMenuOpen((prev) => !prev);
@@ -111,7 +129,9 @@ export default function Header() {
     setIsUserMenuOpen(false);
   };
 
-  // ====== لینک‌های اصلی ناوبری ======
+  // ============================================================
+  // لینک‌های ناوبری
+  // ============================================================
   const navLinks = [
     { href: "/products", label: "Products" },
     { href: "/requests", label: "Buy Requests" },
@@ -120,7 +140,9 @@ export default function Header() {
     { href: "/about", label: "How It Works" },
   ];
 
-  // ====== شناسه کاربر ======
+  // ============================================================
+  // اطلاعات کاربر
+  // ============================================================
   const displayName =
     session?.user?.companyName || session?.user?.name || "User";
   const initials = (session?.user?.name || session?.user?.email || "U")
@@ -138,13 +160,12 @@ export default function Header() {
 
   const isActiveLink = (href) => {
     if (href === "/") return pathname === "/";
-    // پشتیبانی از query string
     const baseHref = href.split("?")[0];
     return pathname.startsWith(baseHref);
   };
 
   // ============================================================
-  // User Dropdown Content (فقط برای کاربر لاگین‌کرده)
+  // محتوای Dropdown کاربر (فقط لاگین‌کرده)
   // ============================================================
   const userDropdownContent = session ? (
     <div
@@ -157,6 +178,7 @@ export default function Header() {
         zIndex: 10000,
       }}
     >
+      {/* Header */}
       <div className="dropdown-user-header">
         <div
           className="dropdown-avatar"
@@ -174,6 +196,7 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Navigation - فقط موبایل */}
       <div className="dropdown-nav-section dropdown-mobile-only">
         <div className="dropdown-section-label">Navigation</div>
         {navLinks.map((link) => (
@@ -189,6 +212,7 @@ export default function Header() {
         ))}
       </div>
 
+      {/* Account */}
       <div className="dropdown-menu-section">
         <div className="dropdown-section-label">Account</div>
         <DropdownItem
@@ -235,6 +259,7 @@ export default function Header() {
         />
       </div>
 
+      {/* Footer */}
       <div className="dropdown-footer">
         <button
           type="button"
@@ -249,9 +274,9 @@ export default function Header() {
   ) : null;
 
   // ============================================================
-  // Join Free Dropdown Content
+  // محتوای Dropdown Join Free (فقط مهمان)
   // ============================================================
-  const joinDropdownContent = (
+  const joinDropdownContent = !session ? (
     <div
       ref={joinMenuRef}
       className="join-dropdown"
@@ -297,8 +322,11 @@ export default function Header() {
         <i className="fas fa-arrow-right join-option-arrow"></i>
       </Link>
     </div>
-  );
+  ) : null;
 
+  // ============================================================
+  // Render
+  // ============================================================
   return (
     <>
       <header className="site-header">
@@ -343,11 +371,12 @@ export default function Header() {
               {status !== "loading" && (
                 <>
                   {session ? (
-                    /* ====== کاربر لاگین کرده: فقط User Menu ====== */
+                    /* ====== کاربر لاگین کرده ====== */
                     <>
                       <Link
                         href="/requests/new"
                         className="btn-post-request"
+                        aria-label="Post a Request"
                       >
                         <i className="fas fa-plus"></i>
                         <span>Post a Request</span>
@@ -384,12 +413,14 @@ export default function Header() {
                       </button>
                     </>
                   ) : (
-                    /* ====== مهمان: Login + Join Free + Post a Request ====== */
+                    /* ====== مهمان ====== */
                     <>
+                      {/* Login - Desktop only */}
                       <Link href="/login" className="btn-login">
                         Login
                       </Link>
 
+                      {/* Join Free - Desktop only */}
                       <div
                         className="join-trigger-wrapper"
                         ref={joinTriggerRef}
@@ -410,13 +441,30 @@ export default function Header() {
                         </button>
                       </div>
 
+                      {/* Post a Request - همه‌جا */}
                       <Link
                         href="/requests/new"
                         className="btn-post-request"
+                        aria-label="Post a Request"
                       >
                         <i className="fas fa-plus"></i>
                         <span>Post a Request</span>
                       </Link>
+
+                      {/* Menu trigger برای موبایل - آیکون کاربر */}
+                      <button
+                        ref={triggerRef}
+                        type="button"
+                        onClick={handleToggleUserMenu}
+                        aria-label="Menu"
+                        aria-expanded={isUserMenuOpen}
+                        className={`user-menu-trigger menu-only ${isUserMenuOpen ? "active" : ""
+                          }`}
+                      >
+                        <div className="trigger-avatar menu-avatar">
+                          <i className="fas fa-user"></i>
+                        </div>
+                      </button>
                     </>
                   )}
                 </>
@@ -426,9 +474,108 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Portals */}
-      {mounted && isUserMenuOpen && createPortal(userDropdownContent, document.body)}
-      {mounted && isJoinMenuOpen && createPortal(joinDropdownContent, document.body)}
+      {/* ===== Portalها ===== */}
+      {mounted &&
+        session &&
+        isUserMenuOpen &&
+        userDropdownContent &&
+        createPortal(userDropdownContent, document.body)}
+
+      {/* Menu dropdown برای مهمان روی موبایل */}
+      {mounted &&
+        !session &&
+        isUserMenuOpen &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="header-dropdown guest-menu-dropdown"
+            style={{
+              position: "fixed",
+              top: dropdownPos.top,
+              right: dropdownPos.right,
+              zIndex: 10000,
+            }}
+          >
+            {/* Navigation - فقط موبایل */}
+            <div className="dropdown-nav-section">
+              <div className="dropdown-section-label">Navigation</div>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsUserMenuOpen(false)}
+                  className={`dropdown-item ${isActiveLink(link.href) ? "active" : ""
+                    }`}
+                >
+                  <span>{link.label}</span>
+                </Link>
+              ))}
+            </div>
+
+            {/* Auth Options */}
+            {/* Auth Options - رنگ‌بندی‌شده */}
+            <div className="auth-section">
+              <Link
+                href="/login"
+                onClick={() => setIsUserMenuOpen(false)}
+                className="auth-option"
+              >
+                <div className="auth-option-icon login">
+                  <i className="fas fa-sign-in-alt"></i>
+                </div>
+                <div className="auth-option-content">
+                  <strong>Sign In</strong>
+                  <span>Already have an account?</span>
+                </div>
+                <i className="fas fa-arrow-right auth-option-arrow"></i>
+              </Link>
+            </div>
+
+            <div className="auth-divider">
+              <span>New here? Create an account</span>
+            </div>
+
+            <div className="auth-section">
+              <Link
+                href="/register?role=supplier"
+                onClick={() => setIsUserMenuOpen(false)}
+                className="auth-option"
+              >
+                <div className="auth-option-icon supplier">
+                  <i className="fas fa-tractor"></i>
+                </div>
+                <div className="auth-option-content">
+                  <strong>Join as Supplier</strong>
+                  <span>Sell products globally</span>
+                </div>
+                <i className="fas fa-arrow-right auth-option-arrow"></i>
+              </Link>
+
+              <Link
+                href="/register?role=buyer"
+                onClick={() => setIsUserMenuOpen(false)}
+                className="auth-option"
+              >
+                <div className="auth-option-icon buyer">
+                  <i className="fas fa-shopping-bag"></i>
+                </div>
+                <div className="auth-option-content">
+                  <strong>Join as Buyer</strong>
+                  <span>Source from verified suppliers</span>
+                </div>
+                <i className="fas fa-arrow-right auth-option-arrow"></i>
+              </Link>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Join Free dropdown (مهمان - دسکتاپ) */}
+      {mounted &&
+        !session &&
+        isJoinMenuOpen &&
+        joinDropdownContent &&
+        createPortal(joinDropdownContent, document.body)}
     </>
   );
 }
