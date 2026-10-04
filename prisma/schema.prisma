@@ -81,6 +81,8 @@ model Product {
   category       String
   subCategory    String?
   productType    String?
+  // مسیر slug دسته‌بندی (سه‌سطحی) برای فیلتر پیشوندی: "grains-cereals/rice/basmati"
+  categoryPath   String?
   shortDesc      String   @db.VarChar(255)
   fullDesc       String?  @db.Text
   price          Float
@@ -97,6 +99,9 @@ model Product {
   certifications String?
   packaging      String?
   shippingTerms  String?
+  paymentTerms   String?
+  // متن یکجای جست‌وجو (نام + توضیح + دسته + اتریبیوت‌ها) برای FULLTEXT
+  searchText     String?  @db.Text
   views      Int      @default(0)
   isVisible      Boolean  @default(true)
   userId         String
@@ -112,6 +117,12 @@ model Product {
   savedBy SavedProduct[] // ✅ اضافه شد (رابطه با SavedProduct)
   inquiries ProductInquiry[]
   revealedByUsers RevealedSupplierInfo[]
+  attributes ProductAttribute[]
+
+  @@index([categoryPath])
+  @@index([status, isVisible])
+  @@index([userId])
+  @@index([countryCode])
 }
 
 model BuyingRequest {
@@ -123,6 +134,8 @@ model BuyingRequest {
   views      Int      @default(0)
   subCategory     String?
   productType     String?
+  // مسیر slug سه‌سطحی برای فیلتر پیشوندی
+  categoryPath    String?
   description     String @db.Text
   quantity        Int
   unit            String   @default("kg")
@@ -143,6 +156,8 @@ model BuyingRequest {
   targetPrice        Float?   
   isPriceNegotiable  Boolean  @default(true) 
   supplierCountries  Json?
+  // متن یکجای جست‌وجو برای FULLTEXT
+  searchText         String?  @db.Text
   savedBy SavedRequest[] 
   quotes Quote[] 
   messages Message[]
@@ -153,6 +168,11 @@ model BuyingRequest {
   approvedBy    String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([categoryPath])
+  @@index([status, isVisible])
+  @@index([deliveryCountry])
+  @@index([userId])
 }
 
 model Account {
@@ -659,4 +679,65 @@ model ScheduledJob {
   updatedAt      DateTime  @updatedAt
 
   @@index([isActive, nextRunAt])
+}
+
+// ============================================================
+// اتریبیوت‌های پویا (EAV)
+//
+// AttributeDefinition → «چه مشخصه‌ای» برای «کدام دسته»
+// ProductAttribute    → «مقدار آن مشخصه» برای «کدام محصول»
+//
+// ارث‌بری scope: global → category → subCategory → productType
+// هرچه خاص‌تر، اولویت بیشتر. فیلترها از همین جدول ساخته
+// می‌شوند، پس اتریبیوت جدید بدون تغییر کد ظاهر می‌شود.
+// ============================================================
+model AttributeDefinition {
+  id           String   @id @default(cuid())
+  key          String // "moisture" — نام ماشینی
+  label        String // "Moisture content"
+  labelFa      String?
+  // text | number | boolean | select | multiSelect
+  dataType     String   @default("text")
+  unit         String? // "%", "mm", "kg"
+  // برای select/multiSelect: [{ value, label }]
+  options      Json?
+  // global | category | subCategory | productType
+  scope        String   @default("global")
+  scopeId      String? // slug مربوطه — برای global برابر null
+  isFilterable Boolean  @default(true)
+  isRequired   Boolean  @default(false)
+  showInCard   Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  values ProductAttribute[]
+
+  @@unique([key, scope, scopeId])
+  @@index([scope, scopeId, isActive])
+  @@index([isActive, isFilterable])
+}
+
+model ProductAttribute {
+  id          String   @id @default(cuid())
+  productId   String
+  attributeId String
+  // ستون‌های تایپ‌دار — برای فیلتر سریع و ایندکس‌پذیر
+  valueString String?  @db.VarChar(255)
+  valueNumber Float?
+  valueBool   Boolean?
+  optionKeys  Json? // برای multiSelect
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product   Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attribute AttributeDefinition @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  // توجه: unique نیست — چون اتریبیوت multiSelect برای هر گزینه
+  // یک ردیف می‌سازد. یکتا بودن با «حذف و درج مجدد» تضمین می‌شود.
+  @@index([productId, attributeId])
+  @@index([attributeId, valueString])
+  @@index([attributeId, valueNumber])
+  @@index([attributeId, valueBool])
 }

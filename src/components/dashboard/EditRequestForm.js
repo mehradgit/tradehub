@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import CategorySelect from "@/components/ui/CategorySelect";
 import CountrySelect from "@/components/ui/CountrySelect";
 import SupplierCountrySelect from "@/components/ui/SupplierCountrySelect";
+import VocabularySelect from "@/components/ui/VocabularySelect";
 import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import { getCountryName } from "@/lib/countries";
@@ -396,24 +397,21 @@ export default function EditRequestForm({ request }) {
               />
             </div>
 
-            <Field
-              label="Payment Terms"
-              name="paymentTerms"
-              value={formData.paymentTerms}
-              onChange={handleChange}
-              type="select"
-              icon="fa-credit-card"
-              options={[
-                "T/T (Telegraphic Transfer)",
-                "L/C (Letter of Credit)",
-                "D/P (Documents against Payment)",
-                "D/A (Documents against Acceptance)",
-                "PayPal",
-                "Western Union",
-                "Cash",
-                "Other",
-              ]}
-            />
+            <div className="er-field">
+              <label className="er-label">
+                <i className="fas fa-credit-card"></i>
+                Payment Terms
+              </label>
+              <VocabularySelect
+                vocabKey="paymentTerms"
+                value={formData.paymentTerms}
+                onChange={(v) =>
+                  setFormData((prev) => ({ ...prev, paymentTerms: v }))
+                }
+                allowCustom
+                placeholder="Select payment term…"
+              />
+            </div>
           </section>
 
           {/* ============================================================
@@ -476,40 +474,58 @@ export default function EditRequestForm({ request }) {
                 </div>
               </div>
 
-              <Field
-                label="Shipping Terms"
-                name="shippingTerms"
-                value={formData.shippingTerms}
-                onChange={handleChange}
-                type="select"
-                icon="fa-truck"
-                options={[
-                  "FOB (Free On Board)",
-                  "CIF (Cost, Insurance, Freight)",
-                  "EXW (Ex Works)",
-                  "DDP (Delivered Duty Paid)",
-                  "DAP (Delivered at Place)",
-                ]}
-              />
+              <div className="er-field">
+                <label className="er-label">
+                  <i className="fas fa-truck"></i>
+                  Shipping Terms
+                </label>
+                <VocabularySelect
+                  vocabKey="incoterms"
+                  value={formData.shippingTerms}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, shippingTerms: v }))
+                  }
+                  allowCustom
+                  placeholder="Select delivery term…"
+                />
+              </div>
 
-              <Field
-                label="Packaging Requirements"
-                name="packagingReq"
-                value={formData.packagingReq}
-                onChange={handleChange}
-                placeholder="e.g., 250g glass jars"
-                icon="fa-box-open"
-              />
+              <div className="er-field">
+                <label className="er-label">
+                  <i className="fas fa-box-open"></i>
+                  Packaging Requirements
+                </label>
+                <VocabularySelect
+                  vocabKey="packagingTypes"
+                  value={formData.packagingReq}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, packagingReq: v }))
+                  }
+                  multiple
+                  allowCustom
+                  placeholder="Select packaging type…"
+                  addPlaceholder="Add custom packaging…"
+                />
+              </div>
 
-              <Field
-                label="Required Certifications"
-                name="certifications"
-                value={formData.certifications}
-                onChange={handleChange}
-                placeholder="e.g., USDA Organic, Fair Trade, ISO 22000"
-                icon="fa-certificate"
-                hint="Separate with commas"
-              />
+              <div className="er-field">
+                <label className="er-label">
+                  <i className="fas fa-certificate"></i>
+                  Required Certifications
+                </label>
+                <VocabularySelect
+                  vocabKey="certifications"
+                  value={formData.certifications}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, certifications: v }))
+                  }
+                  multiple
+                  allowCustom
+                  placeholder="Select certification…"
+                  addPlaceholder="Add custom certification…"
+                />
+                <div className="er-hint">Separate with commas</div>
+              </div>
             </div>
           </section>
 

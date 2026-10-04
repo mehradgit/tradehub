@@ -2,7 +2,9 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import ProfileCard from "@/components/profiles/ProfileCard";
-import ProfileFilter from "@/components/profiles/ProfileFilter";
+import SharedFilterBar from "@/components/filters/FilterBar";
+import { getFilterContext } from "@/lib/filters/serverContext";
+import { describePath } from "@/lib/categoryTree";
 import Pagination from "@/components/requests/Pagination";
 
 const BASE_URL = "https://foodtradelink.com";
@@ -103,51 +105,55 @@ export async function generateMetadata({ searchParams }) {
 // صفحه (بدون تغییر)
 // ============================================================
 export default async function ProfilesPage({ searchParams }) {
-  const {
-    role = "all",
-    category = "",
-    subCategory = "",
-    page: pageParam = 1,
-    search = "",
-  } = await searchParams;
+  const resolvedParams = await searchParams;
 
-  const page = parseInt(pageParam) || 1;
-  const limit = 30;
-  const skip = (page - 1) * limit;
+  // ============================================================
+  // موتور فیلتر مشترک
+  // ============================================================
+  const filters = await getFilterContext("profiles", resolvedParams);
+  const { orderBy, page, limit, skip } = filters.plan;
 
-  const where = {
-    registrationComplete: true,
-  };
+  const params = filters.effectiveParams;
+  const search = params.search || "";
+  const rawRole = String(params.role || "").toLowerCase();
+  // برای استفاده در JSON-LD و متن صفحه
+  const role = rawRole || "all";
+  const category = params.category || "";
+  const subCategory = params.subCategory || "";
 
-  if (role === "supplier") where.role = "SUPPLIER";
-  else if (role === "buyer") where.role = "BUYER";
+  const where = { ...filters.plan.where };
 
-  if (search) {
-    where.OR = [
-      { name: { contains: search } },
-      { companyName: { contains: search } },
-      { country: { contains: search } },
-    ];
-  }
+  // نقش: لینک‌های قدیمی ?role=supplier (کوچک) را هم بپذیر
+  if (rawRole === "supplier") where.role = "SUPPLIER";
+  else if (rawRole === "buyer") where.role = "BUYER";
+  else if (params.role) where.role = String(params.role).toUpperCase();
 
-  if (category) {
-    const productFilter = {
+  // ============================================================
+  // فیلتر دسته‌بندی شرکت‌ها
+  //
+  // روی User ستونی برای دسته وجود ندارد، پس از طریق محصولات یا
+  // درخواست‌های همان شرکت اعمال می‌شود. با categoryPath (slug)
+  // به‌صورت prefix، یعنی هر سه سطح پوشش داده می‌شود.
+  // ============================================================
+  if (filters.categoryPath) {
+    const pathFilter = {
       isVisible: true,
-      category,
-      ...(subCategory && { subCategory }),
-    };
-    const requestFilter = {
-      isVisible: true,
-      category,
-      ...(subCategory && { subCategory }),
+      status: "APPROVED",
+      categoryPath: { startsWith: filters.categoryPath },
     };
 
     where.OR = [
       ...(where.OR || []),
-      { products: { some: productFilter } },
-      { buyingRequests: { some: requestFilter } },
+      { products: { some: pathFilter } },
+      { buyingRequests: { some: pathFilter } },
     ];
   }
+
+  const categoryLabel = filters.categoryPath
+    ? describePath(filters.categoryPath, filters.index)
+    : category && subCategory
+    ? `${category} › ${subCategory}`
+    : category || subCategory || "";
 
   const [profiles, totalCount] = await Promise.all([
     prisma.user.findMany({
@@ -172,7 +178,7 @@ export default async function ProfilesPage({ searchParams }) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
       skip,
       take: limit,
     }),
@@ -239,11 +245,8 @@ export default async function ProfilesPage({ searchParams }) {
           </p>
         </div>
 
-        <ProfileFilter
-          currentRole={role}
-          currentCategory={category}
-          currentSearch={search}
-        />
+        {/* ✅ نوار فیلتر یکپارچه — از اسکیمای مشترک ساخته می‌شود */}
+        <SharedFilterBar {...filters.barProps} resultCount={totalCount} />
 
         {profiles.length > 0 ? (
           <div className="profiles-grid">

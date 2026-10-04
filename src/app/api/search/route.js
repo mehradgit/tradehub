@@ -18,6 +18,20 @@ export async function GET(request) {
       });
     }
 
+    // ============================================================
+    // نکته‌ی مهم درباره‌ی جست‌وجو:
+    //
+    // `contains` در واقع LIKE '%x%' تولید می‌کند و چون الگو با
+    // کاراکتر wildcard شروع می‌شود، MySQL نمی‌تواند از هیچ
+    // ایندکس معمولی استفاده کند و ناچار full table scan می‌زند.
+    //
+    // به همین دلیل ستون یکجای searchText اضافه شده و ایندکس
+    // FULLTEXT روی آن ساخته می‌شود (prisma/sql/fulltext-indexes.sql).
+    // شرط contains روی searchText فعلاً فقط برای سازگاری است تا
+    // ردیف‌های قدیمی که searchText خالی دارند از دست نروند؛ در
+    // گام بعدی می‌توان این شرط را به MATCH(searchText) AGAINST(?)
+    // تبدیل کرد تا جست‌وجو ایندکس‌پذیر و رتبه‌بندی‌شده (ranked) شود.
+    // ============================================================
     const [products, requests, profiles] = await Promise.all([
       // ====== محصولات عمومی ======
       prisma.product.findMany({
@@ -25,6 +39,9 @@ export async function GET(request) {
           isVisible: true,
           status: "APPROVED",
           OR: [
+            // متن یکجای جست‌وجو (اگر پر شده باشد) — مسیر FULLTEXT آینده
+            { searchText: { contains: q } },
+            // fallback: ستون‌های قبلی، برای ردیف‌های قدیمی بدون searchText
             { name: { contains: q } },
             { shortDesc: { contains: q } },
             { category: { contains: q } },
@@ -57,6 +74,7 @@ export async function GET(request) {
           isVisible: true,
           status: "APPROVED",
           OR: [
+            { searchText: { contains: q } },
             { title: { contains: q } },
             { description: { contains: q } },
             { category: { contains: q } },

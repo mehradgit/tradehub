@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import ProductCard from "@/components/home/ProductCard";
 import Pagination from "@/components/requests/Pagination";
-import ProductFilterBar from "@/components/product/ProductFilterBar";
+import FilterBar from "@/components/filters/FilterBar";
+import { getFilterContext } from "@/lib/filters/serverContext";
+import { describePath } from "@/lib/categoryTree";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -111,48 +113,39 @@ export async function generateMetadata({ searchParams }) {
 // صفحه لیست محصولات (بدون تغییر)
 // ============================================================
 export default async function ProductsPage({ searchParams }) {
-  const {
-    page: pageParam = 1,
-    category = "",
-    subCategory = "",
-    search = "",
-    sort = "newest",
-  } = await searchParams;
+  const resolvedParams = await searchParams;
 
-  const page = parseInt(pageParam) || 1;
-  const limit = 30;
-  const skip = (page - 1) * limit;
+  // ============================================================
+  // موتور فیلتر مشترک
+  // where / orderBy / صفحه‌بندی / گزینه‌ها / اتریبیوت‌ها / facet
+  // از یک منبع می‌آید (src/lib/filters/schemas.js)
+  // ============================================================
+  const filters = await getFilterContext("products", resolvedParams);
+  const { where, orderBy, page, limit, skip } = filters.plan;
 
-  const where = {
-    isVisible: true,
-    status: "APPROVED",
-  };
+  // پارامترهای مؤثر (شامل تبدیل لینک‌های قدیمی category/subCategory)
+  const params = filters.effectiveParams;
+  const search = params.search || "";
+  const category = params.category || "";
+  const subCategory = params.subCategory || "";
 
-  if (category) where.category = category;
-  if (subCategory) where.subCategory = subCategory;
-  if (search) {
-    where.OR = [
-      { name: { contains: search } },
-      { shortDesc: { contains: search } },
-      { fullDesc: { contains: search } },
-    ];
-  }
+  // برچسب دسته از مسیر سه‌سطحی (slug → نام نمایشی)
+  const categoryLabel = filters.categoryPath
+    ? describePath(filters.categoryPath, filters.index)
+    : category && subCategory
+    ? `${category} › ${subCategory}`
+    : category || subCategory || "";
 
-  let orderBy = {};
-  switch (sort) {
-    case "oldest":
-      orderBy = { createdAt: "asc" };
-      break;
-    case "price_low":
-      orderBy = { price: "asc" };
-      break;
-    case "price_high":
-      orderBy = { price: "desc" };
-      break;
-    default:
-      orderBy = { createdAt: "desc" };
-      break;
-  }
+  // بریدکرامب از سطح‌های مسیر (هر سطح لینک‌دار)
+  const crumbs = String(filters.categoryPath || "")
+    .split("/")
+    .filter(Boolean)
+    .map((slug, idx, arr) => ({
+      slug,
+      name: filters.index?.byPath?.get(slug)?.name || slug,
+      path: arr.slice(0, idx + 1).join("/"),
+      isLast: idx === arr.length - 1,
+    }));
 
   const [products, totalCount] = await Promise.all([
     prisma.product.findMany({
@@ -219,22 +212,29 @@ export default async function ProductsPage({ searchParams }) {
                 Home
               </Link>
             </li>
-            {category && (
-              <li className="breadcrumb-item">
-                <Link
-                  href={`/products?category=${encodeURIComponent(category)}`}
-                  style={{ color: "var(--primary)" }}
-                >
-                  {category}
-                </Link>
+            {crumbs.map((crumb) => (
+              <li
+                key={crumb.path}
+                className={
+                  crumb.isLast
+                    ? "breadcrumb-item active text-muted"
+                    : "breadcrumb-item"
+                }
+              >
+                {crumb.isLast ? (
+                  crumb.name
+                ) : (
+                  <Link
+                    href={`/categories/${crumb.path}`}
+                    style={{ color: "var(--primary)" }}
+                  >
+                    {crumb.name}
+                  </Link>
+                )}
               </li>
-            )}
-            {subCategory && (
-              <li className="breadcrumb-item active text-muted">
-                {subCategory}
-              </li>
-            )}
-            {!category && !subCategory && (
+            ))}
+
+            {crumbs.length === 0 && (
               <li className="breadcrumb-item active text-muted">
                 All Products
               </li>
@@ -245,19 +245,14 @@ export default async function ProductsPage({ searchParams }) {
         <div className="page-header products-page-header">
           <h1>
             <i className="fas fa-box" style={{ color: "var(--primary)" }}></i>
-            {search
-              ? `Search: "${search}"`
-              : subCategory || category || "All Products"}
+            {search ? `Search: "${search}"` : categoryLabel || "All Products"}
           </h1>
           <span className="request-count">{totalCount} products</span>
         </div>
 
-        <ProductFilterBar
-          currentCategory={category}
-          currentSubCategory={subCategory}
-          currentSearch={search}
-          currentSort={sort}
-        />
+        {/* ✅ نوار فیلتر یکپارچه — از اسکیمای مشترک ساخته می‌شود
+            (جست‌وجو + دسته + مرتب‌سازی + پنل فیلترهای بیشتر) */}
+        <FilterBar {...filters.barProps} resultCount={totalCount} />
 
         {products.length > 0 ? (
           <div className="products-grid">

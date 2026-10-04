@@ -317,7 +317,9 @@ export default function ProductDetail({
 
         {/* ====== Tabs + فرم ====== */}
         <div className="product-detail-bottom">
-          <ProductTabs product={data} />
+          {/* مشخصات پویا (EAV) فقط یک‌جا رندر می‌شوند: داخل تب Specifications
+              در ProductTabs (تا در دو بخش صفحه تکرار نشوند). */}
+          <ProductTabs product={data} attributes={data.attributes || []} />
 
           {isSupplierRevealed ? (
             <div className="request-form-card">

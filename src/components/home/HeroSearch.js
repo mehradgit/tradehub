@@ -56,7 +56,8 @@ export default function HeroSearch() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+      // مگا سرچ هدر تنها ورودی جست‌وجوست؛ صفحه‌ی /search حذف شد
+      router.push(`/products?search=${encodeURIComponent(query.trim())}`);
       setIsOpen(false);
     }
   };
@@ -173,7 +174,7 @@ export default function HeroSearch() {
 
         {/* See all */}
         <Link
-          href={`/search?q=${encodeURIComponent(query)}`}
+          href={`/products?search=${encodeURIComponent(query)}`}
           onClick={() => setIsOpen(false)}
           style={{
             display: "block",

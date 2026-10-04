@@ -11,6 +11,7 @@ function buildSeeded() {
   return defaultCategories.map((c, i) => ({
     id: c.id,
     name: c.name,
+    nameFa: c.nameFa || null,
     slug: c.slug,
     icon: c.icon,
     description: c.description,

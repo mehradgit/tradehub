@@ -11,6 +11,7 @@ import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import CountrySelect from "@/components/ui/CountrySelect";
 import CategorySelect from "@/components/ui/CategorySelect";
 import SupplierCountrySelect from "@/components/ui/SupplierCountrySelect";
+import VocabularySelect from "@/components/ui/VocabularySelect";
 import { getCountryName } from "@/lib/countries";
 
 export default function NewRequestPage() {
@@ -446,22 +447,15 @@ export default function NewRequestPage() {
               {/* Payment Terms */}
               <div className="form-group mt-3">
                 <label>Payment Terms</label>
-                <select
-                  className="form-select"
-                  name="paymentTerms"
+                <VocabularySelect
+                  vocabKey="paymentTerms"
                   value={formData.paymentTerms}
-                  onChange={handleChange}
-                >
-                  <option value="">Select payment terms</option>
-                  <option value="T/T">T/T (Telegraphic Transfer)</option>
-                  <option value="L/C">L/C (Letter of Credit)</option>
-                  <option value="D/P">D/P (Documents against Payment)</option>
-                  <option value="D/A">D/A (Documents against Acceptance)</option>
-                  <option value="PayPal">PayPal</option>
-                  <option value="Western Union">Western Union</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Other">Other</option>
-                </select>
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, paymentTerms: v }))
+                  }
+                  allowCustom
+                  placeholder="Select payment term…"
+                />
               </div>
 
               {/* Suppliers From */}
@@ -534,28 +528,28 @@ export default function NewRequestPage() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Shipping Terms</label>
-                  <select
-                    className="form-select"
-                    name="shippingTerms"
+                  <VocabularySelect
+                    vocabKey="incoterms"
                     value={formData.shippingTerms}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select shipping terms</option>
-                    <option>FOB (Free On Board)</option>
-                    <option>CIF (Cost, Insurance, Freight)</option>
-                    <option>EXW (Ex Works)</option>
-                    <option>DDP (Delivered Duty Paid)</option>
-                  </select>
+                    onChange={(v) =>
+                      setFormData((prev) => ({ ...prev, shippingTerms: v }))
+                    }
+                    allowCustom
+                    placeholder="Select delivery term…"
+                  />
                 </div>
                 <div className="form-group">
                   <label>Packaging Requirements</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="packagingReq"
-                    placeholder="e.g., 250g glass jars"
+                  <VocabularySelect
+                    vocabKey="packagingTypes"
                     value={formData.packagingReq}
-                    onChange={handleChange}
+                    onChange={(v) =>
+                      setFormData((prev) => ({ ...prev, packagingReq: v }))
+                    }
+                    multiple
+                    allowCustom
+                    placeholder="Select packaging type…"
+                    addPlaceholder="Add custom packaging…"
                   />
                 </div>
               </div>
@@ -567,13 +561,16 @@ export default function NewRequestPage() {
 
               <div className="form-group">
                 <label>Required Certifications</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="certifications"
-                  placeholder="e.g., USDA Organic, Fair Trade, ISO 22000"
+                <VocabularySelect
+                  vocabKey="certifications"
                   value={formData.certifications}
-                  onChange={handleChange}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, certifications: v }))
+                  }
+                  multiple
+                  allowCustom
+                  placeholder="Select certification…"
+                  addPlaceholder="Add custom certification…"
                 />
                 <div className="help-text">Separate with commas</div>
               </div>

@@ -177,7 +177,9 @@ export default function RootLayout({ children }) {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: "https://foodtradelink.com/search?q={search_term_string}",
+        // صفحه‌ی /search حذف شد؛ مگا سرچ هدر به صفحه‌ی فیلتردار
+        // محصولات می‌رود، پس هدف sitelinks searchbox هم همان است.
+        urlTemplate: "https://foodtradelink.com/products?search={search_term_string}",
       },
       "query-input": "required name=search_term_string",
     },

@@ -10937,3 +10937,238 @@ a:hover {
   letter-spacing: 0.5px;
   white-space: nowrap;
 }
+
+/* ============================================================
+   مگا سرچ — بازطراحی
+   سرچ کل سایت در هدر است؛ داخل صفحات فقط یک فیلد «مصنوعی»
+   می‌ماند که همین نوار را باز می‌کند.
+   ============================================================ */
+
+/* ---------- فیلد کوچک هدر (حالت پیش‌فرض) ---------- */
+.hs-mini {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 230px;
+  height: 38px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: text;
+  transition: background 0.2s ease;
+}
+
+.hs-mini:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.hs-mini i {
+  font-size: 12.5px;
+  opacity: 0.85;
+}
+
+.hs-mini-ph {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+/* ---------- ریسپانسیو ----------
+   آیکن گرد همیشه دیده می‌شود؛ فیلد کوچک روی صفحه‌های پهن‌تر کنارش
+   هست و با تنگ‌شدن صفحه کوتاه و بعد مخفی می‌شود تا هدر شلوغ نشود. */
+@media (max-width: 1150px) {
+  .hs-mini {
+    width: 168px;
+  }
+}
+
+@media (max-width: 900px) {
+  .hs-mini {
+    display: none;
+  }
+}
+
+/* ---------- انتخابگر حوزه ---------- */
+.hs-scope {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.hs-scope-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 9px 12px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #13251f;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.hs-scope-btn:hover {
+  background: #eaf7f1;
+}
+
+.hs-scope-chev {
+  font-size: 9px;
+  color: #71807b;
+}
+
+.hs-scope-menu {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 0;
+  min-width: 200px;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e4ebe7;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(11, 50, 40, 0.22);
+  z-index: 30;
+}
+
+.hs-scope-menu li {
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #13251f;
+  cursor: pointer;
+}
+
+.hs-scope-menu li:hover {
+  background: #eaf7f1;
+}
+
+.hs-scope-menu li.selected {
+  color: #13795b;
+  font-weight: 700;
+}
+
+/* ---------- مرتب‌سازی در نوار ---------- */
+.hs-sort {
+  flex: 0 0 auto;
+  max-width: 150px;
+  border: 1.5px solid #e4ebe7;
+  background: #fff;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #13251f;
+  outline: 0;
+  cursor: pointer;
+}
+
+.hs-sort:focus {
+  border-color: #13795b;
+}
+
+/* ---------- دکمه فیلترها ---------- */
+.hs-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  border: 1.5px solid #e4ebe7;
+  background: #fff;
+  border-radius: 999px;
+  padding: 9px 15px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #13251f;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.hs-filters:hover {
+  border-color: #bfe3d3;
+}
+
+.hs-filters.on {
+  border-color: #bfe3d3;
+  background: #eaf7f1;
+  color: #13795b;
+}
+
+.hs-badge {
+  background: #15966f;
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.7;
+}
+
+/* ---------- نوار وضعیت و چیپ‌ها ---------- */
+.hs-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 11px;
+  font-size: 12px;
+  color: #71807b;
+  padding-left: 6px;
+}
+
+.hs-meta strong {
+  color: #13251f;
+}
+
+.hs-chip {
+  display: inline-flex;
+  align-items: center;
+  background: #eaf7f1;
+  color: #13795b;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  max-width: 290px;
+}
+
+.hs-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hs-chip.ghost {
+  background: #f0f4f2;
+  color: #71807b;
+  font-weight: 600;
+}
+
+/* ---------- موبایل: پیل چندخطی ---------- */
+@media (max-width: 720px) {
+  .hs-pill {
+    height: auto;
+    flex-wrap: wrap;
+    border-radius: 18px;
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .hs-input {
+    flex: 1 1 100%;
+  }
+
+  .hs-divider {
+    display: none;
+  }
+}

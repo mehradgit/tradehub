@@ -4,6 +4,17 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { getUserActivePlan } from "@/lib/planService";
 import { revalidatePath } from "next/cache"; // ✅ جدید
+// ====== دسته‌بندی سه‌سطحی + متن جست‌وجو + اتریبیوت‌های پویا ======
+import { buildCategoryTree, resolveCategoryPath } from "@/lib/categoryTree";
+import { getCategories } from "@/lib/categoriesService";
+import {
+  buildProductSearchText,
+  flattenAttributeValues,
+} from "@/lib/searchText";
+import {
+  setProductAttributes,
+  getProductAttributes,
+} from "@/lib/attributesService";
 
 // ===== GET =====
 export async function GET(request, { params }) {
@@ -31,7 +42,17 @@ export async function GET(request, { params }) {
       );
     }
 
-    return NextResponse.json(product);
+    // ====== اتریبیوت‌های محصول ======
+    // نبود جدول اتریبیوت یا هر خطای دیگر نباید GET را بشکند.
+    let attributes = [];
+    try {
+      attributes = await getProductAttributes(id);
+    } catch (attrError) {
+      console.error("Error fetching product attributes:", attrError);
+      attributes = [];
+    }
+
+    return NextResponse.json({ ...product, attributes });
   } catch (error) {
     console.error("Error fetching product:", error);
     return NextResponse.json(
@@ -69,9 +90,11 @@ export async function PUT(request, { params }) {
       shippingTerms,
       packaging,
       certifications,
+      paymentTerms,
       origin,
       isVisible,
       images,
+      attributes,
     } = body;
 
     const { plan } = await getUserActivePlan(userId);
@@ -91,7 +114,16 @@ export async function PUT(request, { params }) {
 
     const existingProduct = await prisma.product.findUnique({
       where: { id },
-      select: { userId: true, productNumber: true, slug: true },
+      select: {
+        userId: true,
+        productNumber: true,
+        slug: true,
+        // برای fallback در محاسبه‌ی categoryPath و searchText
+        category: true,
+        subCategory: true,
+        productType: true,
+        categoryPath: true,
+      },
     });
 
     if (!existingProduct) {
@@ -105,26 +137,93 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
+    // ====== دسته‌بندی: مقادیر مؤثر ======
+    // هر سطحی که در body نیامده باشد، از ردیف موجود استفاده می‌شود
+    // تا categoryPath با دسته‌ی واقعاً ذخیره‌شده هم‌خوان بماند.
+    const hasCategoryFields =
+      category !== undefined ||
+      subCategory !== undefined ||
+      productType !== undefined;
+
+    const effectiveCategory = category ?? existingProduct.category;
+    const effectiveSubCategory = subCategory ?? existingProduct.subCategory;
+    const effectiveProductType = productType ?? existingProduct.productType;
+
+    // اگر دسته‌بندی تغییر نکرده، همان مسیر قبلی حفظ می‌شود؛
+    // در غیر این صورت از درخت فعلی دسته‌بندی‌ها دوباره حل می‌شود.
+    let categoryPath = existingProduct.categoryPath;
+    if (hasCategoryFields) {
+      const tree = buildCategoryTree(await getCategories());
+      categoryPath = resolveCategoryPath(
+        {
+          category: effectiveCategory,
+          subCategory: effectiveSubCategory,
+          productType: effectiveProductType,
+        },
+        tree,
+      );
+    }
+
+    // ====== ذخیره‌ی اتریبیوت‌ها (EAV) ======
+    // اگر attributes در body باشد (حتی آرایه‌ی خالی = پاک‌کردن همه)
+    // setProductAttributes صدا زده می‌شود. خطای اتریبیوت هرگز نباید
+    // به‌روزرسانی محصول را بشکند.
+    if (Array.isArray(attributes)) {
+      // فقط ردیف‌های دارای attributeId رشته‌ای؛ اعتبارسنجی و تبدیل
+      // نوع داخل setProductAttributes انجام می‌شود.
+      const attributeItems = attributes.filter(
+        (a) => a && typeof a.attributeId === "string",
+      );
+      try {
+        await setProductAttributes(id, attributeItems);
+      } catch (attrError) {
+        console.error("Error saving product attributes:", attrError);
+      }
+    }
+
+    // ====== اتریبیوت‌های فعلی (برای searchText) ======
+    // اگر همین حالا ذخیره شده‌اند، مقادیر نرمال‌شده‌ی آن‌ها خوانده
+    // می‌شود؛ در غیر این صورت مقادیر قبلی محصول.
+    let currentAttributes = [];
+    try {
+      currentAttributes = await getProductAttributes(id);
+    } catch (attrError) {
+      console.error("Error reading product attributes:", attrError);
+      currentAttributes = [];
+    }
+
+    // ====== فیلدهایی که نوشته می‌شوند ======
+    const productData = {
+      name,
+      category: effectiveCategory,
+      subCategory: effectiveSubCategory || null,
+      productType: effectiveProductType || null,
+      categoryPath,
+      shortDesc,
+      fullDesc: fullDesc || null,
+      price: parseFloat(price),
+      currency,
+      unit,
+      moq: parseInt(moq),
+      stock: stock ? parseInt(stock) : null,
+      leadTime: leadTime ? parseInt(leadTime) : null,
+      shippingTerms: shippingTerms || null,
+      packaging: packaging || null,
+      certifications: certifications || null,
+      paymentTerms: paymentTerms || null,
+      origin: origin || null,
+      images: images || [],
+    };
+
     const updated = await prisma.product.update({
       where: { id },
       data: {
-        name,
-        category,
-        subCategory: subCategory || null,
-        productType: productType || null,
-        shortDesc,
-        fullDesc: fullDesc || null,
-        price: parseFloat(price),
-        currency,
-        unit,
-        moq: parseInt(moq),
-        stock: stock ? parseInt(stock) : null,
-        leadTime: leadTime ? parseInt(leadTime) : null,
-        shippingTerms: shippingTerms || null,
-        packaging: packaging || null,
-        certifications: certifications || null,
-        origin: origin || null,
-        images: images || [],
+        ...productData,
+        // متن یکجای جست‌وجو از مقادیر جدید + اتریبیوت‌های فعلی
+        searchText: buildProductSearchText({
+          product: productData,
+          attributeValues: flattenAttributeValues(currentAttributes),
+        }),
         status: "PENDING",
         isVisible: false,
       },

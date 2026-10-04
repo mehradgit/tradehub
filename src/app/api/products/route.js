@@ -2,11 +2,23 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache"; // ✅ رفع باگ: قبلاً import نشده بود و POST بعد از insert خطا می‌داد
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { generateNumber, generateSlug } from "@/utils/generate";
 import { canAddProduct, getUserActivePlan } from "@/lib/planService";
+// ====== دسته‌بندی سه‌سطحی + متن جست‌وجو + اتریبیوت‌های پویا ======
+import { buildCategoryTree, resolveCategoryPath } from "@/lib/categoryTree";
+import { getCategories } from "@/lib/categoriesService";
+import {
+  buildProductSearchText,
+  flattenAttributeValues,
+} from "@/lib/searchText";
+import {
+  setProductAttributes,
+  getProductAttributes,
+} from "@/lib/attributesService";
 
 // ====== تابع ذخیره تصویر Base64 ======
 async function saveBase64Image(base64String, folder = "products") {
@@ -70,8 +82,12 @@ export async function POST(request) {
       certifications,
       packaging,
       shippingTerms,
+      paymentTerms,
       isVisible,
-      specs,
+      // توجه: دیگر specs وجود ندارد — مشخصات به‌صورت اتریبیوت (EAV)
+      // با attributes ذخیره می‌شوند. specs قبلاً اینجا destructure
+      // می‌شد ولی هرگز ذخیره نمی‌شد (ستونی هم در شِما نداشت).
+      attributes,
     } = body;
 
     if (
@@ -96,6 +112,14 @@ export async function POST(request) {
       );
     }
 
+    // ====== اتریبیوت‌های ورودی ======
+    // فقط ردیف‌هایی که attributeId رشته‌ای دارند نگه داشته می‌شوند؛
+    // اعتبارسنجی و تبدیل نوع (عدد/بولین/چندانتخابی) داخل
+    // setProductAttributes انجام می‌شود و اینجا تکرار نمی‌شود.
+    const attributeItems = Array.isArray(attributes)
+      ? attributes.filter((a) => a && typeof a.attributeId === "string")
+      : [];
+
     const imagePaths = [];
     for (const img of images) {
       if (img.startsWith("data:image")) {
@@ -108,28 +132,51 @@ export async function POST(request) {
       }
     }
 
+    // ====== مسیر سه‌سطحی دسته‌بندی ======
+    // قبل از create محاسبه می‌شود تا همراه بقیه‌ی فیلدها در همان
+    // یک INSERT نوشته شود: "grains-cereals/rice/basmati"
+    const tree = buildCategoryTree(await getCategories());
+    const categoryPath = resolveCategoryPath(
+      { category, subCategory, productType },
+      tree,
+    );
+
+    // ====== فیلدهایی که نوشته می‌شوند ======
+    // همان آبجکت برای ساخت searchText استفاده می‌شود تا متن جست‌وجو
+    // دقیقاً از مقادیر ذخیره‌شده ساخته شود.
+    const productData = {
+      name,
+      category,
+      subCategory: subCategory || null,
+      productType: productType || null,
+      categoryPath,
+      shortDesc,
+      fullDesc: fullDesc || null,
+      price: parseFloat(price),
+      currency: currency || "USD",
+      unit: unit || "kg",
+      moq: parseInt(moq),
+      stock: stock ? parseInt(stock) : null,
+      leadTime: leadTime ? parseInt(leadTime) : null,
+      images: imagePaths,
+      badge: badge || null,
+      country: origin || null,
+      countryCode: countryCode || null,
+      origin: origin || null,
+      certifications: certifications || null,
+      packaging: packaging || null,
+      shippingTerms: shippingTerms || null,
+      paymentTerms: paymentTerms || null,
+    };
+
     const product = await prisma.product.create({
       data: {
-        name,
-        category,
-        subCategory: subCategory || null,
-        productType: productType || null,
-        shortDesc,
-        fullDesc: fullDesc || null,
-        price: parseFloat(price),
-        currency: currency || "USD",
-        unit: unit || "kg",
-        moq: parseInt(moq),
-        stock: stock ? parseInt(stock) : null,
-        leadTime: leadTime ? parseInt(leadTime) : null,
-        images: imagePaths,
-        badge: badge || null,
-        country: origin || null,
-        countryCode: countryCode || null,
-        origin: origin || null,
-        certifications: certifications || null,
-        packaging: packaging || null,
-        shippingTerms: shippingTerms || null,
+        ...productData,
+        // متن یکجای جست‌وجو (اتریبیوت‌ها در گام بعد اضافه می‌شوند)
+        searchText: buildProductSearchText({
+          product: productData,
+          attributeValues: [],
+        }),
         isVisible: false,
         status: "PENDING",
         userId,
@@ -137,6 +184,40 @@ export async function POST(request) {
         slug,
       },
     });
+
+    // ====== ذخیره‌ی اتریبیوت‌ها (EAV) ======
+    // فقط وقتی آرایه غیرخالی است. خطای اتریبیوت نباید ساخت محصول را
+    // شکست دهد، پس داخل try/catch است.
+    let attributesSaved = false;
+    if (attributeItems.length > 0) {
+      try {
+        await setProductAttributes(product.id, attributeItems);
+        attributesSaved = true;
+      } catch (attrError) {
+        console.error("Error saving product attributes:", attrError);
+      }
+    }
+
+    // ====== همسان‌کردن searchText با مقادیر اتریبیوت‌ها ======
+    // nice-to-have: مقادیر ذخیره‌شده دوباره خوانده می‌شوند (چون
+    // setProductAttributes نوع داده را تبدیل می‌کند) و searchText
+    // یک‌بار دیگر نوشته می‌شود. شکست این مرحله محصول را باطل نمی‌کند.
+    if (attributesSaved) {
+      try {
+        const savedAttributes = await getProductAttributes(product.id);
+        await prisma.product.update({
+          where: { id: product.id },
+          data: {
+            searchText: buildProductSearchText({
+              product: productData,
+              attributeValues: flattenAttributeValues(savedAttributes),
+            }),
+          },
+        });
+      } catch (attrError) {
+        console.error("Error rebuilding searchText with attributes:", attrError);
+      }
+    }
 
     // ✅ Invalidate caches
     revalidatePath("/");

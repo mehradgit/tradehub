@@ -8,6 +8,7 @@ import {
   canViewSupplierInfo,
   hasRevealedSupplierInfo,
 } from "@/lib/accessControlService";
+import { getProductAttributes } from "@/lib/attributesService";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -41,6 +42,16 @@ async function getProductData(productNumber) {
     notFound();
   }
 
+  // ====== مشخصات پویا (EAV) ======
+  // اگر جدول/سرویس اتریبیوت‌ها در دسترس نباشد، صفحه نباید بشکند.
+  let attributes = [];
+  try {
+    attributes = await getProductAttributes(product.id);
+  } catch (err) {
+    console.error("[product-detail] getProductAttributes failed:", err);
+    attributes = [];
+  }
+
   const productData = {
     id: product.id,
     name: product.name,
@@ -67,6 +78,9 @@ async function getProductData(productNumber) {
     certifications: product.certifications || null,
     leadTime: product.leadTime || null,
     unit: product.unit || null,
+    // ====== مشخصات پویا (EAV) — آرایه‌ای از plain objects ======
+    // { attributeId, key, label, labelFa, dataType, unit, options, values, value }
+    attributes,
     shippingCountries: ["Worldwide"],
     features: product.certifications?.split(",").map((s) => s.trim()) || [
       "Premium",

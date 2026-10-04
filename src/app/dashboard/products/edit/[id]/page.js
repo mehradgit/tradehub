@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
+import { getProductAttributes } from "@/lib/attributesService";
 import EditProductForm from "@/components/dashboard/EditProductForm";
 
 export default async function EditProductPage({ params }) {
@@ -29,6 +30,21 @@ export default async function EditProductPage({ params }) {
     redirect("/dashboard/products");
   }
 
+  // ============================================================
+  // اتریبیوت‌های پویا (EAV) سمت سرور خوانده می‌شوند
+  //
+  // چرا: prisma.product.findUnique ستون‌های اسکالر را برمی‌گرداند و
+  // رابطه‌ی attributes را شامل نمی‌شود. اگر فرم ویرایش آن را
+  // کلاینت‌ساید می‌گرفت، در فاصله‌ی تغییر دسته یک race ایجاد می‌شد
+  // که ممکن است مقادیر دسته‌ی قبلی ذخیره شوند.
+  // ============================================================
+  let attributes = [];
+  try {
+    attributes = await getProductAttributes(id);
+  } catch (err) {
+    console.error("[edit-product] getProductAttributes failed:", err);
+  }
+
   return (
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -40,7 +56,7 @@ export default async function EditProductPage({ params }) {
           <i className="fas fa-arrow-left me-2"></i>Back to Products
         </a>
       </div>
-      <EditProductForm product={product} />
+      <EditProductForm product={{ ...product, attributes }} />
     </div>
   );
 }

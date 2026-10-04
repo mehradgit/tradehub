@@ -1,128 +1,221 @@
 // src/components/layout/HeaderSearch.js
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCategories } from "@/hooks/useCategories";
+import { useVocabularies } from "@/hooks/useVocabularies";
+import { countries } from "@/lib/countries";
+import { FILTER_SCHEMAS } from "@/lib/filters/schemas";
+import { readFilterValues } from "@/lib/filters/params";
+import { FILTER_EVENTS, useFilterEvent } from "@/lib/filterEvents";
+import { summarizeField } from "@/components/filters/FilterModal";
+
+// ============================================================
+// مگا سرچ — تنها ورودی جست‌وجو و فیلتر کل سایت
+//
+//   • حالت پیش‌فرض: یک فیلد کوچک در هدر
+//   • با کلیک/فوکوس/کلید «/» → نوار بزرگ باز و فوکوس می‌شود
+//   • داخل نوار: ورودی + انتخابگر حوزه + مرتب‌سازی + Filters + چیپ‌ها
+//   • دکمه‌ی Filters داده‌ی فیلتر ندارد؛ رویداد می‌فرستد و مدال
+//     همان صفحه (که داده‌ی سرور را دارد) باز می‌شود.
+// ============================================================
+
+// بخش‌های سایت که موتور فیلتر دارند
+const SECTIONS = [
+  { prefix: "/products", schemaKey: "products", path: "/products", label: "Products" },
+  { prefix: "/requests", schemaKey: "requests", path: "/requests", label: "Buying Requests" },
+  { prefix: "/profiles", schemaKey: "profiles", path: "/profiles", label: "Companies" },
+];
+
+function detectSection(pathname = "") {
+  return SECTIONS.find((s) => pathname.startsWith(s.prefix)) || null;
+}
 
 export default function HeaderSearch() {
   const router = useRouter();
-  const { categories } = useCategories();   // âœ… دسته‌ها از DB
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { tree } = useCategories();
+  const { vocabularies } = useVocabularies();
+
+  const section = detectSection(pathname);
 
   const [isOpen, setIsOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState({
-    value: "",
-    label: "All Categories",
-    icon: "fa-border-all",
-  });
   const [query, setQuery] = useState("");
-
+  const [scopeOpen, setScopeOpen] = useState(false);
   const inputRef = useRef(null);
-  const categoryRef = useRef(null);
+  const scopeRef = useRef(null);
 
-  // ============================================================
-  // âœ… ساخت لیست دسته‌ها داینامیک از DB
-  // ============================================================
-  const categoryOptions = useMemo(() => {
-    const options = [
-      { value: "", label: "All Categories", icon: "fa-border-all" },
-    ];
+  // ===== اسکیمای بخش فعلی + مقادیر فیلتر از URL =====
+  const schema = section ? FILTER_SCHEMAS[section.schemaKey] : null;
 
-    const parents = categories
-      .filter((c) => c.parent === 0 && c.isActive !== false)
-      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const values = useMemo(() => {
+    if (!schema) return {};
+    try {
+      return readFilterValues(schema.fields, searchParams);
+    } catch {
+      return {};
+    }
+  }, [schema, searchParams]);
 
-    parents.forEach((cat) => {
-      options.push({
-        value: cat.id,                          // âœ… ID به جای name
-        label: cat.name,
-        icon: cat.icon ? `fa-${cat.icon}` : "fa-tag",
-      });
-    });
+  // ===== گزینه‌ها برای برچسب چیپ‌ها (واژگان + کشورها) =====
+  const headerOptions = useMemo(() => {
+    const out = {};
+    if (!schema) return out;
+    for (const f of schema.fields) {
+      if (f.optionsFrom === "countries") {
+        out[f.name] = (countries || []).map((c) => ({ value: c.name, label: c.name }));
+      } else if (f.optionsFrom) {
+        out[f.name] = vocabularies?.[f.optionsFrom] || [];
+      } else if (f.type === "sort") {
+        out[f.name] = schema.sortOptions || [];
+      }
+    }
+    return out;
+  }, [schema, vocabularies]);
 
-    return options;
-  }, [categories]);
+  const sortValue =
+    (schema && (values?.sort || searchParams.get("sort"))) || "";
 
-  // ============================================================
-  // Toggle search bar
-  // ============================================================
-  const handleToggle = () => {
-    setIsOpen((prev) => {
-      const next = !prev;
-      if (!next) setDropdownOpen(false);
-      return next;
-    });
-  };
+  // ===== همگام‌سازی ورودی با URL =====
+  useEffect(() => {
+    if (!section) return;
+    setQuery(searchParams.get("search") || searchParams.get("q") || "");
+  }, [section, pathname, searchParams]);
 
-  const closeSearch = () => {
+  // ===== باز/بستن =====
+  const openBar = useCallback(() => {
+    setIsOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 320);
+  }, []);
+
+  const closeBar = () => {
     setIsOpen(false);
-    setDropdownOpen(false);
+    setScopeOpen(false);
   };
 
-  // ============================================================
-  // Submit → /search?q=...&category=...
-  // ============================================================
-  const handleSubmit = (e) => {
-    if (e) e.preventDefault();
+  // فیلد مصنوعی داخل صفحه → همین نوار باز شود
+  useFilterEvent(FILTER_EVENTS.OPEN_MEGA, openBar);
 
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (selectedCategory.value)
-      params.set("category", selectedCategory.value);
-
-    if (!params.toString()) {
-      inputRef.current?.focus();
-      return;
-    }
-
-    router.push(`/search?${params.toString()}`);
-    closeSearch();
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
+  // کلید میان‌بر «/»
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "/") return;
+      const t = document.activeElement?.tagName || "";
+      if (/INPUT|SELECT|TEXTAREA/.test(t)) return;
       e.preventDefault();
-      handleSubmit();
-    } else if (e.key === "Escape") {
-      if (dropdownOpen) setDropdownOpen(false);
-      else closeSearch();
-    }
-  };
+      openBar();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openBar]);
 
-  // ============================================================
-  // Focus input when opened
-  // ============================================================
+  // Escape
   useEffect(() => {
-    if (isOpen) {
-      const t = setTimeout(() => inputRef.current?.focus(), 350);
-      return () => clearTimeout(t);
-    }
-  }, [isOpen]);
-
-  // ============================================================
-  // Close dropdown on outside click
-  // ============================================================
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (categoryRef.current && !categoryRef.current.contains(e.target)) {
-        setDropdownOpen(false);
+    if (!isOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        if (scopeOpen) setScopeOpen(false);
+        else closeBar();
       }
     };
-    if (dropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, scopeOpen]);
+
+  // کلیک بیرون از انتخابگر حوزه
+  useEffect(() => {
+    const onDown = (e) => {
+      if (scopeRef.current && !scopeRef.current.contains(e.target)) {
+        setScopeOpen(false);
+      }
+    };
+    if (scopeOpen) document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [scopeOpen]);
+
+  // ===== ناوبری =====
+  const goToSection = (s, extra = {}) => {
+    const params = new URLSearchParams();
+    const q = (extra.search !== undefined ? extra.search : query).trim();
+    if (q) params.set("search", q);
+    if (extra.sort) params.set("sort", extra.sort);
+    params.set("page", "1");
+    router.push(`${s.path}?${params.toString()}`);
+    closeBar();
+  };
+
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (section) {
+      // فیلترهای فعلی حفظ می‌شوند، فقط search عوض می‌شود
+      const params = new URLSearchParams(searchParams.toString());
+      const q = query.trim();
+      if (q) params.set("search", q);
+      else params.delete("search");
+      params.set("page", "1");
+      router.push(`${section.path}?${params.toString()}`);
+      closeBar();
+      return;
     }
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
-  }, [dropdownOpen]);
+    if (query.trim()) {
+      goToSection(SECTIONS[0], { search: query });
+    } else {
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleScope = (s) => {
+    setScopeOpen(false);
+    goToSection(s);
+  };
+
+  const handleSort = (v) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (v) params.set("sort", v);
+    else params.delete("sort");
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  // ===== چیپ‌های فیلتر فعال (فیلدهای اسکیما) =====
+  const chips = useMemo(() => {
+    if (!schema) return [];
+    const out = [];
+    for (const f of schema.fields) {
+      if (f.type === "sort" || f.type === "dynamicAttributes") continue;
+      const text = summarizeField(f, values[f.name], headerOptions, null);
+      if (text) out.push({ key: f.name, label: f.label, text });
+    }
+    return out;
+  }, [schema, values, headerOptions]);
+
+  const activeCount = chips.length;
 
   return (
     <>
-      {/* ==================== TOGGLE BUTTON ==================== */}
+      {/* ==================== فیلد کوچک ====================
+          روی صفحه‌های پهن کنار آیکن گرد دیده می‌شود؛ روی باریک‌ترها
+          مخفی می‌شود و آیکن تنها می‌ماند (آیکن همیشه هست). */}
+      <button
+        type="button"
+        className="hs-mini"
+        onClick={openBar}
+        aria-label="Open search"
+        aria-expanded={isOpen}
+      >
+        <i className="fa-solid fa-magnifying-glass" />
+        <span className="hs-mini-ph">
+          {section ? `Search ${section.label.toLowerCase()}…` : "Search…"}
+        </span>
+      </button>
+
+      {/* آیکن گرد — همیشه دیده می‌شود (روی موبایل تنها راه ورود) */}
       <button
         type="button"
         className={`hs-toggle ${isOpen ? "active" : ""}`}
-        onClick={handleToggle}
+        onClick={() => (isOpen ? closeBar() : openBar())}
         aria-label="Toggle search"
         aria-expanded={isOpen}
         aria-controls="hs-search-bar"
@@ -131,12 +224,8 @@ export default function HeaderSearch() {
         <i className="fa-solid fa-xmark hs-icon-close" />
       </button>
 
-      {/* ==================== SEARCH BAR ==================== */}
-      <div
-        id="hs-search-bar"
-        className={`hs-bar ${isOpen ? "open" : ""}`}
-        role="search"
-      >
+      {/* ==================== نوار مگا ==================== */}
+      <div id="hs-search-bar" className={`hs-bar ${isOpen ? "open" : ""}`} role="search">
         <div className="container">
           <form className="hs-pill" onSubmit={handleSubmit}>
             <i className="fa-solid fa-magnifying-glass hs-pill-icon" />
@@ -145,64 +234,116 @@ export default function HeaderSearch() {
               ref={inputRef}
               type="text"
               className="hs-input"
-              placeholder="Search for products, suppliers, or trade requests..."
+              placeholder={
+                section ? `Search ${section.label.toLowerCase()}…` : "Search the marketplace…"
+              }
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
+              aria-label="Search"
             />
 
             <span className="hs-divider" />
 
-            {/* Category Dropdown */}
-            <div className="hs-category" ref={categoryRef}>
+            {/* ---------- انتخابگر حوزه ---------- */}
+            <div className="hs-scope" ref={scopeRef}>
               <button
                 type="button"
-                className={`hs-category-trigger ${
-                  dropdownOpen ? "open" : ""
-                }`}
-                onClick={() => setDropdownOpen((v) => !v)}
+                className="hs-scope-btn"
+                onClick={() => setScopeOpen((v) => !v)}
                 aria-haspopup="listbox"
-                aria-expanded={dropdownOpen}
+                aria-expanded={scopeOpen}
               >
-                <i
-                  className={`fa-solid ${selectedCategory.icon} hs-grid-icon`}
-                />
-                <span className="hs-category-label">
-                  {selectedCategory.label}
-                </span>
-                <i className="fa-solid fa-chevron-down hs-chevron" />
+                <i className="fa-solid fa-layer-group" />
+                <span>{section ? section.label : "All"}</span>
+                <i className="fa-solid fa-chevron-down hs-scope-chev" />
               </button>
 
-              {dropdownOpen && (
-                <ul className="hs-category-menu" role="listbox">
-                  {categoryOptions.map((cat) => (
+              {scopeOpen && (
+                <ul className="hs-scope-menu" role="listbox">
+                  {SECTIONS.map((s) => (
                     <li
-                      key={cat.value || "all"}
+                      key={s.schemaKey}
                       role="option"
-                      aria-selected={selectedCategory.value === cat.value}
-                      className={
-                        selectedCategory.value === cat.value
-                          ? "selected"
-                          : ""
-                      }
-                      onClick={() => {
-                        setSelectedCategory(cat);
-                        setDropdownOpen(false);
-                      }}
+                      aria-selected={section?.schemaKey === s.schemaKey}
+                      className={section?.schemaKey === s.schemaKey ? "selected" : ""}
+                      onClick={() => handleScope(s)}
                     >
-                      <i className={`fa-solid ${cat.icon}`} />
-                      {cat.label}
+                      {s.label}
                     </li>
                   ))}
                 </ul>
               )}
             </div>
 
+            <span className="hs-divider" />
+
+            {/* ---------- مرتب‌سازی ---------- */}
+            {section && (
+              <>
+                <select
+                  className="hs-sort"
+                  value={sortValue}
+                  onChange={(e) => handleSort(e.target.value)}
+                  aria-label="Sort by"
+                >
+                  <option value="">Sort: default</option>
+                  {(schema?.sortOptions || []).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label ?? o.value}
+                    </option>
+                  ))}
+                </select>
+                <span className="hs-divider" />
+              </>
+            )}
+
+            {/* ---------- دکمه فیلترها → مدال همان صفحه ---------- */}
+            {section && (
+              <button
+                type="button"
+                className={`hs-filters ${activeCount > 0 ? "on" : ""}`}
+                onClick={() => {
+                  closeBar();
+                  window.dispatchEvent(new CustomEvent(FILTER_EVENTS.OPEN_FILTERS));
+                }}
+              >
+                <i className="fa-solid fa-sliders" />
+                Filters
+                {activeCount > 0 && <span className="hs-badge">{activeCount}</span>}
+              </button>
+            )}
+
             <button type="submit" className="hs-submit">
               <i className="fa-solid fa-magnifying-glass" />
               <span>Search</span>
             </button>
           </form>
+
+          {/* ---------- وضعیت + چیپ‌ها ---------- */}
+          <div className="hs-meta">
+            {section ? (
+              <span>
+                Searching <strong>{section.label}</strong>
+                {activeCount > 0 ? ` · ${activeCount} filter${activeCount > 1 ? "s" : ""}` : ""}
+              </span>
+            ) : (
+              <span>
+                Global search — pick a section above to use its filters
+              </span>
+            )}
+
+            {chips.map((c) => (
+              <span key={c.key} className="hs-chip">
+                <span>
+                  {c.label}: {c.text}
+                </span>
+              </span>
+            ))}
+
+            {activeCount === 0 && section && (
+              <span className="hs-chip ghost">No filters yet — open Filters</span>
+            )}
+          </div>
         </div>
       </div>
     </>
