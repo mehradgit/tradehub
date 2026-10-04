@@ -111,6 +111,7 @@ async function dispatchAction(action) {
       link: inAppData.link || null,
       icon: inAppData.icon || null,
       metadata: inAppData.metadata || null,
+      skipPush: true, // ✅ پوش را خودِ همین تابع پایین‌تر مدیریت می‌کند
     });
   }
 

@@ -49,6 +49,7 @@ export async function createNotification({
   link = null,
   icon = null,
   metadata = null,
+  skipPush = false,
 }) {
   try {
     if (!userId || !type || !title) {
@@ -74,16 +75,21 @@ export async function createNotification({
     });
 
     // ✅ ارسال Web Push (fire-and-forget)
-    sendWebPushToUser(userId, {
-      title: notification.title,
-      body: notification.body || "",
-      url: notification.link || "/dashboard/notifications",
-      icon: "/favicon.ico",
-      notificationId: notification.id,
-    }).catch((err) => {
-      console.error("[NotificationService] Web Push failed:", err);
-    });
-    
+    // وقتی از eventService صدا زده می‌شویم، پوش همان‌جا و بر اساس
+    // ترجیحات کاربر مدیریت می‌شود، پس skipPush=true می‌آید تا
+    // نوتیفیکیشن تکراری ارسال نشود.
+    if (!skipPush) {
+      sendWebPushToUser(userId, {
+        title: notification.title,
+        body: notification.body || "",
+        url: notification.link || "/dashboard/notifications",
+        icon: "/favicon.ico",
+        notificationId: notification.id,
+      }).catch((err) => {
+        console.error("[NotificationService] Web Push failed:", err);
+      });
+    }
+
     return notification;
   } catch (error) {
     console.error("createNotification error:", error);

@@ -1,11 +1,8 @@
 // src/app/api/admin/tickets/auto-close/route.js
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
-import {
-  createNotification,
-  NOTIFICATION_TYPES,
-} from "@/lib/notificationService";
+import { NextResponse, after } from "next/server";
+import { dispatchEvent } from "@/lib/eventService";
 
 export async function POST() {
   try {
@@ -45,17 +42,17 @@ export async function POST() {
       },
     });
 
-    // ✅ نوتیفیکیشن برای صاحبان تیکت‌ها
-    for (const t of ticketsToClose) {
-      createNotification({
-        userId: t.userId,
-        type: NOTIFICATION_TYPES.TICKET_AUTO_CLOSED,
-        title: `Ticket #${t.ticketNumber} closed`,
-        body: "This ticket was automatically closed after 7 days of inactivity. Reopen it if you still need help.",
-        link: `/dashboard/support/${t.ticketNumber}`,
-        metadata: { ticketId: t.id, ticketNumber: t.ticketNumber },
-      });
-    }
+    // ✅ اطلاع به صاحبان تیکت‌ها از مسیر مرکزی رویداد
+    after(async () => {
+      for (const t of ticketsToClose) {
+        const res = await dispatchEvent("ticket.auto_closed", {
+          ticketId: t.id,
+        });
+        if (res?.error) {
+          console.error("[ticket.auto_closed] dispatch error:", res.error);
+        }
+      }
+    });
 
     return NextResponse.json({
       message: `${result.count} ticket(s) closed`,

@@ -58,6 +58,12 @@ export default function AdminSidebar({ isOpen, onClose }) {
       icon: "fa-clipboard-check",
       href: "/admin/approvals",
     },
+    { label: "Email Queue", icon: "fa-envelope-open-text", href: "/admin/emails" },
+    {
+      label: "Email Templates",
+      icon: "fa-file-code",
+      href: "/admin/email-templates",
+    },
     { label: "Analytics", icon: "fa-chart-line", href: "/admin/analytics" },
     {
       label: "Access Control",
@@ -76,7 +82,11 @@ export default function AdminSidebar({ isOpen, onClose }) {
   ];
 
   const renderItem = (item) => {
-    const isActive = pathname === item.href;
+    // ✅ زیرمسیرها هم والدشان را فعال می‌کنند
+    //    (مثلاً /admin/emails/123 → Email Queue)
+    const isActive =
+      pathname === item.href ||
+      (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
     return (
       <Link
         key={item.href}

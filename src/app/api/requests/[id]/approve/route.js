@@ -1,12 +1,12 @@
-// src/app/api/admin/requests/[id]/approve/route.js
+// src/app/api/requests/[id]/approve/route.js
+// ⚠️ توجه: این روت با /api/admin/requests/[id]/approve تکراری است.
+//    پنل ادمین نسخه‌ی admin را صدا می‌زند. این فایل فقط برای
+//    سازگاری عقب‌رو نگه داشته شده و رفتارش یکسان شده است.
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { revalidatePath } from "next/cache"; // ✅
-import {
-  createNotification,
-  NOTIFICATION_TYPES,
-} from "@/lib/notificationService";
+import { dispatchEvent } from "@/lib/eventService";
 
 export async function PATCH(request, { params }) {
   try {
@@ -57,21 +57,16 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    createNotification({
-      userId: buyingRequest.userId,
-      type: isApproving
-        ? NOTIFICATION_TYPES.REQUEST_APPROVED
-        : NOTIFICATION_TYPES.REQUEST_REJECTED,
-      title: isApproving
-        ? "Buying Request Approved"
-        : "Buying Request Rejected",
-      body: isApproving
-        ? `Your buying request "${buyingRequest.title}" has been approved and is now live.`
-        : `Your buying request "${buyingRequest.title}" was rejected. Reason: ${
-            rejectionNote || "No reason provided."
-          }`,
-      link: `/dashboard/requests`,
-      metadata: { requestId: buyingRequest.id },
+    // ✅ اطلاع به صاحب درخواست از مسیر مرکزی رویداد
+    after(async () => {
+      const result = await dispatchEvent("request.reviewed", {
+        requestId: buyingRequest.id,
+        approved: isApproving,
+        rejectionNote,
+      });
+      if (result?.error) {
+        console.error("[request.reviewed] dispatch error:", result.error);
+      }
     });
 
     // ✅ Invalidate caches

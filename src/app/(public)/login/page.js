@@ -135,6 +135,14 @@ function LoginPageContent() {
     signIn("google", { callbackUrl: "/complete-registration" });
   };
 
+  // ====== ورود ادمین محلی (فقط development) ======
+  // ایمیل از سمت سرور خوانده می‌شود (DEV_LOGIN_EMAIL)، پس اینجا
+  // چیزی ارسال نمی‌کنیم تا امکان جعل وجود نداشته باشد.
+  const handleDevLogin = () => {
+    setLoading(true);
+    signIn("dev-login", { callbackUrl: "/admin" });
+  };
+
   return (
     <div
       className="container"
@@ -254,6 +262,22 @@ function LoginPageContent() {
           <i className="fab fa-google me-2"></i>
           Continue with Google
         </button>
+
+        {/* ===== ورود ادمین محلی — فقط در حالت development =====
+            process.env.NODE_ENV در باندل کلاینت جایگذاری می‌شود،
+            پس روی build پروداکشن این دکمه اصلاً رندر نمی‌شود. */}
+        {process.env.NODE_ENV === "development" && (
+          <button
+            onClick={handleDevLogin}
+            type="button"
+            className="btn btn-outline-secondary btn-lg w-100 fw-semibold mt-3"
+            style={{ borderRadius: "50px" }}
+            disabled={loading}
+          >
+            <i className="fa-solid fa-user-shield me-2"></i>
+            Dev Admin Login (local only)
+          </button>
+        )}
 
         <div className="text-center mt-4">
           <p className="text-muted">
