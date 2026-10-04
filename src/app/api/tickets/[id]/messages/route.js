@@ -1,13 +1,8 @@
 // src/app/api/tickets/[id]/messages/route.js
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
-import { sendTicketReplyEmailToAdmin, truncateMessage } from "@/lib/email";
-import {
-  createNotification,
-  NOTIFICATION_TYPES,
-  notifyAllAdmins,
-} from "@/lib/notificationService";
+import { NextResponse, after } from "next/server";
+import { dispatchEvent } from "@/lib/eventService";
 
 export async function POST(request, { params }) {
   try {
@@ -87,38 +82,19 @@ export async function POST(request, { params }) {
         status: ticket.status === "resolved" ? "open" : ticket.status,
       },
     });
-    const userName = session.user.name || session.user.email || "User";
-    notifyAllAdmins({
-      type: NOTIFICATION_TYPES.TICKET_REPLY,
-      title: `Reply on ticket #${ticket.ticketNumber}`,
-      body: `${userName} replied: "${truncateMessage(message, 120)}"`,
-      link: `/admin/tickets/${ticket.ticketNumber}`,
-      metadata: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber },
-    });
-    // ✅ ارسال ایمیل به ادمین‌ها
-    (async () => {
-      try {
-        const admins = await prisma.user.findMany({
-          where: { isAdmin: true },
-          select: { email: true },
-        });
-
-        const userName = session.user.name || session.user.email || "User";
-
-        for (const admin of admins) {
-          if (!admin.email) continue;
-          await sendTicketReplyEmailToAdmin({
-            adminEmail: admin.email,
-            ticketNumber: ticket.ticketNumber,
-            ticketSubject: ticket.subject,
-            userName,
-            messagePreview: truncateMessage(message, 200),
-          });
-        }
-      } catch (err) {
-        console.error("Failed to send admin reply notification:", err);
+    // ✅ نوتیفیکیشن + Web Push + ایمیل برای همه‌ی ادمین‌ها
+    //    از مسیر مرکزی رویداد (قبلاً یک حلقه‌ی ایمیل detached و
+    //    بدون retry اینجا بود که ممکن بود نیمه‌کاره بماند).
+    after(async () => {
+      const result = await dispatchEvent("ticket.replied", {
+        ticketId: ticket.id,
+        messageId: newMessage.id,
+        byAdmin: false,
+      });
+      if (result?.error) {
+        console.error("[ticket.replied] dispatch error:", result.error);
       }
-    })();
+    });
 
     return NextResponse.json(
       { message: "Reply sent successfully", data: newMessage },

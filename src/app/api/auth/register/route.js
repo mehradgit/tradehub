@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { sendVerificationEmail } from "@/lib/email";
 import { generateNumber, generateSlug } from "@/utils/generate";
 import { verifyCaptcha } from "@/lib/captcha";
@@ -179,9 +179,18 @@ export async function POST(request) {
       console.log(verificationUrl);
       console.log("========================================\n");
     }
-    dispatchEvent("user.registered", { userId: user.id }).catch((err) => {
-      console.error("[Register] welcome event failed:", err);
+    // ✅ ایمیل خوش‌آمدگویی از مسیر مرکزی رویداد، بعد از ارسال پاسخ.
+    //    after() تضمین می‌کند اگر فرآیند سرورلس/ری‌استارت شود،
+    //    کار نیمه‌کاره رها نشود.
+    after(async () => {
+      const result = await dispatchEvent("user.registered", {
+        userId: user.id,
+      });
+      if (result?.error) {
+        console.error("[user.registered] dispatch error:", result.error);
+      }
     });
+
     return NextResponse.json(
       {
         message:

@@ -1,16 +1,8 @@
 // src/app/api/product-inquiries/route.js
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
-import {
-  canAddProduct,
-  getUserActivePlan,
-  incrementUsage,
-} from "@/lib/planService";
-import {
-  createNotification,
-  NOTIFICATION_TYPES,
-} from "@/lib/notificationService";
+import { NextResponse, after } from "next/server";
+import { dispatchEvent } from "@/lib/eventService";
 import { getAccessControlSettings } from "@/lib/accessControlService";
 
 // ====== POST: ثبت درخواست جدید و ایجاد پیام ======
@@ -23,18 +15,24 @@ export async function POST(request) {
     const userId = session.user.id;
 
     const body = await request.json();
-    const { productId, supplierId, message, quantity, requestedPrice } = body;
+    const { productId, message, quantity, requestedPrice } = body;
 
-    if (!productId || !supplierId || !message) {
+    if (!productId || !message) {
       return NextResponse.json(
-        { message: "Product ID, Supplier ID, and message are required" },
+        { message: "Product ID and message are required" },
         { status: 400 },
       );
     }
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, name: true, userId: true },
+      select: {
+        id: true,
+        name: true,
+        userId: true,
+        productNumber: true,
+        slug: true,
+      },
     });
 
     if (!product) {
@@ -43,6 +41,11 @@ export async function POST(request) {
         { status: 404 },
       );
     }
+
+    // ✅ تأمین‌کننده از خودِ محصول استخراج می‌شود، نه از بدنه درخواست.
+    //    قبلاً هر کاربری می‌توانست supplierId دلخواه بفرستد و
+    //    نوتیفیکیشن/پیام برای شخص ثالث بسازد.
+    const supplierId = product.userId;
 
     // ============================================================
     // ✅ گارد امنیتی Reveal (فقط اگر تنظیمات ادمین اجبار کرده باشد)
@@ -94,32 +97,35 @@ export async function POST(request) {
       },
     });
 
-    // ✅ نوتیفیکیشن برای تأمین‌کننده
-    const buyerName = session.user.name || session.user.email || "A buyer";
-    createNotification({
-      userId: supplierId,
-      type: NOTIFICATION_TYPES.NEW_INQUIRY,
-      title: "New Product Inquiry",
-      body: `${buyerName} is interested in "${product.name}".`,
-      link: `/dashboard/inquiries?tab=supplier`,
-      metadata: { productId: product.id, inquiryId: inquiry.id },
-    });
-
-    // ایجاد پیام
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const productLink = `${baseUrl}/products/${productId}`;
+    // ✅ ایجاد پیام چت (خلاصه استعلام برای مکالمه خریدار/تأمین‌کننده)
+    const baseUrl = (
+      process.env.NEXTAUTH_URL || "http://localhost:3000"
+    ).replace(/\/+$/, "");
+    const productLink = `${baseUrl}/products/${product.productNumber}/${product.slug}`;
     const messageContent = `📦 **Product:** ${product.name}\n🔗 ${productLink}\n\n📝 **Request:** ${message}`;
 
     await prisma.message.create({
       data: {
         senderId: userId,
         receiverId: supplierId,
-        productId: productId,
+        productId: product.id,
         content: messageContent,
       },
     });
 
-    // ✅ دیگر incrementUsage اینجا انجام نمی‌شود (سهمیه در مرحله Reveal مصرف شده)
+    // ✅ نوتیفیکیشن + Web Push + ایمیل، همه از مسیر مرکزی رویداد.
+    //    after() تضمین می‌کند کار پس از ارسال پاسخ اجرا شود
+    //    (نه fire-and-forget که ممکن است نیمه‌کاره بماند).
+    after(async () => {
+      const result = await dispatchEvent("inquiry.created", {
+        inquiryId: inquiry.id,
+      });
+      if (result?.error) {
+        console.error("[inquiry.created] dispatch error:", result.error);
+      }
+    });
+
+    // توجه: سهمیه در مرحله «Reveal» مصرف می‌شود، نه اینجا.
 
     return NextResponse.json(
       { message: "Request sent successfully", inquiry },
@@ -145,12 +151,20 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role") || "buyer"; // buyer یا supplier
 
-    const where = {};
-    if (role === "buyer") {
-      where.userId = session.user.id;
-    } else if (role === "supplier") {
-      where.supplierId = session.user.id;
+    // ✅ نقش فقط buyer یا supplier می‌تواند باشد.
+    //    قبلاً هر مقدار دیگری where را خالی می‌گذاشت و
+    //    همه‌ی استعلام‌های سیستم (همراه با ایمیل خریدار) برگردانده می‌شد.
+    if (role !== "buyer" && role !== "supplier") {
+      return NextResponse.json(
+        { message: "Invalid role. Use 'buyer' or 'supplier'." },
+        { status: 400 },
+      );
     }
+
+    const where =
+      role === "buyer"
+        ? { userId: session.user.id }
+        : { supplierId: session.user.id };
 
     const inquiries = await prisma.productInquiry.findMany({
       where,

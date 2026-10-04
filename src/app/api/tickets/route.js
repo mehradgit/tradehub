@@ -1,14 +1,13 @@
 // src/app/api/tickets/route.js
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import {
   generateTicketNumber,
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
 } from "@/utils/ticketHelpers";
-import { notifyAllAdmins, NOTIFICATION_TYPES } from "@/lib/notificationService";
-import { truncateMessage } from "@/lib/email";
+import { dispatchEvent } from "@/lib/eventService";
 // ====== GET: لیست تیکت‌های کاربر ======
 export async function GET(request) {
   try {
@@ -160,14 +159,15 @@ export async function POST(request) {
         },
       },
     });
-    // ✅ نوتیفیکیشن برای ادمین‌ها
-    const userName = session.user.name || session.user.email || "User";
-    notifyAllAdmins({
-      type: NOTIFICATION_TYPES.TICKET_REPLY,
-      title: `New support ticket #${ticket.ticketNumber}`,
-      body: `${userName}: "${truncateMessage(subject, 120)}"`,
-      link: `/admin/tickets/${ticket.ticketNumber}`,
-      metadata: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber },
+    // ✅ نوتیفیکیشن + Web Push + ایمیل برای همه‌ی ادمین‌ها،
+    //    از مسیر مرکزی رویداد و پس از ارسال پاسخ.
+    after(async () => {
+      const result = await dispatchEvent("ticket.created", {
+        ticketId: ticket.id,
+      });
+      if (result?.error) {
+        console.error("[ticket.created] dispatch error:", result.error);
+      }
     });
 
     return NextResponse.json(

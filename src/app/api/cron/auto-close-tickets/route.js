@@ -1,35 +1,22 @@
 // src/app/api/cron/auto-close-tickets/route.js
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { isAuthorizedCron } from "@/lib/cronAuth";
+import { dispatchEvent } from "@/lib/eventService";
 
-// این API را می‌توانید از cron job صدا بزنید
-// مثال: curl -H "x-cron-secret: your-secret" https://yoursite.com/api/cron/auto-close-tickets
-
+// تیکت‌های resolved که این تعداد روز پاسخ نگرفته‌اند، بسته می‌شوند
 const AUTO_CLOSE_DAYS = 7;
-const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(request) {
+  // ✅ fail-closed: بدون CRON_SECRET هیچ درخواستی مجاز نیست
+  if (!isAuthorizedCron(request)) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    // بررسی امنیت (اختیاری)
-    if (CRON_SECRET) {
-      const { searchParams } = new URL(request.url);
-      const secret =
-        searchParams.get("secret") ||
-        request.headers.get("x-cron-secret");
-
-      if (secret !== CRON_SECRET) {
-        return NextResponse.json(
-          { message: "Unauthorized" },
-          { status: 401 }
-        );
-      }
-    }
-
-    // تاریخ X روز پیش
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - AUTO_CLOSE_DAYS);
 
-    // تیکت‌های resolved که در X روز اخیر پاسخ نداده‌اند
     const ticketsToClose = await prisma.ticket.findMany({
       where: {
         status: "resolved",
@@ -45,15 +32,25 @@ export async function GET(request) {
       });
     }
 
-    // بستن همه
     const result = await prisma.ticket.updateMany({
-      where: {
-        id: { in: ticketsToClose.map((t) => t.id) },
-      },
+      where: { id: { in: ticketsToClose.map((t) => t.id) } },
       data: {
         status: "closed",
         closedAt: new Date(),
       },
+    });
+
+    // ✅ اطلاع به صاحبان تیکت‌ها از مسیر مرکزی رویداد
+    //    قبلاً این مسیر تیکت‌ها را کاملاً بی‌صدا می‌بست.
+    after(async () => {
+      for (const t of ticketsToClose) {
+        const res = await dispatchEvent("ticket.auto_closed", {
+          ticketId: t.id,
+        });
+        if (res?.error) {
+          console.error("[ticket.auto_closed] dispatch error:", res.error);
+        }
+      }
     });
 
     return NextResponse.json({

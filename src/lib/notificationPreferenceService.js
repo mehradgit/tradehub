@@ -34,6 +34,14 @@ export const NOTIFICATION_CATEGORIES = [
     defaultPush: true,
   },
   {
+    key: "listing",
+    label: "Listing Reviews",
+    description:
+      "When your products or buying requests are approved or rejected",
+    defaultEmail: true,
+    defaultPush: true,
+  },
+  {
     key: "subscription",
     label: "Subscription",
     description: "Renewal reminders and account changes",
@@ -72,16 +80,28 @@ export async function getOrCreatePreferences(userId, category) {
     defaultPush: true,
   };
 
-  return prisma.notificationPreference.create({
-    data: {
-      userId,
-      category,
-      emailEnabled: defaults.defaultEmail,
-      pushEnabled: defaults.defaultPush,
-      inAppEnabled: true,
-      frequency: "instant",
-    },
-  });
+  try {
+    return await prisma.notificationPreference.create({
+      data: {
+        userId,
+        category,
+        emailEnabled: defaults.defaultEmail,
+        pushEnabled: defaults.defaultPush,
+        inAppEnabled: true,
+        frequency: "instant",
+      },
+    });
+  } catch (err) {
+    // ✅ مسابقه‌ی همزمانی: بین findUnique و create، رکورد توسط
+    //    درخواست دیگری ساخته شده. اگر این خطا را مدیریت نکنیم،
+    //    کل action در eventService سرکوب می‌شود و نوتیفیکیشن گم می‌شود.
+    if (err.code === "P2002") {
+      return prisma.notificationPreference.findUnique({
+        where: { userId_category: { userId, category } },
+      });
+    }
+    throw err;
+  }
 }
 
 // ============================================================

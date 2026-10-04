@@ -1,12 +1,8 @@
 // src/app/api/admin/tickets/[id]/messages/route.js
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
-import { sendTicketReplyEmailToUser, truncateMessage } from "@/lib/email";
-import {
-  createNotification,
-  NOTIFICATION_TYPES,
-} from "@/lib/notificationService";
+import { NextResponse, after } from "next/server";
+import { dispatchEvent } from "@/lib/eventService";
 export async function POST(request, { params }) {
   try {
     const session = await auth();
@@ -81,33 +77,19 @@ export async function POST(request, { params }) {
         where: { id },
         data: updateData,
       });
-      createNotification({
-        userId: ticket.userId,
-        type: NOTIFICATION_TYPES.TICKET_REPLY,
-        title: `New reply on ticket #${ticket.ticketNumber}`,
-        body: `Support replied: "${truncateMessage(message, 120)}"`,
-        link: `/dashboard/support/${ticket.ticketNumber}`,
-        metadata: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber },
-      });
-      // ارسال ایمیل به کاربر
-      (async () => {
-        try {
-          if (ticket.user?.email) {
-            const adminName =
-              session.user.name || session.user.email || "Support";
-
-            await sendTicketReplyEmailToUser({
-              userEmail: ticket.user.email,
-              ticketNumber: ticket.ticketNumber,
-              ticketSubject: ticket.subject,
-              adminName,
-              messagePreview: truncateMessage(message, 200),
-            });
-          }
-        } catch (err) {
-          console.error("Failed to send user email:", err);
+      // ✅ نوتیفیکیشن + Web Push + ایمیل برای صاحب تیکت.
+      //    این بلوک داخل گاردِ !isInternal است، پس یادداشت داخلی
+      //    هرگز به کاربر اطلاع داده نمی‌شود.
+      after(async () => {
+        const result = await dispatchEvent("ticket.replied", {
+          ticketId: ticket.id,
+          messageId: newMessage.id,
+          byAdmin: true,
+        });
+        if (result?.error) {
+          console.error("[ticket.replied] dispatch error:", result.error);
         }
-      })();
+      });
     }
 
     return NextResponse.json(

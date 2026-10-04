@@ -37,6 +37,107 @@ const customAdapter = {
 
 const isProd = process.env.NODE_ENV === "production";
 
+// ============================================================
+// ورود ادمین محلی — فقط برای توسعه
+//
+// دو شرط باید هم‌زمان برقرار باشند تا این مسیر هرگز روی
+// پروداکشن باز نشود:
+//   ۱. NODE_ENV === "development"   (next dev)
+//   ۲. ENABLE_DEV_LOGIN === "true"  (صراحتاً در .env)
+//
+// نکته امنیتی: هیچ‌وقت `next dev` را روی سرور عمومی اجرا نکن.
+// ============================================================
+const DEV_LOGIN_ENABLED =
+  process.env.NODE_ENV === "development" &&
+  process.env.ENABLE_DEV_LOGIN === "true";
+
+const DEV_LOGIN_EMAIL = (
+  process.env.DEV_LOGIN_EMAIL || "mahdihaghighati@gmail.com"
+)
+  .toLowerCase()
+  .trim();
+
+// ساخت (یا آماده‌سازی) کاربر ادمین محلی
+async function ensureDevAdminUser(email: string) {
+  const existing = await prisma.user.findUnique({ where: { email } });
+
+  if (existing) {
+    // اگر کاربر وجود دارد، فقط دسترسی ادمین و وضعیت تأیید را تضمین کن
+    if (
+      existing.isAdmin &&
+      existing.registrationComplete &&
+      existing.emailVerified
+    ) {
+      return existing;
+    }
+    return prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        isAdmin: true,
+        registrationComplete: true,
+        emailVerified: existing.emailVerified ?? new Date(),
+      },
+    });
+  }
+
+  // ===== ساخت کاربر جدید =====
+  // provider نوع credentials آداپتر را صدا نمی‌زند، پس
+  // profileNumber و slug باید دستی ساخته شوند.
+  let profileNumber;
+  let isUnique = false;
+  while (!isUnique) {
+    profileNumber = generateNumber();
+    const clash = await prisma.user.findUnique({
+      where: { profileNumber },
+      select: { id: true },
+    });
+    if (!clash) isUnique = true;
+  }
+
+  return prisma.user.create({
+    data: {
+      email,
+      name: "Local Admin",
+      companyName: "Local Admin",
+      profileNumber,
+      slug: generateSlug("local-admin"),
+      isAdmin: true,
+      role: "BUYER",
+      registrationComplete: true,
+      emailVerified: new Date(),
+    },
+  });
+}
+
+const devLoginProvider = Credentials({
+  id: "dev-login",
+  name: "Dev Login",
+  // ✅ بدون هیچ فیلد ورودی: کلاینت نمی‌تواند ایمیل یا چیز دیگری بفرستد.
+  //    ایمیل فقط از سمت سرور (DEV_LOGIN_EMAIL) خوانده می‌شود.
+  credentials: {},
+  async authorize() {
+    // ✅ لایه‌ی اول: در پروداکشن این provider حتی ثبت نمی‌شود،
+    //    ولی اینجا هم دوباره چک می‌کنیم.
+    if (!DEV_LOGIN_ENABLED) return null;
+    if (!DEV_LOGIN_EMAIL) return null;
+
+    const user = await ensureDevAdminUser(DEV_LOGIN_EMAIL);
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      logo: user.logo,
+      image: user.image,
+      companyName: user.companyName,
+      registrationComplete: true,
+      emailVerified: true,
+      isAdmin: true,
+    };
+  },
+});
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: customAdapter,
   session: { strategy: "jwt" },
@@ -206,6 +307,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         };
       },
     }),
+
+    // ====== ورود ادمین محلی ======
+    // فقط زمانی اضافه می‌شود که NODE_ENV=development و
+    // ENABLE_DEV_LOGIN=true باشد. در build پروداکشن این
+    // provider اصلاً وجود ندارد، پس signIn("dev-login") شکست می‌خورد.
+    ...(DEV_LOGIN_ENABLED ? [devLoginProvider] : []),
   ],
 
   callbacks: {

@@ -1,11 +1,9 @@
 // src/app/api/quotes/route.js
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
-import {
-  createNotification,
-  NOTIFICATION_TYPES,
-} from "@/lib/notificationService";
+import { NextResponse, after } from "next/server";
+import { dispatchEvent } from "@/lib/eventService";
+
 export async function POST(request) {
   try {
     const session = await auth();
@@ -15,11 +13,11 @@ export async function POST(request) {
 
     const userId = session.user.id;
     const body = await request.json();
-    const { requestId, buyerId, quantity, offeredPrice, message } = body;
+    const { requestId, quantity, offeredPrice, message } = body;
 
-    if (!requestId || !buyerId || !message) {
+    if (!requestId || !message) {
       return NextResponse.json(
-        { message: "Missing required fields" },
+        { message: "Request ID and message are required" },
         { status: 400 },
       );
     }
@@ -27,7 +25,13 @@ export async function POST(request) {
     // بررسی وجود درخواست
     const buyingRequest = await prisma.buyingRequest.findUnique({
       where: { id: requestId },
-      select: { id: true, title: true, userId: true },
+      select: {
+        id: true,
+        title: true,
+        userId: true,
+        requestNumber: true,
+        slug: true,
+      },
     });
 
     if (!buyingRequest) {
@@ -43,6 +47,11 @@ export async function POST(request) {
         { status: 400 },
       );
     }
+
+    // ✅ خریدار، صاحبِ درخواست است — نه مقداری که کلاینت در body فرستاده.
+    //    قبلاً هر کاربری می‌توانست buyerId دلخواه بدهد و برای شخص ثالث
+    //    نوتیفیکیشن/پیام بسازد و رکورد معامله را جعل کند.
+    const buyerId = buyingRequest.userId;
 
     // ✅ بررسی RevealedBuyerInfo (سهمیه در مرحله Reveal مصرف شده)
     const revealed = await prisma.revealedBuyerInfo.findUnique({
@@ -80,25 +89,11 @@ export async function POST(request) {
         message,
       },
     });
-    // ✅ نوتیفیکیشن برای خریدار
-    const supplierName =
-      session.user.name || session.user.email || "A supplier";
-    createNotification({
-      userId: buyerId,
-      type: NOTIFICATION_TYPES.NEW_QUOTE,
-      title: `New quote for "${buyingRequest.title}"`,
-      body: `${supplierName} submitted a quote of ${
-        offeredPrice ? `$${offeredPrice}` : "an offer"
-      }.`,
-      link: `/dashboard/requests`,
-      metadata: {
-        requestId: buyingRequest.id,
-        quoteId: quote.id,
-      },
-    });
-    // ارسال پیام به خریدار
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const requestLink = `${baseUrl}/requests/${buyingRequest.id}`;
+    // ✅ ایجاد پیام چت برای خریدار
+    const baseUrl = (
+      process.env.NEXTAUTH_URL || "http://localhost:3000"
+    ).replace(/\/+$/, "");
+    const requestLink = `${baseUrl}/requests/${buyingRequest.requestNumber}/${buyingRequest.slug}`;
     const messageContent = `📦 **New Quote for Request:** ${buyingRequest.title}\n🔗 ${requestLink}\n\n📝 **Message:** ${message}`;
 
     await prisma.message.create({
@@ -108,6 +103,16 @@ export async function POST(request) {
         requestId: requestId,
         content: messageContent,
       },
+    });
+
+    // ✅ نوتیفیکیشن + Web Push + ایمیل از مسیر مرکزی رویداد
+    after(async () => {
+      const result = await dispatchEvent("quote.submitted", {
+        quoteId: quote.id,
+      });
+      if (result?.error) {
+        console.error("[quote.submitted] dispatch error:", result.error);
+      }
     });
 
     return NextResponse.json(

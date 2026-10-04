@@ -1,12 +1,9 @@
 // src/app/api/admin/products/[id]/approve/route.js
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { revalidatePath } from "next/cache"; // ✅
-import {
-  createNotification,
-  NOTIFICATION_TYPES,
-} from "@/lib/notificationService";
+import { dispatchEvent } from "@/lib/eventService";
 
 export async function PATCH(request, { params }) {
   try {
@@ -57,19 +54,17 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    createNotification({
-      userId: product.userId,
-      type: isApproving
-        ? NOTIFICATION_TYPES.PRODUCT_APPROVED
-        : NOTIFICATION_TYPES.PRODUCT_REJECTED,
-      title: isApproving ? "Product Approved" : "Product Rejected",
-      body: isApproving
-        ? `Your product "${product.name}" has been approved and is now live.`
-        : `Your product "${product.name}" was rejected. Reason: ${
-            rejectionNote || "No reason provided."
-          }`,
-      link: `/dashboard/products`,
-      metadata: { productId: product.id },
+    // ✅ اطلاع به صاحب محصول از مسیر مرکزی رویداد
+    //    (In-App + Web Push + ایمیل، پس از ارسال پاسخ)
+    after(async () => {
+      const result = await dispatchEvent("product.reviewed", {
+        productId: product.id,
+        approved: isApproving,
+        rejectionNote,
+      });
+      if (result?.error) {
+        console.error("[product.reviewed] dispatch error:", result.error);
+      }
     });
 
     // ✅ Invalidate caches

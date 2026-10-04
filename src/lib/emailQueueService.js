@@ -89,13 +89,17 @@ export async function queueEmail({
 
 // ============================================================
 // پردازش صف (batch)
+// options.ids — اگر بدهی، فقط همان ردیف‌ها پردازش می‌شوند
+// (برای retry دستی از پنل ادمین)
 // ============================================================
-export async function processEmailQueue(limit = 30) {
+export async function processEmailQueue(limit = 30, options = {}) {
+  const { ids = null } = options;
   const now = new Date();
 
   const pending = await prisma.emailLog.findMany({
     where: {
       status: "queued",
+      ...(ids ? { id: { in: ids } } : {}),
       OR: [
         { nextRetryAt: null },
         { nextRetryAt: { lte: now } },
@@ -193,3 +197,130 @@ async function markPermanentlyFailed(id, errorMessage) {
     },
   });
 }
+
+// ============================================================
+// retry دستی یک ایمیل (از پنل ادمین)
+//
+// فقط ردیف‌هایی قابل retry هستند که محتوای رندرشده‌شان ذخیره
+// شده باشد (metadata._html). اگر رندر اولیه شکست خورده باشد
+// (مثلاً قالب وجود نداشته)، retry بی‌فایده است و پیام روشن
+// برگردانده می‌شود.
+// ============================================================
+export async function retryEmailLog(id) {
+  const log = await prisma.emailLog.findUnique({ where: { id } });
+
+  if (!log) {
+    return { ok: false, error: "Email log not found" };
+  }
+  if (log.status === "sent") {
+    return { ok: false, error: "This email was already sent" };
+  }
+  if (!log.metadata?._html) {
+    return {
+      ok: false,
+      error:
+        "No rendered content stored for this email. Make sure the template exists (run the seed script) and trigger the event again.",
+    };
+  }
+
+  await prisma.emailLog.update({
+    where: { id },
+    data: {
+      status: "queued",
+      retryCount: 0,
+      errorMessage: null,
+      nextRetryAt: null,
+    },
+  });
+
+  const result = await processEmailQueue(1, { ids: [id] });
+
+  const updated = await prisma.emailLog.findUnique({
+    where: { id },
+    select: { status: true, errorMessage: true, sentAt: true },
+  });
+
+  return { ok: true, result, log: updated };
+}
+
+// ============================================================
+// retry دستی همه‌ی ایمیل‌های ناموفق (failed + permanently_failed)
+// ============================================================
+export async function retryAllFailedEmails(batchSize = 20) {
+  const failed = await prisma.emailLog.findMany({
+    where: {
+      status: { in: ["failed", "permanently_failed"] },
+    },
+    select: { id: true, metadata: true },
+    orderBy: { createdAt: "asc" },
+    take: batchSize,
+  });
+
+  // ✅ فیلتر کردن در JS — فیلتر null روی ستون Json در Prisma شکننده است
+  const retryable = failed.filter((l) => l.metadata?._html);
+
+  if (retryable.length === 0) {
+    return { requeued: 0, sent: 0, failed: 0, skipped: failed.length };
+  }
+
+  const ids = retryable.map((l) => l.id);
+
+  await prisma.emailLog.updateMany({
+    where: { id: { in: ids } },
+    data: {
+      status: "queued",
+      retryCount: 0,
+      errorMessage: null,
+      nextRetryAt: null,
+    },
+  });
+
+  const result = await processEmailQueue(ids.length, { ids });
+
+  return { requeued: ids.length, skipped: failed.length - ids.length, ...result };
+}
+
+// ============================================================
+// ارسال ایمیل تستی از پنل ادمین
+// قالب را با متغیرهای نمونه رندر می‌کند و فوراً می‌فرستد تا
+// ادمین بتواند SMTP و قالب را قبل از رویداد واقعی بررسی کند.
+// ============================================================
+export async function sendTestEmail({ toEmail, templateKey, variables }) {
+  if (!toEmail) return { ok: false, error: "No recipient email" };
+
+  const rendered = await renderEmail(templateKey, variables || {});
+  if (!rendered) {
+    return {
+      ok: false,
+      error: `Template "${templateKey}" is missing or inactive. Run: node scripts/seed-email-templates.js`,
+    };
+  }
+
+  const log = await queueEmail({
+    toEmail,
+    templateKey,
+    subject: `[TEST] ${rendered.subject}`,
+    htmlBody: rendered.htmlBody,
+    textBody: rendered.textBody,
+    metadata: { test: true, templateKey },
+  });
+
+  if (!log) {
+    return { ok: false, error: "Could not queue the test email" };
+  }
+
+  const result = await processEmailQueue(1, { ids: [log.id] });
+
+  const updated = await prisma.emailLog.findUnique({
+    where: { id: log.id },
+    select: { status: true, errorMessage: true },
+  });
+
+  return {
+    ok: updated?.status === "sent",
+    error: updated?.errorMessage || null,
+    result,
+    log: updated,
+  };
+}
+
