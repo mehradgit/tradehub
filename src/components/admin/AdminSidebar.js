@@ -64,6 +64,11 @@ export default function AdminSidebar({ isOpen, onClose }) {
       icon: "fa-file-code",
       href: "/admin/email-templates",
     },
+    {
+      label: "Scheduled Jobs",
+      icon: "fa-clock-rotate-left",
+      href: "/admin/scheduled-jobs",
+    },
     { label: "Analytics", icon: "fa-chart-line", href: "/admin/analytics" },
     {
       label: "Access Control",

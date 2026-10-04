@@ -374,6 +374,45 @@ const TEMPLATES = [
       </div>
     `,
   },
+
+  // ---------- Subscription Expiring ----------
+  {
+    key: "subscription_expiring",
+    name: "Subscription Expiry Reminder",
+    description:
+      "Sent 7, 3 and 1 day(s) before an active subscription expires",
+    category: "transactional",
+    subject: "Your {{planName}} plan expires in {{daysLeft}} day(s)",
+    variables: [
+      "userName",
+      "planName",
+      "daysLeft",
+      "endDate",
+      "billingUrl",
+    ],
+    htmlBody: `
+      <h2 style="color: #13251f; margin: 0 0 16px;">Your subscription is ending</h2>
+      <p style="color: #33413d; font-size: 15px; line-height: 1.6;">
+        Hi {{userName}},<br/>
+        Your <strong>{{planName}}</strong> subscription will expire on
+        <strong>{{endDate}}</strong> — that is <strong>{{daysLeft}} day(s)</strong> from now.
+      </p>
+      <p style="color: #33413d; font-size: 14px; line-height: 1.6;">
+        To keep your current limits — product listings, image quotas and
+        buyer/supplier contact access — renew before that date.
+      </p>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="{{billingUrl}}" style="display: inline-block; background: #13795b;
+           color: white; padding: 12px 28px; border-radius: 50px; text-decoration: none;
+           font-weight: 700; font-size: 14px;">
+          Renew Subscription →
+        </a>
+      </div>
+      <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+        If you have already renewed, you can ignore this message.
+      </p>
+    `,
+  },
 ];
 
 async function main() {
