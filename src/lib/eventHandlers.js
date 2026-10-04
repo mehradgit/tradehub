@@ -502,4 +502,66 @@ export const HANDLERS = {
       },
     ];
   },
+
+  // ============================================================
+  // ۹. یادآوری انقضای اشتراک → اطلاع به صاحب اشتراک
+  // ============================================================
+  "subscription.expiring": async ({ subscriptionId, daysLeft }) => {
+    if (!subscriptionId) return [];
+
+    const sub = await prisma.userSubscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        plan: { select: { name: true } },
+      },
+    });
+    if (!sub?.user) return [];
+
+    const billingUrl = `${baseUrl()}/dashboard/billing`;
+    const days = Number(daysLeft) || 0;
+    const planName = sub.plan?.name || "your plan";
+    const endDate = new Date(sub.endDate).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+    const urgency =
+      days <= 1 ? "Expires tomorrow" : `Expires in ${days} days`;
+
+    return [
+      {
+        userId: sub.user.id,
+        category: "subscription",
+        templateKey: "subscription_expiring",
+        variables: {
+          userName: sub.user.name || "there",
+          planName,
+          daysLeft: String(days),
+          endDate,
+          billingUrl,
+        },
+        channels: ["email", "push", "inApp"],
+        inAppData: {
+          type: "subscription_expiring",
+          title: `${urgency} — ${planName}`,
+          body: `Your ${planName} subscription ends on ${endDate}. Renew to keep your access.`,
+          link: "/dashboard/billing",
+          icon: "fa-hourglass-end",
+          metadata: { subscriptionId: sub.id, daysLeft: days },
+        },
+        pushData: {
+          title: urgency,
+          body: `Your ${planName} subscription ends on ${endDate}.`,
+          url: billingUrl,
+        },
+        metadata: {
+          subscriptionId: sub.id,
+          daysLeft: days,
+          event: "subscription.expiring",
+        },
+      },
+    ];
+  },
 };
