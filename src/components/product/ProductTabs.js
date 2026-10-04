@@ -3,8 +3,88 @@
 
 import { useState } from "react";
 
-export default function ProductTabs({ product }) {
+// ============================================================
+// مشخصات پویا (EAV) — قالب‌بندی برای نمایش
+//
+// getProductAttributes() برای هر اتریبیوت این‌ها را می‌دهد:
+//   { attributeId, key, label, labelFa, dataType, unit, options, values, value }
+//   - value  : برای multiSelect آرایه، در غیر این صورت مقدار تکی
+//   - values : همیشه آرایه‌ی خام (string | number | boolean)
+// ============================================================
+function formatAttributeLabel(attr) {
+  const base = attr?.label || attr?.labelFa || attr?.key;
+  if (!base) return null;
+  // واحد اندازه‌گیری داخل پرانتز کنار برچسب
+  return attr?.unit ? `${base} (${attr.unit})` : String(base);
+}
+
+function formatAttributeValue(attr) {
+  if (!attr) return null;
+
+  // مقادیر خام را یکدست می‌کنیم (آرایه یا مقدار تکی)
+  const rawList =
+    Array.isArray(attr.values) && attr.values.length > 0
+      ? attr.values
+      : Array.isArray(attr.value)
+        ? attr.value
+        : attr.value === null || attr.value === undefined
+          ? []
+          : [attr.value];
+
+  // ردیف‌های خالی ("" / null / undefined / []) نمایش داده نمی‌شوند
+  const list = rawList.filter(
+    (v) =>
+      v !== null &&
+      v !== undefined &&
+      !(typeof v === "string" && v.trim() === "") &&
+      !(Array.isArray(v) && v.length === 0),
+  );
+
+  if (list.length === 0) return null;
+
+  const unit = attr.unit ? ` ${attr.unit}` : "";
+
+  // boolean → Yes / No
+  if (attr.dataType === "boolean" || typeof list[0] === "boolean") {
+    const truthy =
+      list[0] === true ||
+      list[0] === "true" ||
+      list[0] === 1 ||
+      list[0] === "1";
+    return truthy ? "Yes" : "No";
+  }
+
+  // number → عدد (به‌همراه واحد در صورت وجود)
+  if (attr.dataType === "number") {
+    const nums = list.map((v) => Number(v)).filter((n) => Number.isFinite(n));
+    if (nums.length === 0) return null;
+    return `${nums.join(", ")}${unit}`;
+  }
+
+  // text | select | multiSelect → رشته‌ها با ", " به هم می‌چسبند
+  const parts = list.map((v) => String(v).trim()).filter(Boolean);
+  if (parts.length === 0) return null;
+  return parts.join(", ");
+}
+
+export default function ProductTabs({ product, attributes }) {
   const [activeTab, setActiveTab] = useState("desc");
+
+  // attributes هم می‌تواند به‌صورت پراپ بیاید و هم داخل product باشد
+  const attributeList = Array.isArray(attributes)
+    ? attributes
+    : Array.isArray(product?.attributes)
+      ? product.attributes
+      : [];
+
+  // فقط ردیف‌هایی که هم برچسب و هم مقدار قابل نمایش دارند
+  const attributeRows = attributeList
+    .map((attr) => ({
+      id: attr?.attributeId || attr?.key,
+      label: formatAttributeLabel(attr),
+      value: formatAttributeValue(attr),
+    }))
+    .filter((row) => row.label && row.value !== null);
 
   const tabs = [
     { id: "desc", label: "Description" },
@@ -165,6 +245,33 @@ export default function ProductTabs({ product }) {
             </tr>
           </tbody>
         </table>
+
+        {/* ============================================================
+            مشخصات پویا (EAV) — فقط وقتی مقداری ذخیره شده باشد
+            (اگر اتریبیوتی نباشد، هیچ عنوان/جدول خالی رندر نمی‌شود)
+            ============================================================ */}
+        {attributeRows.length > 0 && (
+          <>
+            <h5 className="description-label mt-3">Specifications</h5>
+            <table className="tab-spec-table">
+              <tbody>
+                {attributeRows.map((row, index) => (
+                  <tr key={row.id || index}>
+                    <td className="label">
+                      <div className="label-inner">
+                        <i className="fas fa-list-alt"></i>
+                        <span className="label-text" title={row.label}>
+                          {row.label}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="value">{row.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
       </div>
 
       {/* ====== تب Reviews ====== */}

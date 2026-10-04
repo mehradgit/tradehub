@@ -1,5 +1,11 @@
 // src/app/sitemap.js
 import { prisma } from "@/lib/prisma";
+import { getCategories } from "@/lib/categoriesService";
+import { buildCategoryTree, buildCategoryIndex } from "@/lib/categoryTree";
+
+// بدون این، sitemap فقط یک‌بار در زمان build ساخته می‌شود و
+// محصولات/دسته‌های جدید هرگز به آن اضافه نمی‌شوند.
+export const revalidate = 3600;
 
 export default async function sitemap() {
   const baseUrl = "https://foodtradelink.com";
@@ -53,5 +59,32 @@ export default async function sitemap() {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...productUrls, ...requestUrls, ...profileUrls];
+  // ===== لندینگ‌های دسته‌بندی (سه‌سطحی) =====
+  // این صفحات هدف اصلی ترافیک ارگانیک‌اند، پس در sitemap می‌آیند.
+  let categoryUrls = [];
+  try {
+    const flat = await getCategories();
+    const tree = buildCategoryTree(flat).filter((n) => n.isActive !== false);
+    const index = buildCategoryIndex(tree);
+    const now = new Date();
+
+    categoryUrls = index.flat
+      .filter((n) => n.isActive !== false)
+      .map((n) => ({
+        url: `${baseUrl}/categories/${n.path}`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: n.level === 1 ? 0.8 : n.level === 2 ? 0.7 : 0.6,
+      }));
+  } catch (err) {
+    console.error("[sitemap] category URLs failed:", err.message);
+  }
+
+  return [
+    ...staticPages,
+    ...categoryUrls,
+    ...productUrls,
+    ...requestUrls,
+    ...profileUrls,
+  ];
 }

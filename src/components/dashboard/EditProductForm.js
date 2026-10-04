@@ -1,16 +1,24 @@
 // src/components/dashboard/EditProductForm.js
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import CategorySelect from "@/components/ui/CategorySelect";
 import CountrySelect from "@/components/ui/CountrySelect";
+import VocabularySelect from "@/components/ui/VocabularySelect";
+import ProductAttributesFields from "@/components/product/ProductAttributesFields";
 import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import { getCountryName } from "@/lib/countries";
+import { useCategories } from "@/hooks/useCategories";
+import { resolveCategoryPath } from "@/lib/categoryTree";
+import {
+  attributesMapToArray,
+  productAttributesToMap,
+} from "@/lib/attributeValues";
 
 export default function EditProductForm({ product }) {
   const router = useRouter();
@@ -40,10 +48,65 @@ export default function EditProductForm({ product }) {
     shippingTerms: product.shippingTerms || "",
     packaging: product.packaging || "",
     certifications: product.certifications || "",
+    paymentTerms: product.paymentTerms || "",
+    // ====== مشخصات پویا (EAV): { [attributeId]: value } ======
+    attributes: productAttributesToMap(product.attributes || []),
     origin: product.origin || "",
     countryCode: product.countryCode || "",
     isVisible: product.isVisible !== undefined ? product.isVisible : true,
   });
+
+  // ====== مسیر دسته‌بندی برای پنل مشخصات پویا ======
+  const { tree } = useCategories();
+
+  const categoryPath = useMemo(
+    () =>
+      resolveCategoryPath(
+        {
+          category: formData.category,
+          subCategory: formData.subCategory,
+          productType: formData.productType,
+        },
+        tree,
+      ),
+    [formData.category, formData.subCategory, formData.productType, tree],
+  );
+
+  // ====== آیا مقادیر اتریبیوت از قبل در دسترس‌اند؟ ======
+  // اگر صفحه‌ی ویرایش attributes را پاس نداده باشد، از API خوانده
+  // می‌شود. تا وقتی لود نشده، کلید attributes در payload فرستاده
+  // نمی‌شود تا مقادیر موجود پاک نشوند.
+  const [attributesLoaded, setAttributesLoaded] = useState(
+    Array.isArray(product.attributes),
+  );
+
+  useEffect(() => {
+    if (Array.isArray(product.attributes)) return;
+    if (!product.id) return;
+
+    let cancelled = false;
+
+    fetch(`/api/products/${product.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const map = productAttributesToMap(data?.attributes || []);
+        setFormData((prev) =>
+          // اگر کاربر تا رسیدن پاسخ چیزی انتخاب کرده، دست نمی‌زنیم
+          Object.keys(prev.attributes || {}).length > 0
+            ? prev
+            : { ...prev, attributes: map },
+        );
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setAttributesLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [product.id, product.attributes]);
 
   // ===== Images State =====
   const [existingImages, setExistingImages] = useState(
@@ -76,11 +139,14 @@ export default function EditProductForm({ product }) {
   };
 
   const handleCategoryChange = (category) => {
+    // اتریبیوت‌ها به دسته‌بندی وابسته‌اند → مقادیر قبلی ریست می‌شوند
+    // (فلگ attributesLoaded دست‌نخورده می‌ماند تا منطق ارسال به API تغییر نکند)
     setFormData((prev) => ({
       ...prev,
       category: category || "",
       subCategory: "",          // âœ… ریست شدن
       productType: "",          // âœ… ریست شدن
+      attributes: {},
     }));
   };
 
@@ -89,6 +155,7 @@ export default function EditProductForm({ product }) {
       ...prev,
       subCategory: subCategory || "",
       productType: "",          // âœ… ریست شدن
+      attributes: {},
     }));
   };
 
@@ -96,6 +163,7 @@ export default function EditProductForm({ product }) {
     setFormData((prev) => ({
       ...prev,
       productType: productType || "",
+      attributes: {},
     }));
   };
   // ===== Image limit calculations =====
@@ -181,14 +249,24 @@ export default function EditProductForm({ product }) {
         return;
       }
 
+      // attributes از فرم به‌صورت map است و باید به آرایه‌ی API تبدیل شود
+      const { attributes: attributesMap, ...formRest } = formData;
+
       const payload = {
-        ...formData,
+        ...formRest,
         fullDesc: formData.fullDesc || null,
         images: allImages,
         price: parseFloat(formData.price),
         moq: parseInt(formData.moq),
         stock: formData.stock ? parseInt(formData.stock) : null,
         leadTime: formData.leadTime ? parseInt(formData.leadTime) : null,
+        paymentTerms: formData.paymentTerms || null,
+        // ====== مشخصات پویا: map → [{ attributeId, value }] ======
+        // فقط وقتی مقادیر واقعاً خوانده شده‌اند فرستاده می‌شود؛
+        // آرایه‌ی خالی یعنی «همه‌ی مقادیر پاک شوند».
+        ...(attributesLoaded
+          ? { attributes: attributesMapToArray(attributesMap) }
+          : {}),
       };
 
       const res = await fetch(`/api/products/${product.id}`, {
@@ -415,38 +493,79 @@ export default function EditProductForm({ product }) {
             </div>
 
             <div className="ep-grid-2">
-              <Field
-                label="Shipping Terms"
-                name="shippingTerms"
-                value={formData.shippingTerms}
-                onChange={handleChange}
-                type="select"
-                icon="fa-truck"
-                options={[
-                  "FOB (Free On Board)",
-                  "CIF (Cost, Insurance, Freight)",
-                  "EXW (Ex Works)",
-                  "DDP (Delivered Duty Paid)",
-                  "DAP (Delivered at Place)",
-                ]}
-              />
-              <Field
-                label="Packaging"
-                name="packaging"
-                value={formData.packaging}
-                onChange={handleChange}
-                placeholder="e.g., 20kg GrainPro bags"
-                icon="fa-box-open"
-              />
-              <Field
-                label="Certifications"
-                name="certifications"
-                value={formData.certifications}
-                onChange={handleChange}
-                placeholder="e.g., USDA Organic, Fair Trade"
-                icon="fa-certificate"
-                hint="Separate with commas"
-              />
+              {/* ===== Shipping Terms — واژگان کنترل‌شده (incoterms) ===== */}
+              <div className="ep-field">
+                <label className="ep-label">
+                  <i className="fas fa-truck"></i>
+                  Shipping Terms
+                </label>
+                <VocabularySelect
+                  vocabKey="incoterms"
+                  value={formData.shippingTerms}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, shippingTerms: v }))
+                  }
+                  allowCustom
+                  placeholder="Select delivery term…"
+                />
+              </div>
+
+              {/* ===== Payment Terms — فیلد جدید ===== */}
+              <div className="ep-field">
+                <label className="ep-label">
+                  <i className="fas fa-money-check-dollar"></i>
+                  Payment Terms
+                </label>
+                <VocabularySelect
+                  vocabKey="paymentTerms"
+                  value={formData.paymentTerms}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, paymentTerms: v }))
+                  }
+                  allowCustom
+                  placeholder="Select payment term…"
+                />
+              </div>
+
+              {/* ===== Packaging — چندانتخابی ===== */}
+              <div className="ep-field">
+                <label className="ep-label">
+                  <i className="fas fa-box-open"></i>
+                  Packaging
+                </label>
+                <VocabularySelect
+                  vocabKey="packagingTypes"
+                  value={formData.packaging}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, packaging: v }))
+                  }
+                  multiple
+                  allowCustom
+                  placeholder="Select packaging…"
+                  addPlaceholder="e.g., 20kg GrainPro bags"
+                />
+              </div>
+
+              {/* ===== Certifications — چندانتخابی ===== */}
+              <div className="ep-field">
+                <label className="ep-label">
+                  <i className="fas fa-certificate"></i>
+                  Certifications
+                </label>
+                <VocabularySelect
+                  vocabKey="certifications"
+                  value={formData.certifications}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, certifications: v }))
+                  }
+                  multiple
+                  allowCustom
+                  placeholder="Select certifications…"
+                  addPlaceholder="e.g., USDA Organic"
+                />
+                <div className="ep-hint">Separate with commas</div>
+              </div>
+
               <div className="ep-field">
                 <label className="ep-label">
                   <i className="fas fa-globe"></i>
@@ -466,6 +585,29 @@ export default function EditProductForm({ product }) {
                 />
               </div>
             </div>
+          </section>
+
+          {/* ============================================================
+             SECTION 3.5: Technical Specifications — پویا بر اساس دسته
+             ============================================================ */}
+          <section className="ep-card">
+            <div className="ep-card-head">
+              <h3 className="ep-card-title">
+                <i className="fas fa-table"></i>
+                Technical Specifications
+              </h3>
+              <p className="ep-card-sub">
+                Fields are defined by the selected category
+              </p>
+            </div>
+
+            <ProductAttributesFields
+              categoryPath={categoryPath}
+              values={formData.attributes}
+              onChange={(next) =>
+                setFormData((prev) => ({ ...prev, attributes: next }))
+              }
+            />
           </section>
 
           {/* ============================================================

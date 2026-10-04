@@ -5,6 +5,69 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ProductApprovalButtons from "@/components/admin/ProductApprovalButtons";
+import { getProductAttributes } from "@/lib/attributesService";
+
+// ============================================================
+// مشخصات پویا (EAV) — قالب‌بندی برای نمایش
+//
+// getProductAttributes() برای هر اتریبیوت این‌ها را می‌دهد:
+//   { attributeId, key, label, labelFa, dataType, unit, options, values, value }
+// مقدار خالی → null (یعنی آن ردیف رندر نمی‌شود)
+// ============================================================
+function formatAttributeLabel(attr) {
+  const base = attr?.label || attr?.labelFa || attr?.key;
+  if (!base) return null;
+  // واحد اندازه‌گیری داخل پرانتز کنار برچسب
+  return attr?.unit ? `${base} (${attr.unit})` : String(base);
+}
+
+function formatAttributeValue(attr) {
+  if (!attr) return null;
+
+  const rawList =
+    Array.isArray(attr.values) && attr.values.length > 0
+      ? attr.values
+      : Array.isArray(attr.value)
+        ? attr.value
+        : attr.value === null || attr.value === undefined
+          ? []
+          : [attr.value];
+
+  // ردیف‌های خالی ("" / null / undefined / []) نمایش داده نمی‌شوند
+  const list = rawList.filter(
+    (v) =>
+      v !== null &&
+      v !== undefined &&
+      !(typeof v === "string" && v.trim() === "") &&
+      !(Array.isArray(v) && v.length === 0),
+  );
+
+  if (list.length === 0) return null;
+
+  const unit = attr.unit ? ` ${attr.unit}` : "";
+
+  // boolean → Yes / No
+  if (attr.dataType === "boolean" || typeof list[0] === "boolean") {
+    const truthy =
+      list[0] === true ||
+      list[0] === "true" ||
+      list[0] === 1 ||
+      list[0] === "1";
+    return truthy ? "Yes" : "No";
+  }
+
+  // number → عدد (به‌همراه واحد در صورت وجود)
+  if (attr.dataType === "number") {
+    const nums = list.map((v) => Number(v)).filter((n) => Number.isFinite(n));
+    if (nums.length === 0) return null;
+    return `${nums.join(", ")}${unit}`;
+  }
+
+  // text | select | multiSelect → رشته‌ها با ", " به هم می‌چسبند
+  const parts = list.map((v) => String(v).trim()).filter(Boolean);
+  if (parts.length === 0) return null;
+  return parts.join(", ");
+}
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -51,8 +114,24 @@ export default async function AdminProductDetailPage({ params }) {
   // Parse images
   const images = Array.isArray(product.images) ? product.images : [];
 
-  // Parse specs
-  const specs = product.specs && typeof product.specs === "object" ? product.specs : null;
+  // ====== مشخصات پویا (EAV) ======
+  // اگر جدول/سرویس اتریبیوت‌ها در دسترس نباشد، صفحه‌ی ادمین نباید بشکند.
+  let attributes = [];
+  try {
+    attributes = await getProductAttributes(product.id);
+  } catch (err) {
+    console.error("[admin-product] getProductAttributes failed:", err);
+    attributes = [];
+  }
+
+  // فقط ردیف‌هایی که هم برچسب و هم مقدار قابل نمایش دارند
+  const attributeRows = attributes
+    .map((attr) => ({
+      id: attr?.attributeId || attr?.key,
+      label: formatAttributeLabel(attr),
+      value: formatAttributeValue(attr),
+    }))
+    .filter((row) => row.label && row.value !== null);
 
   // Status info
   const getStatusInfo = () => {
@@ -360,37 +439,18 @@ export default async function AdminProductDetailPage({ params }) {
         </FieldGrid>
       </Section>
 
-      {/* Technical Specifications */}
-      {specs && Object.keys(specs).length > 0 && (
-        <Section title="Technical Specifications" icon="fa-list-alt">
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: 12,
-            }}
-          >
-            {Object.entries(specs).map(([key, value]) => (
-              <div
-                key={key}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "10px 14px",
-                  background: "var(--bg)",
-                  borderRadius: 8,
-                  fontSize: 13,
-                }}
-              >
-                <span style={{ color: "var(--muted)", fontWeight: 600 }}>
-                  {key}
-                </span>
-                <span style={{ color: "var(--text)", fontWeight: 500 }}>
-                  {String(value)}
-                </span>
-              </div>
+      {/* Technical Specifications — مشخصات پویا (EAV) */}
+      {attributeRows.length > 0 && (
+        <Section title="Specifications" icon="fa-list-alt">
+          <FieldGrid cols={2}>
+            {attributeRows.map((row, index) => (
+              <Field
+                key={row.id || index}
+                label={row.label}
+                value={row.value}
+              />
             ))}
-          </div>
+          </FieldGrid>
         </Section>
       )}
 

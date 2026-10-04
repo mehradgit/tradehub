@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import RequestCard from "@/components/requests/RequestCard";
 import Pagination from "@/components/requests/Pagination";
-import FilterBar from "@/components/requests/FilterBar";
+import SharedFilterBar from "@/components/filters/FilterBar";
+import { getFilterContext } from "@/lib/filters/serverContext";
+import { describePath } from "@/lib/categoryTree";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -102,43 +104,37 @@ export async function generateMetadata({ searchParams }) {
 // صفحه (بدون تغییر)
 // ============================================================
 export default async function RequestsPage({ searchParams }) {
-  const {
-    page: pageParam = 1,
-    category = "",
-    subCategory = "",
-    search = "",
-    filter = "all",
-  } = await searchParams;
+  const resolvedParams = await searchParams;
 
-  const page = parseInt(pageParam) || 1;
-  const limit = 30;
-  const skip = (page - 1) * limit;
+  // ============================================================
+  // موتور فیلتر مشترک (همان اسکیمای محصولات، با فیلدهای درخواست)
+  // ============================================================
+  const filters = await getFilterContext("requests", resolvedParams);
+  const { orderBy, page, limit, skip } = filters.plan;
 
-  const where = {
-    isVisible: true,
-    status: "APPROVED",
-  };
+  // پارامترهای مؤثر (تبدیل خودکار category/subCategory قدیمی)
+  const params = filters.effectiveParams;
+  const search = params.search || "";
+  const category = params.category || "";
+  const subCategory = params.subCategory || "";
+  const filter = params.filter || "all";
 
-  if (category) where.category = category;
-  if (subCategory) where.subCategory = subCategory;
-
-  if (search) {
-    where.OR = [
-      { title: { contains: search } },
-      { description: { contains: search } },
-      { category: { contains: search } },
-      { subCategory: { contains: search } },
-      { deliveryCountry: { contains: search } },
-    ];
-  }
-
+  // شرط موتور + نگه‌داشتن فیلتر قدیمی ?filter=urgent|verified
+  const where = { ...filters.plan.where };
   if (filter === "urgent") where.isUrgent = true;
   else if (filter === "verified") where.isUrgent = false;
+
+  // برچسب دسته از مسیر سه‌سطحی
+  const categoryLabel = filters.categoryPath
+    ? describePath(filters.categoryPath, filters.index)
+    : category && subCategory
+    ? `${category} › ${subCategory}`
+    : category || subCategory || "";
 
   const [requests, totalCount] = await Promise.all([
     prisma.buyingRequest.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy,
       skip,
       take: limit,
       include: {
@@ -224,7 +220,7 @@ export default async function RequestsPage({ searchParams }) {
             <i className="fas fa-shopping-cart"></i>
             {search
               ? `Search: "${search}"`
-              : subCategory || category || "Buying Requests"}
+              : categoryLabel || "Buying Requests"}
           </h1>
           <p className="requests-page-subtitle">
             {totalCount} active {filter === "urgent" ? "urgent " : ""}
@@ -232,12 +228,8 @@ export default async function RequestsPage({ searchParams }) {
           </p>
         </div>
 
-        <FilterBar
-          currentCategory={category}
-          currentSubCategory={subCategory}
-          currentSearch={search}
-          currentFilter={filter}
-        />
+        {/* ✅ نوار فیلتر یکپارچه — از اسکیمای مشترک ساخته می‌شود */}
+        <SharedFilterBar {...filters.barProps} resultCount={totalCount} />
 
         {requests.length > 0 ? (
           <div className="requests-grid">

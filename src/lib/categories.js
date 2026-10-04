@@ -12,6 +12,7 @@ function flattenCategories() {
     flat.push({
       id: cat.id,
       name: cat.name_en,
+      nameFa: cat.name_fa || null,
       slug: cat.slug || cat.id,
       icon: cat.icon || null,
       description: cat.description || null,
@@ -26,6 +27,7 @@ function flattenCategories() {
       flat.push({
         id: sub.id,
         name: sub.name_en,
+        nameFa: sub.name_fa || null,
         slug: sub.slug || sub.id,
         icon: sub.icon || null,
         description: sub.description || null,

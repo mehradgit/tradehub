@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mega Search + Filter Modals — Prototype</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<style>
+/* ============================================================
+   رنگ‌ها از globals.css و admin.css خود پروژه برداشته شده‌اند
+   ============================================================ */
+:root{
+  --primary:#13795b;
+  --primary-dark:#0b5b43;
+  --primary-light:#eaf7f1;
+  --green2:#15966f;
+  --dark:#13251f;
+  --muted:#71807b;
+  --line:#e4ebe7;
+  --bg:#f6f9f8;
+  --radius:14px;
+  --shadow-lg:0 24px 60px rgba(11,50,40,.22);
+  --shadow-md:0 6px 20px rgba(11,50,40,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Segoe UI",Inter,system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--dark);
+  font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+
+/* ==================== HEADER ==================== */
+.site-header{
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+  color:#fff;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 14px rgba(11,50,40,.18);
+}
+.header-inner{
+  max-width:1220px;margin:0 auto;padding:0 20px;
+  height:68px;display:flex;align-items:center;gap:26px;
+}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:18px;letter-spacing:-.3px}
+.logo i{font-size:20px}
+.nav{display:flex;gap:22px;margin-left:8px;font-size:13.5px;font-weight:500;opacity:.92}
+.nav a:hover{opacity:1}
+.header-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+.icon-btn{
+  width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.09);color:#fff;display:grid;place-items:center;
+  font-size:15px;transition:.18s;
+}
+.icon-btn:hover{background:rgba(255,255,255,.2)}
+.icon-btn.active{background:#fff;color:var(--primary);border-color:#fff}
+
+/* ==================== MEGA SEARCH BAR ==================== */
+.mega{
+  position:fixed;top:68px;left:0;right:0;z-index:99;
+  background:rgba(255,255,255,.97);
+  -webkit-backdrop-filter:saturate(180%) blur(14px);
+  backdrop-filter:saturate(180%) blur(14px);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 10px 30px rgba(11,50,40,.09);
+  padding:16px 0 13px;
+  transform:translateY(-118%);opacity:0;visibility:hidden;
+  transition:transform .34s cubic-bezier(.4,0,.2,1),opacity .24s,visibility .24s;
+}
+.mega.open{transform:translateY(0);opacity:1;visibility:visible}
+.mega-inner{max-width:1220px;margin:0 auto;padding:0 20px}
+
+/* پیل اصلی */
+.pill{
+  display:flex;align-items:center;gap:0;
+  background:#fff;border:1.5px solid var(--line);border-radius:999px;
+  height:58px;padding:5px 5px 5px 20px;
+  box-shadow:0 4px 14px rgba(11,50,40,.05);
+  transition:.2s;
+}
+.pill:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(19,121,91,.11)}
+.pill > .fa-magnifying-glass{color:#9aa8a3;font-size:15px;margin-right:13px;flex:0 0 auto}
+.pill input{
+  flex:1;border:0;outline:0;background:transparent;
+  font-size:14.5px;color:var(--dark);padding:6px 0;min-width:80px;
+}
+.pill input::placeholder{color:#a9b5b0}
+.pill-sep{width:1px;height:26px;background:var(--line);margin:0 4px;flex:0 0 auto}
+
+/* انتخابگر حوزه (in Products / Requests / Companies) */
+.scope{position:relative;flex:0 0 auto}
+.scope-btn{
+  display:flex;align-items:center;gap:8px;border:0;background:transparent;
+  padding:9px 13px;border-radius:999px;font-size:13px;font-weight:600;color:var(--dark);
+  transition:.15s;
+}
+.scope-btn:hover{background:var(--primary-light)}
+.scope-btn i.fa-chevron-down{font-size:9px;color:var(--muted)}
+.scope-menu{
+  position:absolute;top:calc(100% + 9px);left:0;min-width:210px;
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow-lg);padding:6px;z-index:20;
+}
+.scope-menu button{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  border:0;background:transparent;padding:9px 11px;border-radius:8px;
+  font-size:13px;color:var(--dark);
+}
+.scope-menu button:hover{background:var(--primary-light)}
+.scope-menu button .cnt{margin-left:auto;color:var(--muted);font-size:11px}
+.scope-menu button.sel{color:var(--primary);font-weight:700}
+
+/* دکمه فیلترها */
+.filters-btn{
+  display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);
+  background:#fff;color:var(--dark);border-radius:999px;padding:9px 15px;
+  font-size:13px;font-weight:700;flex:0 0 auto;transition:.16s;
+}
+.filters-btn:hover{border-color:#bfe3d3}
+.filters-btn.on{border-color:#bfe3d3;color:var(--primary);background:var(--primary-light)}
+.badge{
+  background:var(--green2);color:#fff;border-radius:999px;
+  padding:1px 7px;font-size:10.5px;font-weight:800;line-height:1.7;
+}
+.submit-btn{
+  border:0;background:var(--green2);color:#fff;border-radius:999px;
+  padding:11px 22px;font-size:13px;font-weight:700;flex:0 0 auto;transition:.16s;
+}
+.submit-btn:hover{background:var(--primary-dark)}
+
+/* نوار وضعیت + چیپ‌ها */
+.mega-meta{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-top:11px;font-size:12px;color:var(--muted);
+}
+.mega-meta strong{color:var(--dark)}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;background:var(--primary-light);
+  color:var(--primary);border-radius:999px;padding:5px 9px 5px 12px;
+  font-size:11.5px;font-weight:700;max-width:290px;
+}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip button{border:0;background:transparent;color:var(--primary);padding:0;font-size:11px}
+.chip.ghost{background:#f0f4f2;color:var(--muted);font-weight:600}
+.clear-link{border:0;background:transparent;color:var(--primary);font-size:11.5px;font-weight:700;text-decoration:underline}
+
+/* ==================== صفحه ==================== */
+.page{max-width:1220px;margin:0 auto;padding:26px 20px 70px}
+.page-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.page-head h1{font-size:22px;margin:0;font-weight:800;letter-spacing:-.3px}
+.page-head h1 i{color:var(--primary);margin-right:8px}
+.count-pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 12px;font-size:12px;color:var(--muted)}
+.crumbs{font-size:12.5px;color:var(--muted);margin-bottom:18px}
+.crumbs a{color:var(--primary)}
+
+/* راهنمای طراحی */
+.note{
+  background:#fff;border:1px dashed #c9dbd3;border-left:4px solid var(--green2);
+  border-radius:12px;padding:14px 16px;margin-bottom:22px;font-size:12.5px;color:#3c4f49;
+}
+.note b{color:var(--dark)}
+.note ol{margin:8px 0 0;padding-left:20px}
+.note li{margin-bottom:4px}
+
+/* گرید محصولات */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;transition:.18s}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.thumb{height:118px;background:linear-gradient(135deg,#e8f3ee,#d6ebe2);display:grid;place-items:center;color:#9dc4b6;font-size:30px}
+.card-body{padding:12px 13px}
+.card-body h4{margin:0 0 5px;font-size:13.5px;font-weight:700}
+.card-body .sub{font-size:11.5px;color:var(--muted)}
+.card-body .price{margin-top:9px;font-size:14px;font-weight:800;color:var(--primary)}
+.card-body .price small{font-weight:500;color:var(--muted);font-size:11px}
+.tag{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:700;margin-top:8px}
+
+/* ==================== مدال ==================== */
+.overlay{
+  position:fixed;inset:0;background:rgba(9,32,26,.5);z-index:200;
+  display:none;align-items:flex-start;justify-content:center;
+  padding:70px 16px 24px;overflow-y:auto;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+}
+.overlay.open{display:flex}
+/* تصمیم ۴: مدال سطح ۲ جایگزین سطح ۱ می‌شود (نه روی هم).
+   پس پس‌زمینه و فاصله‌ی بالا مثل سطح ۱ است. */
+.overlay.sub{z-index:210}
+
+.modal{
+  background:#fff;border-radius:18px;width:100%;max-width:620px;
+  box-shadow:var(--shadow-lg);overflow:hidden;
+  animation:pop .2s cubic-bezier(.34,1.4,.64,1);
+  margin-bottom:40px;
+}
+.modal.narrow{max-width:470px}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+
+.modal-head{
+  display:flex;align-items:center;gap:13px;
+  padding:17px 20px;border-bottom:1px solid var(--line);
+}
+.modal-head .ttl{flex:1;min-width:0}
+.modal-head h3{margin:0;font-size:15.5px;font-weight:800;letter-spacing:-.2px}
+.modal-head p{margin:2px 0 0;font-size:11.5px;color:var(--muted)}
+.x-btn{
+  width:34px;height:34px;border-radius:9px;border:1px solid var(--line);
+  background:#fff;color:var(--muted);display:grid;place-items:center;font-size:14px;flex:0 0 auto;
+}
+.x-btn:hover{background:#f5f8f7;color:var(--dark)}
+.back-btn{
+  width:34px;height:34px;border-radius:9px;border:1px solid var(--line);
+  background:#fff;color:var(--dark);display:grid;place-items:center;font-size:13px;flex:0 0 auto;
+}
+.modal-body{padding:8px 0;max-height:56vh;overflow-y:auto}
+.modal-foot{
+  display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--line);background:#fafcfb;
+}
+.btn{
+  border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;border:1px solid var(--line);
+  background:#fff;color:var(--dark);transition:.15s;
+}
+.btn:hover{background:#f4f8f6}
+.btn.primary{background:var(--green2);border-color:var(--green2);color:#fff;flex:1}
+.btn.primary:hover{background:var(--primary-dark)}
+.btn.ghost{color:var(--muted)}
+
+/* ردیف گروه فیلتر (مدال سطح ۱) */
+.fgroup{
+  display:flex;align-items:center;gap:13px;width:100%;text-align:left;
+  border:0;background:transparent;padding:13px 20px;transition:.13s;
+}
+.fgroup:hover{background:#f7faf9}
+.fgroup + .fgroup{border-top:1px solid #f2f6f4}
+.fgroup .ic{
+  width:34px;height:34px;border-radius:9px;background:var(--primary-light);
+  color:var(--primary);display:grid;place-items:center;font-size:13px;flex:0 0 auto;
+}
+.fgroup .txt{flex:1;min-width:0}
+.fgroup .txt b{display:block;font-size:13.5px;font-weight:600}
+.fgroup .txt small{display:block;color:var(--muted);font-size:11.5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:380px}
+.fgroup .txt small.set{color:var(--primary);font-weight:700}
+.fgroup .chev{color:#c3cec9;font-size:12px;flex:0 0 auto}
+.sec-label{
+  padding:14px 20px 7px;font-size:10.5px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.7px;
+  border-top:1px solid var(--line);margin-top:6px;
+}
+
+/* گزینه‌های مدال سطح ۲ */
+.search-mini{
+  display:flex;align-items:center;gap:10px;margin:6px 20px 10px;
+  border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#fff;
+}
+.search-mini i{color:#a9b5b0;font-size:12px}
+.search-mini input{border:0;outline:0;flex:1;font-size:13px;background:transparent;color:var(--dark)}
+.opt{
+  display:flex;align-items:center;gap:11px;padding:10px 20px;
+  font-size:13.5px;cursor:pointer;transition:.12s;
+}
+.opt:hover{background:#f7faf9}
+.opt input{width:17px;height:17px;accent-color:var(--primary);flex:0 0 auto;cursor:pointer}
+.opt .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opt .cnt{color:var(--muted);font-size:11.5px;flex:0 0 auto}
+.opt.on .lbl{font-weight:700;color:var(--primary)}
+.range-row{display:flex;align-items:center;gap:11px;padding:9px 20px 4px}
+.range-row input{
+  flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  font-size:13.5px;outline:0;color:var(--dark);min-width:0;
+}
+.range-row input:focus{border-color:var(--primary)}
+.range-row .dash{color:var(--muted)}
+.range-row .unit{font-size:11.5px;color:var(--muted);flex:0 0 auto}
+.hint{padding:4px 20px 14px;font-size:11.5px;color:var(--muted)}
+.seg-row{display:flex;gap:7px;padding:12px 20px;flex-wrap:wrap}
+.seg-row button{
+  border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 15px;
+  font-size:12.5px;font-weight:600;color:var(--dark);
+}
+.seg-row button.on{background:var(--primary-light);border-color:#bfe3d3;color:var(--primary);font-weight:800}
+.empty-hint{padding:22px 20px;text-align:center;color:var(--muted);font-size:12.5px}
+
+/* ==================== فیلد کوچک هدر (تصمیم ۲) ====================
+   به‌صورت پیش‌فرض یک فیلد کوچک است؛ با فوکوس/تایپ، نوار مگا سرچ
+   باز می‌شود و همان مقدار به آن منتقل می‌شود.
+   ================================================================= */
+.header-search-mini{
+  display:flex;align-items:center;gap:9px;
+  width:230px;height:38px;padding:0 14px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);
+  border-radius:999px;color:rgba(255,255,255,.9);
+  font-size:13px;cursor:text;transition:.2s;
+}
+.header-search-mini:hover{background:rgba(255,255,255,.22)}
+.header-search-mini i{font-size:12.5px;opacity:.85}
+.header-search-mini span{opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-search-mini kbd{
+  margin-left:auto;font-family:inherit;font-size:10px;font-weight:700;
+  background:rgba(255,255,255,.18);border-radius:5px;padding:2px 6px;opacity:.85;
+}
+
+/* ==================== ردیف سرچ مصنوعی داخل صفحه (تصمیم ۳) ====================
+   کادر جست‌وجوی واقعی نیست: با کلیک، نوار مگا سرچ هدر باز و فوکوس می‌شود.
+   ========================================================================= */
+.page-search-row{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;
+}
+.fake-field{
+  flex:1 1 260px;min-width:200px;display:flex;align-items:center;gap:10px;
+  background:#fff;border:1.5px solid var(--line);border-radius:999px;
+  padding:11px 18px;font-size:13.5px;color:#a9b5b0;text-align:left;
+  transition:.18s;box-shadow:0 2px 8px rgba(11,50,40,.04);
+}
+.fake-field:hover{border-color:#bfe3d3;box-shadow:0 4px 14px rgba(11,50,40,.08)}
+.fake-field i{font-size:13px;color:#9aa8a3}
+.fake-field .ph{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fake-field .scope-tag{
+  background:var(--primary-light);color:var(--primary);border-radius:999px;
+  padding:3px 10px;font-size:11px;font-weight:800;flex:0 0 auto;
+}
+.page-filters-btn{
+  display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);
+  background:#fff;color:var(--dark);border-radius:999px;padding:11px 17px;
+  font-size:13px;font-weight:700;flex:0 0 auto;transition:.16s;
+}
+.page-filters-btn:hover{border-color:#bfe3d3}
+.page-filters-btn.on{border-color:#bfe3d3;color:var(--primary);background:var(--primary-light)}
+.sort-select{
+  border:1.5px solid var(--line);background:#fff;color:var(--dark);
+  border-radius:999px;padding:10px 14px;font-size:12.5px;font-weight:600;
+  font-family:inherit;outline:0;cursor:pointer;flex:0 0 auto;max-width:190px;
+}
+.sort-select:focus{border-color:var(--primary)}
+
+@media(max-width:900px){
+  .header-search-mini{width:170px}
+}
+@media(max-width:720px){
+  .nav{display:none}
+  .header-search-mini{display:none}
+  .pill{height:auto;flex-wrap:wrap;border-radius:18px;padding:9px;gap:8px}
+  .pill input{width:100%;flex:1 1 100%}
+  .pill-sep{display:none}
+  .modal-body{max-height:62vh}
+  .overlay{padding:46px 10px 20px;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== HEADER ==================== -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo"><i class="fa-solid fa-seedling"></i> FoodTradeLink</div>
+    <nav class="nav">
+      <a href="#">Products</a>
+      <a href="#">Requests</a>
+      <a href="#">Companies</a>
+      <a href="#">Pricing</a>
+    </nav>
+    <div class="header-actions">
+      <!-- تصمیم ۲: فیلد کوچک؛ با فوکوس/تایپ نوار مگا سرچ باز میشود -->
+      <div class="header-search-mini" id="miniSearch" tabindex="0" role="search" aria-label="Search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span>Search products, companies…</span>
+        <kbd>/</kbd>
+      </div>
+      <!-- روی موبایل فیلد کوچک مخفی است و فقط این آیکن میماند -->
+      <button class="icon-btn" id="toggleSearch" title="Search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+      <button class="icon-btn" title="Account"><i class="fa-regular fa-user"></i></button>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== MEGA SEARCH ==================== -->
+<div class="mega" id="mega">
+  <div class="mega-inner">
+    <div class="pill">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input id="q" placeholder="Search products, suppliers, or trade requests…" />
+      <span class="pill-sep"></span>
+
+      <!-- انتخابگر حوزه: تنها جای تعیین «کجا جست‌وجو شود» -->
+      <div class="scope">
+        <button class="scope-btn" id="scopeBtn">
+          <i class="fa-solid fa-filter" id="scopeIcon"></i>
+          <span id="scopeLabel">Products</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="scope-menu" id="scopeMenu" style="display:none"></div>
+      </div>
+
+      <span class="pill-sep"></span>
+
+      <!-- دکمه فیلترها → مدال -->
+      <button class="filters-btn" id="openFilters">
+        <i class="fa-solid fa-sliders"></i>
+        Filters
+        <span class="badge" id="fCount" style="display:none">0</span>
+      </button>
+
+      <span class="pill-sep"></span>
+
+      <!-- تصمیم ۱: مرتب‌سازی فیلتر نیست، پس dropdown جدا کنار Filters -->
+      <select class="sort-select" id="sortSel" aria-label="Sort by">
+        <option value="">Sort: Newest</option>
+        <option value="price_low">Price: low → high</option>
+        <option value="price_high">Price: high → low</option>
+        <option value="name">Name: A → Z</option>
+        <option value="oldest">Oldest first</option>
+      </select>
+
+      <button class="submit-btn">Search</button>
+    </div>
+
+    <!-- چیپ‌های فیلتر فعال + وضعیت -->
+    <div class="mega-meta" id="megaMeta"></div>
+  </div>
+</div>
+
+<!-- ==================== صفحه ==================== -->
+<main class="page">
+  <div class="page-head">
+    <h1><i class="fa-solid fa-box"></i><span id="pageTitle">All Products</span></h1>
+    <span class="count-pill" id="pageCount">128 products</span>
+  </div>
+  <div class="crumbs">
+    <a href="#">Home</a> › <a href="#">Products</a> › <span id="crumbLast">All</span>
+  </div>
+
+  <!-- ============================================================
+       تصمیم ۳: فیلد «مصنوعی» داخل صفحه
+       کادر جست‌وجوی واقعی نیست — با کلیک، مگا سرچ هدر باز و فوکوس
+       می‌شود. کنارش دکمه‌ی فیلتر همان مدال را مستقیم باز می‌کند.
+       ============================================================ -->
+  <div class="page-search-row">
+    <button class="fake-field" id="fakeField" type="button">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <span class="ph">Search products…</span>
+      <span class="scope-tag" id="fakeScope">Products</span>
+    </button>
+    <button class="page-filters-btn" id="pageFilters">
+      <i class="fa-solid fa-sliders"></i>
+      Filters
+      <span class="badge" id="fCount2" style="display:none">0</span>
+    </button>
+  </div>
+
+  <div class="note">
+    <b>نمونه‌ی تعاملی — تصمیم‌های اعمال‌شده:</b>
+    <ol>
+      <li><b>۲</b> — فیلد هدر کوچک است؛ رویش کلیک کن یا <kbd>/</kbd> بزن → نوار مگا سرچ باز و فوکوس می‌شود</li>
+      <li><b>۳</b> — فیلد <b>مصنوعی</b> همین صفحه را کلیک کن → همان نوار هدر باز می‌شود (این کادر جست‌وجوی واقعی نیست)</li>
+      <li><b>Filters</b> → مدال سطح ۱ (فهرست گروه‌ها)</li>
+      <li><b>۴</b> — روی هر گروه کلیک کن → مدال سطح ۲ <b>جایگزین</b> فهرست می‌شود (روی هم نمی‌افتد)؛ Apply یا ← برمی‌گرداند</li>
+      <li><b>۱</b> — مرتب‌سازی dropdown جدا کنار Filters است، چون فیلتر نیست</li>
+      <li><b>Products ▾</b> → حوزه را عوض کن؛ فیلترها و بخش Specifications عوض می‌شوند</li>
+      <li><b>۵</b> — صفحه‌ی <code>/search</code> حذف می‌شود؛ همین انتخابگر حوزه جایش را می‌گیرد</li>
+    </ol>
+    <span style="color:#71807b">جست‌وجو <b>داخل صفحه حذف شده</b>؛ فقط همین فیلد مصنوعی مانده که کاربر را به سرچ هدر می‌فرستد.</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</main>
+
+<!-- ==================== مدال سطح ۱: فهرست فیلترها ==================== -->
+<div class="overlay" id="ov1">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Filters">
+    <div class="modal-head">
+      <div class="ic" style="width:34px;height:34px;border-radius:9px;background:var(--primary-light);color:var(--primary);display:grid;place-items:center;font-size:13px">
+        <i class="fa-solid fa-sliders"></i>
+      </div>
+      <div class="ttl">
+        <h3>Filters</h3>
+        <p><span id="m1count">128</span> products match · <span id="m1scope">Products</span></p>
+      </div>
+      <button class="x-btn" onclick="closeModal(1)"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" id="m1body"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="clearAll()">Clear all</button>
+      <button class="btn primary" onclick="closeModal(1)">Show <span id="m1show">128</span> results</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== مدال سطح ۲: پارامترهای یک فیلتر ==================== -->
+<div class="overlay sub" id="ov2">
+  <div class="modal narrow" role="dialog" aria-modal="true" aria-label="Filter options">
+    <div class="modal-head">
+      <button class="back-btn" onclick="backToM1()"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="ttl">
+        <h3 id="m2title">Filter</h3>
+        <p id="m2sub">Choose one or more</p>
+      </div>
+      <button class="x-btn" onclick="closeBoth()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" id="m2body"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="clearOne()">Clear</button>
+      <button class="btn primary" onclick="applyOne()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   داده‌ی نمونه — سه حوزه با فیلترهای متفاوت
+   (همان چیزی که در سه اسکیمای src/lib/filters/schemas.js هست)
+   ============================================================ */
+const OPTS = {
+  countries:["Iran","India","Turkey","China","UAE","Brazil","Vietnam","Spain","Egypt","Thailand"],
+  certifications:["ISO 9001","ISO 22000","HACCP","BRC","Halal","Kosher","Organic (EU)","Organic (USDA)","Non-GMO","Fairtrade","SGS"],
+  paymentTerms:["T/T in advance","T/T 30% deposit","L/C at sight","L/C 30 days","L/C 60 days","D/P","D/A","Open account","Western Union","Escrow"],
+  incoterms:["EXW","FCA","FOB","CFR","CIF","CPT","CIP","DAP","DPU","DDP"],
+  packagingTypes:["Bulk","Bag (PP)","Bag (Jute)","Big Bag / Jumbo","Carton","Drum","Bottle","Jar","Can / Tin","Vacuum Packed","Container (FCL)","Container (LCL)"],
+  businessTypes:["Manufacturer","Trading Company","Exporter","Importer","Distributor","Wholesaler","Retailer","Agent / Broker","Farm / Producer","Cooperative"],
+  units:["kg","MT","ton","lb","L","carton","bag","container","pallet"],
+  colors:["Amber","Dark","Light","Golden"],
+  floral:["Acacia","Clover","Multifloral","Manuka","Wildflower"],
+  grades:["Grade A","Grade B","Grade C","Premium"],
+};
+
+const SCHEMAS = {
+  products:{
+    label:"Products", icon:"fa-box", path:"/products", result:"128 products",
+    groups:[
+      {key:"categoryPath", label:"Category", icon:"fa-sitemap", type:"cascade",
+       hint:"Three levels: category › sub-category › product type"},
+      {key:"origin", label:"Origin country", icon:"fa-globe", type:"multi", options:"countries"},
+      {key:"price", label:"Price", icon:"fa-tag", type:"range", unit:"USD"},
+      {key:"unit", label:"Unit of measure", icon:"fa-scale-balanced", type:"multi", options:"units"},
+      {key:"incoterms", label:"Delivery terms", icon:"fa-ship", type:"select", options:"incoterms"},
+      {key:"paymentTerms", label:"Payment terms", icon:"fa-credit-card", type:"select", options:"paymentTerms"},
+      {key:"certifications", label:"Certifications", icon:"fa-certificate", type:"multi", options:"certifications"},
+      {key:"businessTypes", label:"Supplier type", icon:"fa-building", type:"multi", options:"businessTypes"},
+      {section:"Specifications", note:"Shown because the selected category is Honey"},
+      {key:"moisture", label:"Moisture", icon:"fa-droplet", type:"range", unit:"%"},
+      {key:"color", label:"Colour", icon:"fa-palette", type:"multi", options:"colors"},
+      {key:"organic", label:"Organic", icon:"fa-leaf", type:"boolean"},
+      {key:"floral", label:"Floral source", icon:"fa-seedling", type:"multi", options:"floral"},
+      {key:"mgo", label:"MGO", icon:"fa-flask", type:"range", unit:"mg/kg"},
+    ]},
+  requests:{
+    label:"Buying Requests", icon:"fa-cart-shopping", path:"/requests", result:"64 requests",
+    groups:[
+      {key:"categoryPath", label:"Category", icon:"fa-sitemap", type:"cascade"},
+      {key:"deliveryCountry", label:"Delivery country", icon:"fa-truck-fast", type:"multi", options:"countries"},
+      {key:"isUrgent", label:"Urgent only", icon:"fa-bolt", type:"boolean"},
+      {key:"quantity", label:"Quantity", icon:"fa-weight-hanging", type:"range", unit:"MT"},
+      {key:"incoterms", label:"Delivery terms", icon:"fa-ship", type:"select", options:"incoterms"},
+      {key:"paymentTerms", label:"Payment terms", icon:"fa-credit-card", type:"select", options:"paymentTerms"},
+      {key:"certifications", label:"Required certifications", icon:"fa-certificate", type:"multi", options:"certifications"},
+      {key:"packagingReq", label:"Packaging required", icon:"fa-box-open", type:"multi", options:"packagingTypes"},
+    ]},
+  profiles:{
+    label:"Companies", icon:"fa-users", path:"/profiles", result:"312 companies",
+    groups:[
+      {key:"role", label:"Role", icon:"fa-user-tag", type:"choice", options:["Supplier","Buyer"]},
+      {key:"categoryPath", label:"Trades in category", icon:"fa-sitemap", type:"cascade"},
+      {key:"country", label:"Country", icon:"fa-globe", type:"multi", options:"countries"},
+      {key:"businessTypes", label:"Company type", icon:"fa-building", type:"multi", options:"businessTypes"},
+      {key:"hasProducts", label:"Has products listed", icon:"fa-box", type:"boolean"},
+      {key:"certifications", label:"Certifications", icon:"fa-certificate", type:"multi", options:"certifications"},
+    ]},
+};
+
+/* تعداد نمونه برای کنار هر گزینه */
+const COUNTRIES=[91,64,38,55,22,17,29,14,11,19];
+function countFor(opt, i){ return COUNTRIES[i % COUNTRIES.length]; }
+
+/* ==================== state ==================== */
+let ctx = "products";
+let values = { products:{}, requests:{}, profiles:{} };   // فیلترهای اعمال‌شده
+let draft = null, draftKey = null;                         // پیش‌نویس مدال سطح ۲
+let sortValue = "";                                        // تصمیم ۱: مرتب‌سازی
+
+const $ = (s)=>document.querySelector(s);
+const groups = ()=>SCHEMAS[ctx].groups;
+const activeGroups = ()=>groups().filter(g=>!g.section);
+
+/* ==================== کمکی‌ها ==================== */
+function summary(g){
+  const v = values[ctx][g.key];
+  if(v===undefined||v===null||v==="") return "";
+  if(Array.isArray(v)) return v.length? v.join(", ") : "";
+  if(typeof v==="object"){ 
+    const a=v.min!==""&&v.min!==undefined?v.min:"…";
+    const b=v.max!==""&&v.max!==undefined?v.max:"…";
+    return `${a} – ${b}${g.unit?" "+g.unit:""}`;
+  }
+  if(v===true) return "Yes";
+  return String(v);
+}
+function activeCount(){ return activeGroups().filter(g=>summary(g)!=="").length; }
+
+/* ==================== رندر هدر و صفحه ==================== */
+function renderScopeMenu(){
+  $("#scopeMenu").innerHTML = Object.entries(SCHEMAS).map(([k,s])=>`
+    <button class="${k===ctx?"sel":""}" onclick="setCtx('${k}')">
+      <i class="fa-solid ${s.icon}"></i> ${s.label}
+      <span class="cnt">${s.result}</span>
+    </button>`).join("");
+}
+function renderMeta(){
+  const chips = activeGroups().map(g=>{
+    const s = summary(g); if(!s) return "";
+    return `<span class="chip"><span>${g.label}: ${s}</span>
+      <button onclick="removeOne('${g.key}')" title="Remove"><i class="fa-solid fa-xmark"></i></button></span>`;
+  }).join("");
+  const n = activeCount();
+  $("#megaMeta").innerHTML = `
+    <span>Filtering <strong>${SCHEMAS[ctx].label}</strong> · <strong>${SCHEMAS[ctx].result}</strong></span>
+    ${chips}
+    ${n>1?`<button class="clear-link" onclick="clearAll()">Clear all</button>`:""}
+    ${n===0?`<span class="chip ghost">No filters yet — open Filters</span>`:""}`;
+  const b=$("#fCount"); b.textContent=n; b.style.display = n? "inline-block":"none";
+  $("#openFilters").classList.toggle("on", n>0);
+
+  // دکمه و فیلد مصنوعیِ داخل صفحه با هدر هم‌گام می‌شوند
+  const b2=$("#fCount2"); b2.textContent=n; b2.style.display = n? "inline-block":"none";
+  $("#pageFilters").classList.toggle("on", n>0);
+  $("#fakeScope").textContent = SCHEMAS[ctx].label;
+  const ph = "Search " + SCHEMAS[ctx].label.toLowerCase() + "…";
+  $("#fakeField").querySelector(".ph").textContent = ph;
+  $("#q").placeholder = ph;
+
+  $("#pageTitle").textContent = SCHEMAS[ctx].label;
+  $("#pageCount").textContent = SCHEMAS[ctx].result;
+  $("#crumbLast").textContent = SCHEMAS[ctx].label;
+  $("#scopeLabel").textContent = SCHEMAS[ctx].label;
+  $("#scopeIcon").className = "fa-solid "+SCHEMAS[ctx].icon;
+}
+const ONE = { products:"Product", requests:"Request", profiles:"Company" };
+function renderGrid(){
+  const icons=["fa-jar","fa-wheat-awn","fa-bottle-droplet","fa-mortar-pestle","fa-box","fa-leaf"];
+  $("#grid").innerHTML = Array.from({length:8}).map((_,i)=>{
+    const g = groups().find(x=>x.type==="multi");
+    const tag = g ? (OPTS[g.options]||[])[i%5] : "Bulk";
+    return `<div class="card">
+      <div class="thumb"><i class="fa-solid ${icons[i%icons.length]}"></i></div>
+      <div class="card-body">
+        <h4>Sample ${ONE[ctx]} #${i+1}</h4>
+        <div class="sub">Iran · Min order 5 MT</div>
+        <div class="price">$${(2+i*1.7).toFixed(2)} <small>/ kg</small></div>
+        <span class="tag">${tag}</span>
+      </div></div>`;
+  }).join("");
+}
+function render(){ renderScopeMenu(); renderMeta(); renderGrid(); if($("#ov1").classList.contains("open")) renderM1(); }
+
+/* ==================== مدال سطح ۱ ==================== */
+function renderM1(){
+  $("#m1count").textContent = "128"; $("#m1show").textContent = "128";
+  $("#m1scope").textContent = SCHEMAS[ctx].label;
+  $("#m1body").innerHTML = groups().map(g=>{
+    if(g.section) return `<div class="sec-label">${g.section}${g.note?` · <span style="text-transform:none;font-weight:600">${g.note}</span>`:""}</div>`;
+    const s = summary(g);
+    return `<button class="fgroup" onclick="openSub('${g.key}')">
+      <span class="ic"><i class="fa-solid ${g.icon||"fa-filter"}"></i></span>
+      <span class="txt">
+        <b>${g.label}</b>
+        <small class="${s?"set":""}">${s? s : "Any"}</small>
+      </span>
+      <i class="fa-solid fa-chevron-right chev"></i>
+    </button>`;
+  }).join("");
+}
+function openModal(n){
+  if(n===1){ renderM1(); $("#ov1").classList.add("open"); document.body.style.overflow="hidden"; }
+  else { $("#ov2").classList.add("open"); }
+}
+function closeModal(n){
+  if(n===1){ $("#ov1").classList.remove("open"); $("#ov2").classList.remove("open"); document.body.style.overflow=""; }
+  else { $("#ov2").classList.remove("open"); }
+}
+function closeBoth(){ closeModal(1); }
+/* تصمیم ۴: بازگشت از سطح ۲ به سطح ۱ */
+function backToM1(){ $("#ov2").classList.remove("open"); openModal(1); }
+
+/* ==================== مدال سطح ۲ ==================== */
+function openSub(key){
+  const g = groups().find(x=>x.key===key); if(!g) return;
+  draftKey = key;
+  const cur = values[ctx][key];
+  draft = Array.isArray(cur)? [...cur]
+        : (cur && typeof cur==="object")? {...cur}
+        : (cur===undefined? (g.type==="multi"||g.type==="select"? [] : "") : cur);
+
+  $("#m2title").textContent = g.label;
+  $("#m2sub").textContent =
+    g.type==="multi" ? "Choose one or more" :
+    g.type==="range" ? "Set a range" :
+    g.type==="cascade" ? "Category › sub-category › product type" :
+    g.type==="choice" ? "Choose one" : "Enter a value";
+
+  renderM2(g);
+  // تصمیم ۴: سطح ۱ پنهان می‌شود تا سطح ۲ جایگزینش شود (نه روی هم)
+  $("#ov1").classList.remove("open");
+  openModal(2);
+}
+function renderM2(g){
+  const box = $("#m2body");
+  let html = "";
+
+  if(g.type==="multi"){
+    const opts = OPTS[g.options]||[];
+    html += `<div class="search-mini"><i class="fa-solid fa-magnifying-glass"></i>
+      <input placeholder="Search…" oninput="filterOpts(this.value)"></div>`;
+    html += `<div id="optList">` + opts.map((o,i)=>`
+      <label class="opt ${draft.includes(o)?"on":""}" data-o="${o}">
+        <input type="checkbox" ${draft.includes(o)?"checked":""} onchange="toggleOpt('${o}')">
+        <span class="lbl">${o}</span>
+        <span class="cnt">(${countFor(o,i)})</span>
+      </label>`).join("") + `</div>`;
+    html += `<div class="hint">Numbers in brackets = how many results would remain.</div>`;
+  }
+
+  else if(g.type==="range"){
+    html += `<div class="range-row">
+      <input type="number" placeholder="Min" value="${draft.min??""}" oninput="draft.min=this.value">
+      <span class="dash">—</span>
+      <input type="number" placeholder="Max" value="${draft.max??""}" oninput="draft.max=this.value">
+      ${g.unit?`<span class="unit">${g.unit}</span>`:""}
+    </div>
+    <div class="hint">Leave a field empty for no limit on that side.</div>`;
+  }
+
+  else if(g.type==="cascade"){
+    const L1=["Grains & Cereals","Honey & Sweeteners","Oils & Fats","Nuts & Dried Fruit"];
+    const L2={"Honey & Sweeteners":["Honey","Date Syrup","Maple Syrup"],"Grains & Cereals":["Rice","Wheat","Barley","Corn"],"Oils & Fats":["Olive Oil","Sunflower Oil"],"Nuts & Dried Fruit":["Almonds","Raisins"]};
+    const L3={"Honey":["Acacia","Clover","Multifloral","Manuka"],"Rice":["Basmati","Jasmine","Long Grain"]};
+    const parts = (typeof draft==="string"&&draft)? draft.split("/") : [];
+    const [a="",b="",c=""] = parts;
+    const l2 = L2[a]||[], l3 = L3[b]||[];
+    html += `<div style="padding:12px 20px;display:grid;gap:10px">
+      <select class="cat-sel" onchange="setCascade(0,this.value)">
+        <option value="">All categories</option>
+        ${L1.map(x=>`<option ${x===a?"selected":""}>${x}</option>`).join("")}
+      </select>
+      <select class="cat-sel" onchange="setCascade(1,this.value)" ${!a?"disabled":""}>
+        <option value="">All sub-categories</option>
+        ${l2.map(x=>`<option ${x===b?"selected":""}>${x}</option>`).join("")}
+      </select>
+      <select class="cat-sel" onchange="setCascade(2,this.value)" ${!b?"disabled":""}>
+        <option value="">All product types</option>
+        ${l3.map(x=>`<option ${x===c?"selected":""}>${x}</option>`).join("")}
+      </select>
+    </div>
+    <div class="hint">Only the first level is shown in the search bar; all three levels live here.</div>`;
+  }
+
+  else if(g.type==="choice"){
+    html += `<div class="seg-row">${(g.options||[]).map(o=>`
+      <button class="${draft===o?"on":""}" onclick="draft='${o}';renderM2(currentGroup())">${o}</button>`).join("")}</div>`;
+  }
+
+  else if(g.type==="select"){
+    html += `<div class="seg-row">${(OPTS[g.options]||[]).map(o=>`
+      <button class="${draft===o?"on":""}" onclick="toggleSingle('${o}')">${o}</button>`).join("")}</div>
+      <div class="hint">Pick one value.</div>`;
+  }
+
+  else if(g.type==="boolean"){
+    html += `<div class="seg-row">
+      <button class="${draft===true?"on":""}" onclick="draft=true;renderM2(currentGroup())">Yes</button>
+      <button class="${draft===""?"on":""}" onclick="draft='';renderM2(currentGroup())">Any</button>
+    </div>`;
+  }
+
+  else {
+    html += `<div class="range-row"><input value="${draft||""}" placeholder="Type to filter…" oninput="draft=this.value"></div>`;
+  }
+
+  box.innerHTML = html || `<div class="empty-hint">Nothing to configure.</div>`;
+}
+function currentGroup(){ return groups().find(x=>x.key===draftKey); }
+function filterOpts(q){
+  const term=q.toLowerCase();
+  document.querySelectorAll("#optList .opt").forEach(el=>{
+    el.style.display = el.dataset.o.toLowerCase().includes(term)? "flex":"none";
+  });
+}
+function toggleOpt(o){
+  draft = draft.includes(o)? draft.filter(x=>x!==o) : [...draft,o];
+  renderM2(currentGroup());
+}
+function toggleSingle(o){ draft = draft===o? "" : o; renderM2(currentGroup()); }
+function setCascade(level, val){
+  const g = currentGroup();
+  let parts = (typeof draft==="string"&&draft)? draft.split("/") : [];
+  while(parts.length<3) parts.push("");
+  parts[level]=val;
+  for(let i=level+1;i<3;i++) parts[i]="";
+  draft = parts.filter(Boolean).join("/");
+  renderM2(g);
+}
+function applyOne(){
+  const g = currentGroup();
+  if(g.type==="multi"){ values[ctx][draftKey] = draft.length? draft : undefined; }
+  else if(g.type==="range"){
+    const has = (draft.min!==""&&draft.min!==undefined)||(draft.max!==""&&draft.max!==undefined);
+    values[ctx][draftKey] = has? draft : undefined;
+  }
+  else { values[ctx][draftKey] = draft===""? undefined : draft; }
+  closeModal(2); render();
+  backToM1();   // تصمیم ۴: بعد از Apply به فهرست فیلترها برمیگردیم
+}
+function clearOne(){ draft = (currentGroup().type==="multi"||currentGroup().type==="select")?[]:""; renderM2(currentGroup()); }
+function removeOne(key){ values[ctx][key]=undefined; render(); }
+function clearAll(){ values[ctx]={}; render(); }
+
+/* ==================== ناوبری ==================== */
+function setCtx(k){ ctx=k; $("#scopeMenu").style.display="none"; render(); }
+$("#scopeBtn").onclick = (e)=>{ e.stopPropagation();
+  const m=$("#scopeMenu"); m.style.display = m.style.display==="none"? "block":"none"; };
+document.addEventListener("click", ()=> $("#scopeMenu").style.display="none" );
+$("#scopeMenu").addEventListener("click", e=>e.stopPropagation());
+$("#openFilters").onclick = ()=> openModal(1);
+$("#toggleSearch").onclick = function(){
+  const open = $("#mega").classList.toggle("open");
+  this.classList.toggle("active", open);
+  if(open) setTimeout(()=>$("#q").focus(), 60);
+};
+
+/* ============================================================
+   تصمیم ۲ و ۳
+   ۲: فیلد کوچک هدر — با فوکوس/تایپ نوار اصلی باز می‌شود
+   ۳: فیلد «مصنوعی» داخل صفحه — با کلیک، همان نوار باز می‌شود
+   ============================================================ */
+function openMega(){
+  $("#mega").classList.add("open");
+  $("#toggleSearch").classList.add("active");
+  setTimeout(()=>$("#q").focus(), 70);
+}
+$("#miniSearch").addEventListener("mousedown", openMega);
+$("#miniSearch").addEventListener("focus", openMega);
+$("#fakeField").addEventListener("click", openMega);
+$("#pageFilters").addEventListener("click", ()=> openModal(1));
+
+/* کلید میان‌بر «/» مثل دیجی‌کالا و گیت‌هاب */
+document.addEventListener("keydown", e=>{
+  if(e.key !== "/") return;
+  const t = document.activeElement?.tagName || "";
+  if(/INPUT|SELECT|TEXTAREA/.test(t)) return;
+  e.preventDefault();
+  openMega();
+});
+
+/* تصمیم ۱: مرتب‌سازی */
+$("#sortSel").addEventListener("change", e=>{
+  sortValue = e.target.value;
+  renderGrid();
+});
+
+document.addEventListener("keydown", e=>{
+  if(e.key!=="Escape") return;
+  // در مدل جایگزینی، Escape از سطح ۲ به سطح ۱ برمی‌گردد
+  if($("#ov2").classList.contains("open")) backToM1();
+  else if($("#ov1").classList.contains("open")) closeModal(1);
+});
+[$("#ov1"),$("#ov2")].forEach(ov=>ov.addEventListener("click", e=>{
+  if(e.target!==ov) return;
+  if(ov.id==="ov1") closeModal(1);
+  else backToM1();   // کلیک بیرون مدال سطح ۲ = برگشت به فهرست
+}));
+
+render();
+</script>
+</body>
+</html>

@@ -1,20 +1,30 @@
 // src/hooks/useCategories.js
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { categories as defaultCategories } from "@/lib/categories";
+import { buildCategoryTree, buildCategoryIndex } from "@/lib/categoryTree";
 
 // Cache سطح ماژول برای جلوگیری از fetch تکراری
-let cache = null;
+let cache = null; // { categories, tree, flat }
 let cachePromise = null;
 
+const FALLBACK = (() => {
+  const tree = buildCategoryTree(defaultCategories);
+  return {
+    categories: defaultCategories,
+    tree,
+    flat: buildCategoryIndex(tree).flat,
+  };
+})();
+
 export function useCategories() {
-  const [categories, setCategories] = useState(cache || defaultCategories);
+  const [data, setData] = useState(cache || FALLBACK);
   const [loading, setLoading] = useState(!cache);
 
   useEffect(() => {
     if (cache) {
-      setCategories(cache);
+      setData(cache);
       setLoading(false);
       return;
     }
@@ -22,24 +32,42 @@ export function useCategories() {
     if (!cachePromise) {
       cachePromise = fetch("/api/categories")
         .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          cache = data?.categories || [];
+        .then((payload) => {
+          const list = payload?.categories || [];
+          const tree =
+            payload?.tree?.length > 0
+              ? payload.tree
+              : buildCategoryTree(list.length ? list : defaultCategories);
+
+          cache = {
+            categories: list.length ? list : defaultCategories,
+            tree,
+            flat: payload?.flat?.length ? payload.flat : buildCategoryIndex(tree).flat,
+          };
           return cache;
         })
         .catch(() => {
-          cache = [];
-          return [];
+          cache = FALLBACK;
+          return FALLBACK;
         });
     }
 
-    cachePromise.then((list) => {
-      // اگر API چیزی برگردوند، از آن استفاده کن؛ وگرنه fallback به استاتیک
-      setCategories(list && list.length > 0 ? list : defaultCategories);
+    cachePromise.then((c) => {
+      setData(c);
       setLoading(false);
     });
   }, []);
 
-  return { categories, loading };
+  // ===== ایندکس و helper ها =====
+  const index = useMemo(() => buildCategoryIndex(data.tree || []), [data.tree]);
+
+  return {
+    categories: data.categories || [],
+    tree: data.tree || [],
+    flat: data.flat || [],
+    index,
+    loading,
+  };
 }
 
 /**

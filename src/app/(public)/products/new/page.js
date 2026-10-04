@@ -1,7 +1,7 @@
 // src/app/(public)/products/new/page.js
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -9,7 +9,12 @@ import Layout from "@/components/layout/Layout";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import CountrySelect from "@/components/ui/CountrySelect";
 import CategorySelect from "@/components/ui/CategorySelect";
+import VocabularySelect from "@/components/ui/VocabularySelect";
+import ProductAttributesFields from "@/components/product/ProductAttributesFields";
 import { getCountryName } from "@/lib/countries";
+import { useCategories } from "@/hooks/useCategories";
+import { resolveCategoryPath } from "@/lib/categoryTree";
+import { attributesMapToArray } from "@/lib/attributeValues";
 import { toast } from "react-toastify";
 
 export default function NewProductPage() {
@@ -38,14 +43,34 @@ export default function NewProductPage() {
     stock: "",
     leadTime: "",
     images: [], // array of base64 strings
-    specs: [{ attribute: "", value: "" }],
+    // ====== مشخصات پویا (EAV) ======
+    // { [attributeId]: value } — جایگزین لیست key/value قبلی
+    attributes: {},
     shippingTerms: "",
     packaging: "",
     certifications: "",
+    paymentTerms: "",
     origin: "",
     countryCode: "",
     isVisible: true,
   });
+
+  // ====== مسیر دسته‌بندی برای پنل مشخصات پویا ======
+  // مثال: "grains-cereals/rice/basmati"
+  const { tree } = useCategories();
+
+  const categoryPath = useMemo(
+    () =>
+      resolveCategoryPath(
+        {
+          category: formData.category,
+          subCategory: formData.subCategory,
+          productType: formData.productType,
+        },
+        tree,
+      ),
+    [formData.category, formData.subCategory, formData.productType, tree],
+  );
 
   // ====== تغییرات فیلدها ======
   const handleChange = (e) => {
@@ -54,45 +79,34 @@ export default function NewProductPage() {
   };
 
   const handleCategoryChange = (value) => {
-    setFormData((prev) => ({ ...prev, category: value, subCategory: "", productType: "", }));
+    // تغییر دسته‌بندی = تغییر اتریبیوت‌ها؛ مقادیر قبلی باید پاک شوند
+    setFormData((prev) => ({
+      ...prev,
+      category: value,
+      subCategory: "",
+      productType: "",
+      attributes: {},
+    }));
   };
 
   const handleSubCategoryChange = (value) => {
+    // اتریبیوت‌ها به دسته‌بندی وابسته‌اند → ریست
     setFormData((prev) => ({
       ...prev,
       subCategory: value,
       productType: "",
+      attributes: {},
     }));
   };
 
   const handleProductTypeChange = (value) => {
-    setFormData((prev) => ({ ...prev, productType: value }));
+    // اتریبیوت‌ها به نوع محصول هم وابسته‌اند → ریست
+    setFormData((prev) => ({ ...prev, productType: value, attributes: {} }));
   };
 
   const handleFullDescChange = useCallback((value) => {
     setFormData((prev) => ({ ...prev, fullDesc: value }));
   }, []);
-
-  const handleSpecChange = (index, field, value) => {
-    const newSpecs = [...formData.specs];
-    newSpecs[index][field] = value;
-    setFormData((prev) => ({ ...prev, specs: newSpecs }));
-  };
-
-  const addSpecRow = () => {
-    setFormData((prev) => ({
-      ...prev,
-      specs: [...prev.specs, { attribute: "", value: "" }],
-    }));
-  };
-
-  const removeSpecRow = (index) => {
-    if (formData.specs.length > 1) {
-      const newSpecs = [...formData.specs];
-      newSpecs.splice(index, 1);
-      setFormData((prev) => ({ ...prev, specs: newSpecs }));
-    }
-  };
 
   // ====== تصاویر ======
   const fileInputRef = useRef(null);
@@ -162,13 +176,6 @@ export default function NewProductPage() {
     setError("");
 
     try {
-      const specsObj = formData.specs.reduce((acc, { attribute, value }) => {
-        if (attribute && value) {
-          acc[attribute] = value;
-        }
-        return acc;
-      }, {});
-
       const payload = {
         name: formData.name,
         category: formData.category,
@@ -190,8 +197,10 @@ export default function NewProductPage() {
         certifications: formData.certifications || undefined,
         packaging: formData.packaging || undefined,
         shippingTerms: formData.shippingTerms || undefined,
+        paymentTerms: formData.paymentTerms || undefined,
         isVisible: formData.isVisible,
-        specs: specsObj,
+        // ====== مشخصات پویا: map → [{ attributeId, value }] ======
+        attributes: attributesMapToArray(formData.attributes),
       };
 
       const res = await fetch("/api/products", {
@@ -617,68 +626,18 @@ export default function NewProductPage() {
                 Technical Specifications
               </h3>
 
+              {/* ============================================================
+                  مشخصات فنی — کاملاً داینامیک بر اساس دسته‌بندی انتخاب‌شده
+                  ============================================================ */}
               <div className="form-group">
-                <label>Add product specifications</label>
-                <div className="spec-table-wrapper">
-                  <table className="spec-table">
-                    <thead>
-                      <tr>
-                        <th>Attribute</th>
-                        <th>Value</th>
-                        <th style={{ textAlign: "center" }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {formData.specs.map((spec, index) => (
-                        <tr key={index}>
-                          <td className="spec-label">
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="e.g., Origin"
-                              value={spec.attribute}
-                              onChange={(e) =>
-                                handleSpecChange(
-                                  index,
-                                  "attribute",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-                          <td className="spec-value">
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="e.g., Colombia"
-                              value={spec.value}
-                              onChange={(e) =>
-                                handleSpecChange(index, "value", e.target.value)
-                              }
-                            />
-                          </td>
-                          <td className="spec-actions">
-                            <button
-                              type="button"
-                              className="btn-sm btn-sm-danger"
-                              onClick={() => removeSpecRow(index)}
-                              disabled={formData.specs.length <= 1}
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary mt-2"
-                  onClick={addSpecRow}
-                >
-                  <i className="fas fa-plus"></i> Add Specification
-                </button>
+                <label>Product specifications</label>
+                <ProductAttributesFields
+                  categoryPath={categoryPath}
+                  values={formData.attributes}
+                  onChange={(next) =>
+                    setFormData((prev) => ({ ...prev, attributes: next }))
+                  }
+                />
               </div>
 
               <h3 className="fw-bold mt-4 mb-3">
@@ -692,44 +651,63 @@ export default function NewProductPage() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Shipping Terms</label>
-                  <select
-                    className="form-select"
-                    name="shippingTerms"
+                  <VocabularySelect
+                    vocabKey="incoterms"
                     value={formData.shippingTerms}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select shipping terms</option>
-                    <option>FOB (Free On Board)</option>
-                    <option>CIF (Cost, Insurance, Freight)</option>
-                    <option>EXW (Ex Works)</option>
-                  </select>
+                    onChange={(v) =>
+                      setFormData((p) => ({ ...p, shippingTerms: v }))
+                    }
+                    allowCustom
+                    placeholder="Select delivery term…"
+                  />
                 </div>
                 <div className="form-group">
-                  <label>Packaging</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="packaging"
-                    placeholder="e.g., 20kg GrainPro bags"
-                    value={formData.packaging}
-                    onChange={handleChange}
+                  <label>Payment Terms</label>
+                  <VocabularySelect
+                    vocabKey="paymentTerms"
+                    value={formData.paymentTerms}
+                    onChange={(v) =>
+                      setFormData((p) => ({ ...p, paymentTerms: v }))
+                    }
+                    allowCustom
+                    placeholder="Select payment term…"
                   />
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
+                  <label>Packaging</label>
+                  <VocabularySelect
+                    vocabKey="packagingTypes"
+                    value={formData.packaging}
+                    onChange={(v) =>
+                      setFormData((p) => ({ ...p, packaging: v }))
+                    }
+                    multiple
+                    allowCustom
+                    placeholder="Select packaging…"
+                    addPlaceholder="e.g., 20kg GrainPro bags"
+                  />
+                </div>
+                <div className="form-group">
                   <label>Certifications</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="certifications"
-                    placeholder="e.g., USDA Organic, Fair Trade"
+                  <VocabularySelect
+                    vocabKey="certifications"
                     value={formData.certifications}
-                    onChange={handleChange}
+                    onChange={(v) =>
+                      setFormData((p) => ({ ...p, certifications: v }))
+                    }
+                    multiple
+                    allowCustom
+                    placeholder="Select certifications…"
+                    addPlaceholder="e.g., USDA Organic"
                   />
                   <div className="help-text">Separate with commas</div>
                 </div>
+              </div>
+
+              <div className="form-row">
                 <div className="form-group">
                   <label>Country of Origin</label>
                   <CountrySelect

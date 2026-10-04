@@ -25,6 +25,16 @@ export default function AdminSidebar({ isOpen, onClose }) {
     { label: "Products", icon: "fa-box", href: "/admin/products" },
     { label: "Requests", icon: "fa-box", href: "/admin/requests" },
     { label: "Categories", icon: "fa-layer-group", href: "/admin/categories" },
+    {
+      label: "Attributes",
+      icon: "fa-list-check",
+      href: "/admin/attributes",
+    },
+    {
+      label: "Vocabularies",
+      icon: "fa-spell-check",
+      href: "/admin/vocabularies",
+    },
     { label: "Homepage", icon: "fa-house-chimney", href: "/admin/homepage" },
     {
       label: "Inquiries",
@@ -79,6 +89,12 @@ export default function AdminSidebar({ isOpen, onClose }) {
     { label: "Reports", icon: "fa-file-lines", href: "/admin/reports" },
     { label: "Settings", icon: "fa-gear", href: "/admin/settings" },
     { label: "Backup & Restore", icon: "fa-database", href: "/admin/backup" },
+    // ابزارهای سیستمی: بازسازی ایندکس‌ها و نرمال‌سازی مقادیر قدیمی واژگان
+    {
+      label: "Maintenance",
+      icon: "fa-screwdriver-wrench",
+      href: "/admin/maintenance",
+    },
     {
       label: "Reset Site",
       icon: "fa-triangle-exclamation",

@@ -10,6 +10,7 @@ import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import CountrySelect from "@/components/ui/CountrySelect";
 import CategorySelect from "@/components/ui/CategorySelect";
+import VocabularySelect from "@/components/ui/VocabularySelect";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { getCountryName } from "@/lib/countries";
 
@@ -514,23 +515,21 @@ export default function EditProfilePage() {
                 required
                 icon="fa-building"
               />
-              <Field
-                label="Business Type"
-                name="businessType"
-                value={formData.businessType}
-                onChange={handleChange}
-                type="select"
-                icon="fa-briefcase"
-                options={[
-                  "Manufacturer",
-                  "Distributor",
-                  "Wholesaler",
-                  "Retailer",
-                  "Exporter",
-                  "Importer",
-                  "Processor",
-                ]}
-              />
+              <div className="ep-field">
+                <label className="ep-label">
+                  <i className="fas fa-briefcase"></i>
+                  Business Type
+                </label>
+                <VocabularySelect
+                  vocabKey="businessTypes"
+                  value={formData.businessType}
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, businessType: v }))
+                  }
+                  allowCustom
+                  placeholder="Select business type…"
+                />
+              </div>
               <Field
                 label="Number of Employees"
                 name="employeeCount"

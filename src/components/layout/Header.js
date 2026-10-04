@@ -1,7 +1,7 @@
 // src/components/layout/Header.js
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -365,8 +365,10 @@ export default function Header() {
 
             {/* ===== Header Actions ===== */}
             <div className="header-actions">
-              {/* Search */}
-              <HeaderSearch />
+              {/* Search — داخل Suspense چون از useSearchParams استفاده می‌کند */}
+              <Suspense fallback={null}>
+                <HeaderSearch />
+              </Suspense>
 
               {status !== "loading" && (
                 <>

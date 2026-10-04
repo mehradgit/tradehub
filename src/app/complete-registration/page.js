@@ -10,6 +10,7 @@ import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import CountrySelect from "@/components/ui/CountrySelect";
 import CategorySelect from "@/components/ui/CategorySelect";
+import VocabularySelect from "@/components/ui/VocabularySelect";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { getCountryName } from "@/lib/countries";
 
@@ -644,21 +645,15 @@ function CompleteRegistrationContent() {
               </div>
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Business Type</label>
-                <select
-                  className="form-select"
-                  name="businessType"
+                <VocabularySelect
+                  vocabKey="businessTypes"
                   value={formData.businessType}
-                  onChange={handleChange}
-                >
-                  <option value="">Select business type</option>
-                  <option>Manufacturer</option>
-                  <option>Distributor</option>
-                  <option>Wholesaler</option>
-                  <option>Retailer</option>
-                  <option>Exporter</option>
-                  <option>Importer</option>
-                  <option>Processor</option>
-                </select>
+                  onChange={(v) =>
+                    setFormData((prev) => ({ ...prev, businessType: v }))
+                  }
+                  allowCustom
+                  placeholder="Select business type…"
+                />
               </div>
             </div>
 
