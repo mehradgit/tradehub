@@ -12,7 +12,7 @@ export default async function SupportPage() {
 
   const userId = session.user.id;
 
-  // ===== Counts (کل) =====
+  // ===== Counts (total) =====
   const [
     totalCount,
     openCount,
@@ -59,7 +59,7 @@ export default async function SupportPage() {
 
   const counts = {
     total: totalCount,
-    open: openCount + inProgressCount + waitingCount, // همه "فعال"
+    open: openCount + inProgressCount + waitingCount, // all "active"
     openOnly: openCount,
     inProgress: inProgressCount,
     waiting: waitingCount,

@@ -5,7 +5,7 @@ import { getCountryCode } from "@/utils/countryHelpers";
 import { getCountryViaCode } from "@/lib/countries";
 
 export default function RequestCard({ request }) {
-  // ✅ اگر request undefined باشد، چیزی نمایش نده
+  // If request is undefined, render nothing
   if (!request) {
     return null;
   }

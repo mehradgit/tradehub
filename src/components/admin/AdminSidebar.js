@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react"; // ✅ اضافه
+import { useState, useEffect } from "react"; // ✅ Added
 export default function AdminSidebar({ isOpen, onClose }) {
-  const [stats, setStats] = useState({ openTickets: 0 }); // ✅ اضافه
+  const [stats, setStats] = useState({ openTickets: 0 }); // ✅ Added
   const pathname = usePathname();
 
   // ✅ fetch admin stats
@@ -17,7 +17,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
       .catch(() => { });
   }, []);
   const menuItems = [
-    // بخش Main Menu (بررسی کنید این‌ها با ساختار مطابقت دارند)
+    // Main Menu section (verify these match the structure)
     { label: "Dashboard", icon: "fa-house", href: "/admin" },
     { label: "Users", icon: "fa-users", href: "/admin/users" },
     { label: "Suppliers", icon: "fa-people-group", href: "/admin/suppliers" },
@@ -49,7 +49,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
       count: 12,
     },
 
-    // بخش Management
+    // Management section
   ];
 
   const managementItems = [
@@ -89,7 +89,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
     { label: "Reports", icon: "fa-file-lines", href: "/admin/reports" },
     { label: "Settings", icon: "fa-gear", href: "/admin/settings" },
     { label: "Backup & Restore", icon: "fa-database", href: "/admin/backup" },
-    // ابزارهای سیستمی: بازسازی ایندکس‌ها و نرمال‌سازی مقادیر قدیمی واژگان
+    // System tools: rebuild indexes and normalize legacy vocabulary values
     {
       label: "Maintenance",
       icon: "fa-screwdriver-wrench",
@@ -103,8 +103,8 @@ export default function AdminSidebar({ isOpen, onClose }) {
   ];
 
   const renderItem = (item) => {
-    // ✅ زیرمسیرها هم والدشان را فعال می‌کنند
-    //    (مثلاً /admin/emails/123 → Email Queue)
+    // ✅ Sub-paths also activate their parent
+    //    (e.g. /admin/emails/123 → Email Queue)
     const isActive =
       pathname === item.href ||
       (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
@@ -113,7 +113,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
         key={item.href}
         href={item.href}
         className={isActive ? "active" : ""}
-        onClick={onClose} // ✅ بستن سایدبار با کلیک روی هر لینک
+        onClick={onClose} // ✅ Close the sidebar when any link is clicked
       >
         <i className={`fa-solid ${item.icon}`}></i>
         {item.label}

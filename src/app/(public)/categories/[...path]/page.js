@@ -1,18 +1,18 @@
 // src/app/(public)/categories/[...path]/page.js
 // ============================================================
-// لندینگ دسته‌بندی — سه‌سطحی و ایندکس‌پذیر
+// Category landing — three levels and indexable
 //
 //   /categories/grains-cereals
 //   /categories/grains-cereals/rice
 //   /categories/grains-cereals/rice/basmati
 //
-// چرا پیشوند /categories و نه /products/...:
-//   مسیر /products/[productNumber]/[slug] دو سگمنت است، پس
-//   /products/grains-cereals/rice با آن تضاد پیدا می‌کرد و
-//   parseInt("rice") می‌شد NaN.
+// Why the /categories prefix and not /products/...:
+//   The route /products/[productNumber]/[slug] has two segments, so
+//   /products/grains-cereals/rice would conflict with it and
+//   parseInt("rice") would become NaN.
 //
-// محتوا از همان موتور فیلتر مشترک می‌آید (getFilterContext)،
-// پس این صفحه فقط یک «پوسته‌ی SEO» روی همان موتور است.
+// The content comes from the same shared filter engine (getFilterContext),
+// so this page is only an "SEO shell" on top of that engine.
 // ============================================================
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -26,11 +26,11 @@ import { MAX_CATEGORY_LEVEL } from "@/lib/categoryTree";
 const BASE_URL = "https://foodtradelink.com";
 
 // ============================================================
-// حل کردن مسیر URL به گره‌ی دسته‌بندی
+// Resolve the URL path to a category node
 //
-// عمداً از getCategoryTreeOnly استفاده می‌کند نه getFilterContext:
-// برای اعتبارسنجی مسیر فقط درخت لازم است، وگرنه گزینه‌ها و facet
-// بی‌دلیل دو بار محاسبه می‌شدند.
+// It deliberately uses getCategoryTreeOnly and not getFilterContext:
+// only the tree is needed to validate the path, otherwise the options and
+// facets would be computed twice for no reason.
 // ============================================================
 async function resolveCategory(pathSegments) {
   const segments = (pathSegments || []).filter(Boolean);
@@ -49,7 +49,7 @@ async function resolveCategory(pathSegments) {
 }
 
 // ============================================================
-// شرط دسته‌بندی (خود مسیر + همه‌ی زیرشاخه‌ها)
+// Category condition (the path itself plus all of its descendants)
 // ============================================================
 function categoryWhere(categoryPath) {
   return {
@@ -78,7 +78,7 @@ export async function generateMetadata({ params }) {
 
   const { node, categoryPath, index } = resolved;
 
-  // شمارش واقعی محصولات برای توضیح متا
+  // Real product count for the meta description
   let count = 0;
   try {
     count = await prisma.product.count({ where: categoryWhere(categoryPath) });
@@ -146,7 +146,7 @@ export async function generateMetadata({ params }) {
 }
 
 // ============================================================
-// صفحه
+// Page
 // ============================================================
 export default async function CategoryLandingPage({ params, searchParams }) {
   const { path } = await params;
@@ -157,8 +157,8 @@ export default async function CategoryLandingPage({ params, searchParams }) {
 
   const { node, categoryPath } = resolved;
 
-  // فیلترهای اضافی از query string (مرتب‌سازی، مبدا، قیمت، …)
-  // categoryPath از مسیر می‌آید و بر query اولویت دارد.
+  // Extra filters from the query string (sort, origin, price, …)
+  // categoryPath comes from the route and takes priority over the query.
   const filters = await getFilterContext("products", {
     ...resolvedParams,
     categoryPath,
@@ -192,10 +192,10 @@ export default async function CategoryLandingPage({ params, searchParams }) {
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  // ===== زیردسته‌ها (برای لینک‌سازی داخلی و UX) =====
+  // ===== Subcategories (for internal linking and UX) =====
   const children = node.children || [];
 
-  // ===== سطح‌های والد =====
+  // ===== Parent levels =====
   const segments = categoryPath.split("/");
   const crumbs = segments.map((slug, idx) => {
     const crumbPath = segments.slice(0, idx + 1).join("/");
@@ -303,7 +303,7 @@ export default async function CategoryLandingPage({ params, searchParams }) {
           </ol>
         </nav>
 
-        {/* ===== سربرگ ===== */}
+        {/* ===== Header ===== */}
         <div className="page-header products-page-header">
           <h1>
             <i
@@ -331,7 +331,7 @@ export default async function CategoryLandingPage({ params, searchParams }) {
           </p>
         )}
 
-        {/* ===== زیردسته‌ها ===== */}
+        {/* ===== Subcategories ===== */}
         {children.length > 0 && (
           <div
             className="d-flex flex-wrap gap-2 mb-4"
@@ -357,10 +357,10 @@ export default async function CategoryLandingPage({ params, searchParams }) {
           </div>
         )}
 
-        {/* ===== فیلترها ===== */}
+        {/* ===== Filters ===== */}
         <FilterBar {...filters.barProps} resultCount={totalCount} />
 
-        {/* ===== نتایج ===== */}
+        {/* ===== Results ===== */}
         {products.length > 0 ? (
           <div className="products-grid">
             {products.map((product) => (

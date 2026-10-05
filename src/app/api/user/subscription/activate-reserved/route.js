@@ -17,13 +17,13 @@ export async function POST() {
       return NextResponse.json({ message: "No reserved subscription found" }, { status: 404 });
     }
 
-    // لغو اشتراک فعال فعلی (در صورت وجود)
+    // Cancel the currently active subscription (if any)
     await prisma.userSubscription.updateMany({
       where: { userId, status: "active" },
       data: { status: "ended" },
     });
 
-    // فعال‌سازی اشتراک رزرو
+    // Activate the reserved subscription
     await prisma.userSubscription.update({
       where: { id: reserved.id },
       data: { status: "active" },

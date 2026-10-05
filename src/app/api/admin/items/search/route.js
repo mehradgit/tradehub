@@ -22,7 +22,7 @@ export async function GET(request) {
       );
     }
 
-    // ===== محصولات =====
+    // ===== Products =====
     if (type === "products") {
       const where = {
         isVisible: true,
@@ -79,7 +79,7 @@ export async function GET(request) {
       });
     }
 
-    // ===== درخواست‌ها =====
+    // ===== Requests =====
     const where = {
       isVisible: true,
       status: "APPROVED",

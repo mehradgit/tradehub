@@ -25,10 +25,10 @@ export default function NewProductPage() {
   const [error, setError] = useState("");
 
   // ====== Image limit from plan ======
-  // null = هنوز لود نشده | -1 = نامحدود | n = عدد
+  // null = not loaded yet | -1 = unlimited | n = a number
   const [imageLimit, setImageLimit] = useState(null);
 
-  // ====== فرم دیتا ======
+  // ====== Form data ======
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -43,8 +43,8 @@ export default function NewProductPage() {
     stock: "",
     leadTime: "",
     images: [], // array of base64 strings
-    // ====== مشخصات پویا (EAV) ======
-    // { [attributeId]: value } — جایگزین لیست key/value قبلی
+    // ====== Dynamic attributes (EAV) ======
+    // { [attributeId]: value } — replaces the previous key/value list
     attributes: {},
     shippingTerms: "",
     packaging: "",
@@ -55,8 +55,8 @@ export default function NewProductPage() {
     isVisible: true,
   });
 
-  // ====== مسیر دسته‌بندی برای پنل مشخصات پویا ======
-  // مثال: "grains-cereals/rice/basmati"
+  // ====== Category path for the dynamic attributes panel ======
+  // Example: "grains-cereals/rice/basmati"
   const { tree } = useCategories();
 
   const categoryPath = useMemo(
@@ -72,14 +72,14 @@ export default function NewProductPage() {
     [formData.category, formData.subCategory, formData.productType, tree],
   );
 
-  // ====== تغییرات فیلدها ======
+  // ====== Field change handlers ======
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCategoryChange = (value) => {
-    // تغییر دسته‌بندی = تغییر اتریبیوت‌ها؛ مقادیر قبلی باید پاک شوند
+    // Changing the category changes the attributes; previous values must be cleared
     setFormData((prev) => ({
       ...prev,
       category: value,
@@ -90,7 +90,7 @@ export default function NewProductPage() {
   };
 
   const handleSubCategoryChange = (value) => {
-    // اتریبیوت‌ها به دسته‌بندی وابسته‌اند → ریست
+    // Attributes depend on the category → reset
     setFormData((prev) => ({
       ...prev,
       subCategory: value,
@@ -100,7 +100,7 @@ export default function NewProductPage() {
   };
 
   const handleProductTypeChange = (value) => {
-    // اتریبیوت‌ها به نوع محصول هم وابسته‌اند → ریست
+    // Attributes also depend on the product type → reset
     setFormData((prev) => ({ ...prev, productType: value, attributes: {} }));
   };
 
@@ -108,7 +108,7 @@ export default function NewProductPage() {
     setFormData((prev) => ({ ...prev, fullDesc: value }));
   }, []);
 
-  // ====== تصاویر ======
+  // ====== Images ======
   const fileInputRef = useRef(null);
 
   const handleImageUpload = (e) => {
@@ -141,7 +141,7 @@ export default function NewProductPage() {
     setFormData((prev) => ({ ...prev, isVisible: !prev.isVisible }));
   };
 
-  // ====== مرحله بعد ======
+  // ====== Next step ======
   const handleNextStep = () => {
     if (
       !formData.name ||
@@ -169,7 +169,7 @@ export default function NewProductPage() {
     setStep(1);
   };
 
-  // ====== ارسال فرم ======
+  // ====== Form submission ======
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -199,7 +199,7 @@ export default function NewProductPage() {
         shippingTerms: formData.shippingTerms || undefined,
         paymentTerms: formData.paymentTerms || undefined,
         isVisible: formData.isVisible,
-        // ====== مشخصات پویا: map → [{ attributeId, value }] ======
+        // ====== Dynamic attributes: map → [{ attributeId, value }] ======
         attributes: attributesMapToArray(formData.attributes),
       };
 
@@ -242,7 +242,7 @@ export default function NewProductPage() {
       });
   }, [status]);
 
-  // ====== اگر کاربر لاگین نیست ======
+  // ====== If the user is not logged in ======
   if (status === "loading") {
     return (
       <Layout>
@@ -486,7 +486,7 @@ export default function NewProductPage() {
               </div>
 
               {/* ============================================================
-                  PRODUCT IMAGES - با محدودیت هوشمند
+                  PRODUCT IMAGES - with a smart limit
                   ============================================================ */}
               <h3 className="fw-bold mt-4 mb-3">
                 <i
@@ -647,7 +647,7 @@ export default function NewProductPage() {
               </h3>
 
               {/* ============================================================
-                  مشخصات فنی — کاملاً داینامیک بر اساس دسته‌بندی انتخاب‌شده
+                  Technical specifications — fully dynamic based on the selected category
                   ============================================================ */}
               <div className="form-group">
                 <label>Product specifications</label>

@@ -10,7 +10,7 @@ import { describePath } from "@/lib/categoryTree";
 const BASE_URL = "https://foodtradelink.com";
 
 // ============================================================
-// generateMetadata — پویا بر اساس فیلترها
+// generateMetadata — dynamic based on filters
 // ============================================================
 export async function generateMetadata({ searchParams }) {
   const {
@@ -23,7 +23,7 @@ export async function generateMetadata({ searchParams }) {
 
   const pageNum = parseInt(page) || 1;
 
-  // ===== ساخت عنوان پویا =====
+  // ===== Build dynamic title =====
   let title = "All Products";
   let description =
     "Browse thousands of wholesale food products from verified suppliers worldwide. Filter by category, country, and price.";
@@ -43,7 +43,7 @@ export async function generateMetadata({ searchParams }) {
     title += ` — Page ${pageNum}`;
   }
 
-  // ===== ساخت Canonical URL =====
+  // ===== Build Canonical URL =====
   const url = new URL(`${BASE_URL}/products`);
   if (category) url.searchParams.set("category", category);
   if (subCategory) url.searchParams.set("subCategory", subCategory);
@@ -53,10 +53,10 @@ export async function generateMetadata({ searchParams }) {
 
   const canonicalUrl = url.toString();
 
-  // ===== تصویر =====
+  // ===== Image =====
   const ogImage = `${BASE_URL}/og-image.png`;
 
-  // ===== کلمات کلیدی =====
+  // ===== Keywords =====
   const keywords = [
     category,
     subCategory,
@@ -110,33 +110,33 @@ export async function generateMetadata({ searchParams }) {
 }
 
 // ============================================================
-// صفحه لیست محصولات (بدون تغییر)
+// Product list page (unchanged)
 // ============================================================
 export default async function ProductsPage({ searchParams }) {
   const resolvedParams = await searchParams;
 
   // ============================================================
-  // موتور فیلتر مشترک
-  // where / orderBy / صفحه‌بندی / گزینه‌ها / اتریبیوت‌ها / facet
-  // از یک منبع می‌آید (src/lib/filters/schemas.js)
+  // Shared filter engine
+  // where / orderBy / pagination / options / attributes / facet
+  // all come from one source (src/lib/filters/schemas.js)
   // ============================================================
   const filters = await getFilterContext("products", resolvedParams);
   const { where, orderBy, page, limit, skip } = filters.plan;
 
-  // پارامترهای مؤثر (شامل تبدیل لینک‌های قدیمی category/subCategory)
+  // Effective parameters (including legacy category/subCategory link conversion)
   const params = filters.effectiveParams;
   const search = params.search || "";
   const category = params.category || "";
   const subCategory = params.subCategory || "";
 
-  // برچسب دسته از مسیر سه‌سطحی (slug → نام نمایشی)
+  // Category label from the three-level path (slug → display name)
   const categoryLabel = filters.categoryPath
     ? describePath(filters.categoryPath, filters.index)
     : category && subCategory
     ? `${category} › ${subCategory}`
     : category || subCategory || "";
 
-  // بریدکرامب از سطح‌های مسیر (هر سطح لینک‌دار)
+  // Breadcrumb from the path levels (each level is a link)
   const crumbs = String(filters.categoryPath || "")
     .split("/")
     .filter(Boolean)
@@ -176,7 +176,7 @@ export default async function ProductsPage({ searchParams }) {
   const totalPages = Math.ceil(totalCount / limit);
 
   // ============================================================
-  // JSON-LD — ItemList (لیست محصولات)
+  // JSON-LD — ItemList (product list)
   // ============================================================
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -250,8 +250,8 @@ export default async function ProductsPage({ searchParams }) {
           <span className="request-count">{totalCount} products</span>
         </div>
 
-        {/* ✅ نوار فیلتر یکپارچه — از اسکیمای مشترک ساخته می‌شود
-            (جست‌وجو + دسته + مرتب‌سازی + پنل فیلترهای بیشتر) */}
+        {/* ✅ Unified filter bar — built from the shared schema
+            (search + category + sort + more-filters panel) */}
         <FilterBar {...filters.barProps} resultCount={totalCount} />
 
         {products.length > 0 ? (

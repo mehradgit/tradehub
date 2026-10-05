@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 export default function ProfileDropdown({ user, stats, isOpen, onClose }) {
   const dropdownRef = useRef(null);
 
-  // ====== بستن با کلیک بیرون ======
+  // ====== Close on outside click ======
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -77,7 +77,7 @@ export default function ProfileDropdown({ user, stats, isOpen, onClose }) {
         animation: "fadeInDown 0.2s ease",
       }}
     >
-      {/* ====== Header: Avatar + نام + ایمیل ====== */}
+      {/* ====== Header: Avatar + name + email ====== */}
       <div
         style={{
           padding: 16,
@@ -147,7 +147,7 @@ export default function ProfileDropdown({ user, stats, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* پلن فعلی */}
+        {/* Current plan */}
         <div
           style={{
             marginTop: 12,

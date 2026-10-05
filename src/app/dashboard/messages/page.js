@@ -1099,14 +1099,14 @@ function MessagesPageContent() {
            Responsive
            ============================================================ */
 
-        /* تبلت */
+        /* Tablet */
         @media (max-width: 992px) {
           .messages-layout {
             grid-template-columns: 280px minmax(0, 1fr);
           }
         }
 
-        /* موبایل: تک‌ستونه */
+        /* Mobile: single column */
         @media (max-width: 768px) {
           .messages-page {
             padding: 16px;
@@ -1129,9 +1129,9 @@ function MessagesPageContent() {
             max-height: none;
           }
 
-          /* روی موبایل: 
-             - وقتی هیچ chat باز نیست: فقط لیست
-             - وقتی chat بازه: فقط chat + back button
+          /* On mobile:
+             - when no chat is open: list only
+             - when a chat is open: chat + back button only
           */
           .conversations-panel {
             border-right: none;
@@ -1172,7 +1172,7 @@ function MessagesPageContent() {
           }
         }
 
-        /* موبایل کوچک */
+        /* Small mobile */
         @media (max-width: 500px) {
           .messages-page {
             padding: 12px;

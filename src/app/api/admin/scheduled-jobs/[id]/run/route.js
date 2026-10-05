@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 import { runJobNow } from "@/lib/schedulerService";
 
 // ============================================================
-// POST: اجرای فوری یک job
+// POST: run one job immediately
 //
-// توجه: اجرای همگام است تا نتیجه را ببینی. job هایی مثل
-// process-email-queue ممکن است چند ده ثانیه طول بکشند.
+// Note: execution is synchronous so you can see the result. Jobs like
+// process-email-queue may take a few tens of seconds.
 // ============================================================
 export async function POST(request, { params }) {
   try {

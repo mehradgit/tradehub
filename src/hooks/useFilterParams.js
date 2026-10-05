@@ -13,9 +13,9 @@ import {
 } from "@/lib/filters/params";
 
 // ============================================================
-// یک هوک مشترک برای همه‌ی صفحات فیلتردار
+// A shared hook for all filterable pages
 //
-// URL منبع حقیقت است؛ این هوک فقط می‌خواند و ناوبری می‌کند.
+// The URL is the source of truth; this hook only reads and navigates.
 // ============================================================
 export function useFilterParams(schemaKey) {
   const router = useRouter();
@@ -31,7 +31,7 @@ export function useFilterParams(schemaKey) {
     [schemaKey, searchParams]
   );
 
-  // ===== اعمال چند تغییر با هم (یک ناوبری) =====
+  // ===== Apply several changes at once (a single navigation) =====
   const apply = useCallback(
     (updates = {}, { resetPage = true } = {}) => {
       const url = buildUrl(pathname, searchParams, updates, { resetPage });
@@ -40,7 +40,7 @@ export function useFilterParams(schemaKey) {
     [router, pathname, searchParams]
   );
 
-  // ===== جایگزینی کل فیلترها (دکمه «اعمال» پنل) =====
+  // ===== Replace all filters (the panel's "Apply" button) =====
   const applyValues = useCallback(
     (nextValues = {}) => {
       const params = filtersToParams(nextValues, fields);
@@ -51,11 +51,11 @@ export function useFilterParams(schemaKey) {
     [router, pathname, fields]
   );
 
-  // ===== پاک کردن همه (sort حفظ می‌شود) =====
+  // ===== Clear all (sort is preserved) =====
   const clearAll = useCallback(() => {
     const updates = clearFilterParams(fields, { keepSort: true });
 
-    // اتریبیوت‌ها با پیشوند attr_ هستند و باید جداگانه حذف شوند
+    // Attributes use the attr_ prefix and must be removed separately
     const url = new URL(window.location.href);
     for (const key of [...url.searchParams.keys()]) {
       if (key.startsWith("attr_")) url.searchParams.delete(key);
@@ -65,7 +65,7 @@ export function useFilterParams(schemaKey) {
     router.push(base, { scroll: false });
   }, [router, pathname, fields]);
 
-  // ===== حذف یک فیلتر خاص =====
+  // ===== Remove a specific filter =====
   const removeFilter = useCallback(
     (fieldName) => {
       const field = fields.find((f) => f.name === fieldName);

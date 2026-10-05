@@ -13,7 +13,7 @@ export default async function ActivityPage({ searchParams }) {
   const limit = 20;
   const skip = (page - 1) * limit;
 
-  // دریافت تمام فعالیت‌ها با شمارش تعداد کل
+  // Fetch all activities together with the total count
   const [inquiries, products, requests, totalCount] = await Promise.all([
     prisma.productInquiry.findMany({
       where: { supplierId: userId },
@@ -41,7 +41,7 @@ export default async function ActivityPage({ searchParams }) {
     prisma.buyingRequest.count({ where: { userId } }),
   ]);
 
-  // ترکیب و مرتب‌سازی
+  // Merge and sort
   const activities = [
     ...inquiries.map((inq) => ({
       type: "inquiry",
@@ -113,7 +113,7 @@ export default async function ActivityPage({ searchParams }) {
         </div>
       )}
 
-      {/* صفحه‌بندی */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="dashboard-pagination-container">
           <nav>

@@ -16,12 +16,12 @@ export async function POST(request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // ✅ تعریف userId قبل از استفاده
+    // ✅ Define userId before using it
     const userId = session.user.id;
 
     const { plan, subscription } = await getUserActivePlan(userId);
 
-    // بررسی محدودیت ماهانه درخواست‌ها
+    // Check the monthly request limit
     if (!(await canAddRequest(userId, plan, subscription))) {
       return NextResponse.json(
         {
@@ -60,7 +60,7 @@ export async function POST(request) {
     const requestNumber = generateNumber();
     const slug = generateSlug(title);
 
-    // اعتبارسنجی اولیه
+    // Basic validation
     if (!title || !category || !description || !quantity || !deliveryCountry) {
       return NextResponse.json(
         { message: "Missing required fields" },
@@ -68,13 +68,13 @@ export async function POST(request) {
       );
     }
 
-    // دریافت کشور خریدار از session یا پیش‌فرض
+    // Get the buyer country from the session, or fall back to the default
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { country: true },
     });
 
-    // ایجاد درخواست خرید
+    // Create the buying request
     const buyingRequest = await prisma.buyingRequest.create({
       data: {
         title,
@@ -98,7 +98,7 @@ export async function POST(request) {
         supplierCountries: supplierCountries || ["WORLDWIDE"],
         attachments: attachments || [],
         isUrgent: isUrgent || false,
-        isVisible: false, // ✅ تا تأیید نشده نمایش داده نشود
+        isVisible: false, // ✅ Do not display it until it is approved
         status: "PENDING",
         buyerCountry: user?.country || null,
         userId,
@@ -107,7 +107,7 @@ export async function POST(request) {
       },
     });
 
-    // افزایش شمارنده مصرف
+    // Increment the usage counter
     await incrementUsage(userId, "request", subscription);
 
     return NextResponse.json(

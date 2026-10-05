@@ -32,7 +32,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    // بررسی مجوز
+    // Check permission
     const permission = await canViewRequestContactInfo(userId, buyingRequest);
 
     if (!permission.allowed) {
@@ -42,7 +42,7 @@ export async function GET(request, { params }) {
       });
     }
 
-    // آیا این درخواست باید سهمیه مصرف کند؟
+    // Should this request consume quota?
     const settings = await getAccessControlSettings();
     const shouldConsumeQuota =
       permission.reason !== "owner" &&

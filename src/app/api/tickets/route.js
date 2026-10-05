@@ -8,7 +8,7 @@ import {
   TICKET_PRIORITIES,
 } from "@/utils/ticketHelpers";
 import { dispatchEvent } from "@/lib/eventService";
-// ====== GET: لیست تیکت‌های کاربر ======
+// ====== GET: List the user's tickets ======
 export async function GET(request) {
   try {
     const session = await auth();
@@ -51,7 +51,7 @@ export async function GET(request) {
   }
 }
 
-// ====== POST: ایجاد تیکت جدید ======
+// ====== POST: Create a new ticket ======
 export async function POST(request) {
   try {
     const session = await auth();
@@ -91,7 +91,7 @@ export async function POST(request) {
       ? priority
       : "medium";
 
-    // ✅ حل relatedProductId/relatedRequestId از شماره به id
+    // ✅ Resolve relatedProductId/relatedRequestId from number to id
     let resolvedProductId = null;
     let resolvedRequestId = null;
 
@@ -117,7 +117,7 @@ export async function POST(request) {
       }
     }
 
-    // ✅ بدون slug
+    // ✅ Without a slug
     const ticketNumber = await generateTicketNumber(prisma);
 
     const ticket = await prisma.ticket.create({
@@ -159,8 +159,8 @@ export async function POST(request) {
         },
       },
     });
-    // ✅ نوتیفیکیشن + Web Push + ایمیل برای همه‌ی ادمین‌ها،
-    //    از مسیر مرکزی رویداد و پس از ارسال پاسخ.
+    // ✅ Notification + Web Push + email for all admins,
+    //    through the central event pipeline and after the reply is sent.
     after(async () => {
       const result = await dispatchEvent("ticket.created", {
         ticketId: ticket.id,

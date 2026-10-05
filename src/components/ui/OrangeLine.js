@@ -23,7 +23,7 @@ export default function OrangeLine({ className = "", width = "159.44", height = 
         </filter>
       </defs> */}
 
-      {/* خط اصلی */}
+      {/* Main line */}
       {/* <line
         x1="0"
         y1={parseFloat(height) / 2}

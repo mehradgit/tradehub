@@ -565,7 +565,7 @@ export default function RequestListItem({ request }) {
             font-size: 11px;
           }
 
-          /* Actions: View Quotes + View پر عرض، Edit + Delete کنار هم */
+          /* Actions: View Quotes + View full width, Edit + Delete side by side */
           .rli-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -577,7 +577,7 @@ export default function RequestListItem({ request }) {
             font-size: 12px;
           }
 
-          /* View Quotes - تمام عرض */
+          /* View Quotes - full width */
           :global(.rli-btn-primary) {
             grid-column: 1 / -1;
           }

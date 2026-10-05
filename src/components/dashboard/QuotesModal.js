@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link"; // ✅ ایمپورت لینک
+import Link from "next/link"; // Link import
 import { toast } from "react-toastify";
 
 export default function QuotesModal({ isOpen, onClose, requestId }) {
@@ -112,7 +112,7 @@ export default function QuotesModal({ isOpen, onClose, requestId }) {
                     background: "var(--light)",
                   }}
                 >
-                  {/* ====== هدر: نام شرکت لینک‌دار + دکمه پیام ====== */}
+                  {/* ====== Header: linked company name + message button ====== */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>
                       {supplierId ? (
@@ -139,7 +139,7 @@ export default function QuotesModal({ isOpen, onClose, requestId }) {
                       </div>
                     </div>
 
-                    {/* ✅ دکمه پیام‌رسانی */}
+                    {/* Messaging button */}
                     {supplierId && (
                       <Link
                         href={`/dashboard/messages?userId=${supplierId}`}
@@ -164,7 +164,7 @@ export default function QuotesModal({ isOpen, onClose, requestId }) {
                     )}
                   </div>
 
-                  {/* ====== جزئیات پیشنهاد ====== */}
+                  {/* ====== Quote details ====== */}
                   <div
                     style={{
                       display: "grid",
@@ -205,7 +205,7 @@ export default function QuotesModal({ isOpen, onClose, requestId }) {
                     </div>
                   </div>
 
-                  {/* ====== پیام ====== */}
+                  {/* ====== Message ====== */}
                   {quote.message && (
                     <div style={{ marginTop: "12px", borderTop: "1px solid var(--gray-light)", paddingTop: "12px" }}>
                       <div style={{ fontSize: "12px", color: "var(--gray)", fontWeight: 600, marginBottom: "4px" }}>

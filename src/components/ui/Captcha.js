@@ -34,7 +34,7 @@ const Captcha = forwardRef(function Captcha({ disabled = false }, ref) {
     fetchCaptcha();
   }, [fetchCaptcha]);
 
-  // در اختیار گذاشتن متدها به والد
+  // Expose the methods to the parent
   useImperativeHandle(
     ref,
     () => ({

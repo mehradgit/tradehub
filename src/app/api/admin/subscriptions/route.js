@@ -24,11 +24,11 @@ export async function GET(request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // ✅ همیشه آرایه برگردان
+    // ✅ Always return an array
     return NextResponse.json(subscriptions);
   } catch (error) {
     console.error("Admin subscriptions error:", error);
-    // ✅ در صورت خطا هم آرایه خالی برگردان تا کامپوننت خطا نده
+    // ✅ On error, still return an empty array so the component does not break
     return NextResponse.json([], { status: 200 });
   }
 }

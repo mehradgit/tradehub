@@ -10,16 +10,16 @@ export async function GET() {
     const categories = await getCategories();
     const active = categories.filter((c) => c.isActive !== false);
 
-    // ===== درخت سه‌سطحی =====
+    // ===== Three-level tree =====
     const tree = buildCategoryTree(active).filter((n) => n.isActive !== false);
 
-    // ===== لیست flat (برای سازگاری با کدهای فعلی) =====
+    // ===== Flat list (for compatibility with the existing code) =====
     const flat = flattenTree(tree).filter((n) => n.isActive !== false);
 
     return NextResponse.json({
-      categories: active, // ← شکل قبلی، دست‌نخورده
-      tree, // ← درخت سه‌سطحی
-      flat, // ← flat سه‌سطحی با path
+      categories: active, // ← previous shape, unchanged
+      tree, // ← three-level tree
+      flat, // ← three-level flat list with path
     });
   } catch (error) {
     console.error("Public categories error:", error);

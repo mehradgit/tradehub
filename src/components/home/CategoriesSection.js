@@ -2,15 +2,15 @@
 "use client";
 
 import Link from "next/link";
-import { categories } from "@/lib/categories"; // ✅ استفاده از فایل جامع دسته‌ها
+import { categories } from "@/lib/categories"; // Use the comprehensive categories file
 
 export default function CategoriesSection() {
-  // ====== استخراج دسته‌های اصلی (حداکثر ۶ مورد) ======
+  // ====== Extract the main categories (maximum 6 items) ======
   const mainCategories = categories
     .filter((c) => c.parent === 0)
     .slice(0, 6);
 
-  // ====== نقشه‌ی آیکون‌ها برای دسته‌های مشخص ======
+  // ====== Icon map for specific categories ======
   const iconMap = {
     Protein: "fa-drumstick-bite",
     "Legumes, Grains, and Other Foods": "fa-wheat-awn",
@@ -18,7 +18,7 @@ export default function CategoriesSection() {
     "Frozen Foods": "fa-snowflake",
     Condiments: "fa-pepper-hot",
     "Canned and Ready-Made Food": "fa-can-food",
-    "Sweets and Snacks": "fa-candy-cane", // در صورت نیاز به ۷ ام
+    "Sweets and Snacks": "fa-candy-cane", // In case a 7th one is needed
   };
 
   return (
@@ -45,7 +45,7 @@ export default function CategoriesSection() {
               <i className={`fa-solid ${iconMap[category.name] || "fa-tag"}`}></i>
             </div>
             <h3>{category.name}</h3>
-            <p>20K+ products</p> {/* متن ثابت مطابق HTML نمونه */}
+            <p>20K+ products</p> {/* Static text matching the sample HTML */}
           </Link>
         ))}
       </div>

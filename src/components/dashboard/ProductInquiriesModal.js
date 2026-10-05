@@ -122,7 +122,7 @@ export default function ProductInquiriesModal({ isOpen, onClose, productId }) {
                     background: "var(--light)",
                   }}
                 >
-                  {/* ====== هدر: نام خریدار + دکمه پیام ====== */}
+                  {/* ====== Header: buyer name + message button ====== */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>
                       {buyerId ? (
@@ -149,7 +149,7 @@ export default function ProductInquiriesModal({ isOpen, onClose, productId }) {
                       </div>
                     </div>
 
-                    {/* ✅ دکمه پیام‌رسانی */}
+                    {/* Send-message button */}
                     {buyerId && (
                       <Link
                         href={`/dashboard/messages?userId=${buyerId}`}
@@ -174,7 +174,7 @@ export default function ProductInquiriesModal({ isOpen, onClose, productId }) {
                     )}
                   </div>
 
-                  {/* ====== جزئیات درخواست ====== */}
+                  {/* ====== Inquiry details ====== */}
                   <div
                     style={{
                       display: "grid",
@@ -215,7 +215,7 @@ export default function ProductInquiriesModal({ isOpen, onClose, productId }) {
                     </div>
                   </div>
 
-                  {/* ====== پیام ====== */}
+                  {/* ====== Message ====== */}
                   {inquiry.message && (
                     <div style={{ marginTop: "12px", borderTop: "1px solid var(--gray-light)", paddingTop: "12px" }}>
                       <div style={{ fontSize: "12px", color: "var(--gray)", fontWeight: 600, marginBottom: "4px" }}>

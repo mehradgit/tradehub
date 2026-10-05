@@ -6,7 +6,7 @@ export default auth(function proxy(req) {
   const session = req.auth;
   const pathname = req.nextUrl.pathname;
 
-  // مسیرهای عمومی
+  // Public paths
   const publicPaths = [
     "/",
     "/login",
@@ -21,7 +21,7 @@ export default auth(function proxy(req) {
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 
-  // ====== محافظت از مسیرهای ادمین ======
+  // ====== Protect admin routes ======
   if (pathname.startsWith("/admin")) {
     if (!session) {
       return NextResponse.redirect(new URL("/login", req.url));
@@ -32,7 +32,7 @@ export default auth(function proxy(req) {
     return NextResponse.next();
   }
 
-  // بقیه منطق موجود
+  // Remaining existing logic
   if (isPublicPath) {
     return NextResponse.next();
   }

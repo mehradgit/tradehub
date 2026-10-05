@@ -1,13 +1,13 @@
 // src/utils/uploadHelpers.js
 
 /**
- * آپلود فایل با نمایش درصد پیشرفت
- * @param {File} file - فایل تصویر
- * @param {string} type - نوع فایل (profiles, products, etc.)
- * @param {function} onProgress - تابع برای دریافت درصد پیشرفت (۰ تا ۱۰۰)
- * @param {string|null} purpose - هدف آپلود در نوع profiles:
+ * Upload a file while reporting the progress percentage
+ * @param {File} file - Image file
+ * @param {string} type - File type (profiles, products, etc.)
+ * @param {function} onProgress - Callback receiving the progress percentage (0 to 100)
+ * @param {string|null} purpose - Upload purpose for the profiles type:
  *                                  "logo" | "cover" | "gallery" | null
- * @returns {Promise} - نتیجه آپلود
+ * @returns {Promise} - Upload result
  */
 export function uploadFileWithProgress(file, type, onProgress, purpose = null) {
   return new Promise((resolve, reject) => {
@@ -15,7 +15,7 @@ export function uploadFileWithProgress(file, type, onProgress, purpose = null) {
     formData.append("file", file);
     formData.append("type", type);
 
-    // ✅ فقط برای type="profiles" معنی داره
+    // ✅ Only meaningful for type="profiles"
     if (purpose) {
       formData.append("purpose", purpose);
     }

@@ -132,7 +132,7 @@ export async function generateMetadata({ params }) {
 
   const requestUrl = `${BASE_URL}/requests/${requestNumber}/${request.slug}`;
 
-  // تصویر
+  // Image
   let imageUrl = `${BASE_URL}/og-default.png`;
   if (Array.isArray(request.attachments) && request.attachments[0]) {
     const img = request.attachments[0];

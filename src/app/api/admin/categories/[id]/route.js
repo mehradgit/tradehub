@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCategories, saveCategories } from "@/lib/categoriesService";
 
-// ===== PUT: به‌روزرسانی یک دسته =====
+// ===== PUT: Update a single category =====
 export async function PUT(request, { params }) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -14,7 +14,7 @@ export async function PUT(request, { params }) {
   try {
     const { id } = await params;
 
-    // âœ… ID حالا رشته است
+    // ID is now a string
     if (!id || typeof id !== "string") {
       return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
     }
@@ -40,7 +40,7 @@ export async function PUT(request, { params }) {
         );
       }
 
-      // چک تکراری در همان parent (به‌جز خودش)
+      // Duplicate check within the same parent (excluding itself)
       const parentId = categories[index].parent;
       const duplicate = categories.find(
         (c) =>
@@ -61,7 +61,7 @@ export async function PUT(request, { params }) {
     if (icon !== undefined) categories[index].icon = icon;
     if (isActive !== undefined) categories[index].isActive = !!isActive;
 
-    // âœ… آپدیت productTypes (فقط برای زیردسته‌ها معنا دارد)
+    // Update productTypes (only meaningful for subcategories)
     if (productTypes !== undefined) {
       if (Array.isArray(productTypes)) {
         categories[index].productTypes = productTypes
@@ -90,7 +90,7 @@ export async function PUT(request, { params }) {
   }
 }
 
-// ===== DELETE: حذف دسته (با چک استفاده) =====
+// ===== DELETE: Delete a category (with usage check) =====
 export async function DELETE(request, { params }) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -100,7 +100,7 @@ export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
 
-    // âœ… ID رشته است
+    // ID is a string
     if (!id || typeof id !== "string") {
       return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
     }
@@ -117,7 +117,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // âœ… چک: آیا محصول/درخواستی از این ID استفاده می‌کند؟
+    // Check: is any product/request using this ID?
     const [productCount, requestCount] = await Promise.all([
       prisma.product.count({
         where: {
@@ -146,14 +146,14 @@ export async function DELETE(request, { params }) {
     let removedCount = 1;
 
     if (cascade) {
-      // حذف خود + تمام زیردسته‌ها
+      // Delete itself plus all of its subcategories
       const subs = categories.filter((c) => c.parent === id);
       removedCount += subs.length;
       updated = categories.filter(
         (c) => c.id !== id && c.parent !== id
       );
     } else {
-      // فقط خود، زیردسته‌ها → parent = 0
+      // Only itself; subcategories get parent = 0
       updated = categories
         .filter((c) => c.id !== id)
         .map((c) => (c.parent === id ? { ...c, parent: 0 } : c));

@@ -7,7 +7,7 @@ import PerformanceChart from "@/components/dashboard/PerformanceChart";
 import ProductTable from "@/components/dashboard/ProductTable";
 import SubscriptionCard from "@/components/dashboard/SubscriptionCard";
 
-// ====== تابع کمکی برای استخراج داده‌های ماهانه ======
+// ====== Helper function to extract monthly data ======
 async function getMonthlyStats(userId) {
   const productViewsRaw = await prisma.$queryRaw`
     SELECT 
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
     getMonthlyStats(userId),
   ]);
 
-  // ====== ترکیب و مرتب‌سازی فعالیت‌های اخیر ======
+  // ====== Merge and sort recent activity ======
   const activities = [
     ...recentInquiries.map((inq) => ({
       type: "inquiry",

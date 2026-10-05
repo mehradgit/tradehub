@@ -37,14 +37,14 @@ function LoginPageContent() {
     }
   }, [searchParams]);
 
-  // ====== ورود با ایمیل/رمز ======
+  // ====== Sign in with email/password ======
   const handleCredentialsLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     setUnverifiedEmail(null);
 
-    // ✅ بررسی کپچا
+    // Verify the captcha
     const { answer, token } = captchaRef.current?.getPayload() || {};
     if (!answer || !token) {
       setError("Please answer the security question.");
@@ -53,7 +53,7 @@ function LoginPageContent() {
     }
 
     try {
-      // ۱. اول چک می‌کنیم که اطلاعات درسته و ایمیل تأیید شده
+      // 1. First check that the credentials are correct and the email is verified
       const checkRes = await fetch("/api/auth/check-credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,20 +68,20 @@ function LoginPageContent() {
       const checkData = await checkRes.json();
 
       if (!checkRes.ok) {
-        // مدیریت خطاها بر اساس reason
+        // Handle errors based on the reason
         if (checkData.reason === "email_not_verified") {
           setUnverifiedEmail(checkData.email || email);
           setError(checkData.message);
         } else {
           setError(checkData.message || "Login failed");
         }
-        // کپچا رو رفرش کن
+        // Refresh the captcha
         captchaRef.current?.refresh();
         setLoading(false);
         return;
       }
 
-      // ۲. حالا signIn می‌کنیم (باید موفق باشه چون قبلاً چک کردیم)
+      // 2. Now call signIn (it should succeed because we checked beforehand)
       const result = await signIn("credentials", {
         email,
         password,
@@ -107,7 +107,7 @@ function LoginPageContent() {
     }
   };
 
-  // ====== ارسال مجدد ایمیل تأیید ======
+  // ====== Resend verification email ======
   const handleResendVerification = async () => {
     if (!unverifiedEmail) return;
     setResending(true);
@@ -130,14 +130,14 @@ function LoginPageContent() {
     }
   };
 
-  // ====== ورود با Google ======
+  // ====== Sign in with Google ======
   const handleGoogleLogin = () => {
     signIn("google", { callbackUrl: "/complete-registration" });
   };
 
-  // ====== ورود ادمین محلی (فقط development) ======
-  // ایمیل از سمت سرور خوانده می‌شود (DEV_LOGIN_EMAIL)، پس اینجا
-  // چیزی ارسال نمی‌کنیم تا امکان جعل وجود نداشته باشد.
+  // ====== Local admin login (development only) ======
+  // The email is read on the server side (DEV_LOGIN_EMAIL), so nothing
+  // is sent from here, which removes any chance of spoofing.
   const handleDevLogin = () => {
     setLoading(true);
     signIn("dev-login", { callbackUrl: "/admin" });
@@ -206,7 +206,7 @@ function LoginPageContent() {
             />
           </div>
 
-          {/* Password (فقط یک بار) */}
+          {/* Password (only once) */}
           <div className="mb-3">
             <div className="d-flex justify-content-between align-items-center mb-1">
               <label className="form-label fw-semibold mb-0">Password</label>
@@ -263,9 +263,9 @@ function LoginPageContent() {
           Continue with Google
         </button>
 
-        {/* ===== ورود ادمین محلی — فقط در حالت development =====
-            process.env.NODE_ENV در باندل کلاینت جایگذاری می‌شود،
-            پس روی build پروداکشن این دکمه اصلاً رندر نمی‌شود. */}
+        {/* ===== Local admin login — development mode only =====
+            process.env.NODE_ENV is inlined in the client bundle,
+            so this button is not rendered at all in a production build. */}
         {process.env.NODE_ENV === "development" && (
           <button
             onClick={handleDevLogin}

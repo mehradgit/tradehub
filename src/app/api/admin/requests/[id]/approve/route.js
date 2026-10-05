@@ -56,10 +56,10 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    // ✅ اطلاع به صاحب درخواست از مسیر مرکزی رویداد
-    //    (In-App + Web Push + ایمیل).
-    //    توجه: این همان روتی است که پنل ادمین صدا می‌زند و
-    //    قبلاً هیچ نوتیفیکیشنی نمی‌فرستاد.
+    // ✅ Notify the request owner through the central event route
+    //    (in-app + web push + email).
+    //    Note: this is the same route the admin panel calls, and
+    //    it previously sent no notification at all.
     after(async () => {
       const result = await dispatchEvent("request.reviewed", {
         requestId: buyingRequest.id,

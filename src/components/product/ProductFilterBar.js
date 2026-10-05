@@ -296,7 +296,7 @@ export default function ProductFilterBar({
            Responsive
            ============================================================ */
 
-        /* تبلت بزرگ */
+        /* Large tablet */
         @media (max-width: 1100px) {
           .filter-search {
             flex: 1 1 100%;
@@ -312,7 +312,7 @@ export default function ProductFilterBar({
           }
         }
 
-        /* تبلت */
+        /* Tablet */
         @media (max-width: 768px) {
           .products-filter-bar {
             gap: 10px;
@@ -359,7 +359,7 @@ export default function ProductFilterBar({
           }
         }
 
-        /* موبایل */
+        /* Mobile */
         @media (max-width: 500px) {
           .products-filter-bar {
             gap: 8px;

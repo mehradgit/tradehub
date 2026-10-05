@@ -118,7 +118,7 @@ export default function SupplierInfoSection({
     <>
       <div className="supplier-card-wrapper">
         {isRevealed ? (
-          /* ====== کارت باز ====== */
+          /* ====== Revealed card ====== */
           <div className="supplier-card">
             <div className="supplier-card-cover">
               <img src={supplier.coverImage} alt="Cover" />
@@ -169,7 +169,7 @@ export default function SupplierInfoSection({
             </div>
           </div>
         ) : (
-          /* ====== کارت بلور ====== */
+          /* ====== Blurred card ====== */
           <div className="blurred-wrapper">
             <div className="blurred-content">
               <div className="supplier-card">
@@ -359,7 +359,7 @@ export default function SupplierInfoSection({
         }
 
         /* ============================================================
-           Logo (روی کاور، offset به پایین)
+           Logo (over the cover, offset downwards)
            ============================================================ */
         .supplier-logo-wrapper {
           position: absolute;
@@ -540,7 +540,7 @@ export default function SupplierInfoSection({
         }
 
         /* ============================================================
-           Blurred (برای Basic)
+           Blurred (for Basic)
            ============================================================ */
         .blurred-wrapper {
           position: relative;
@@ -640,7 +640,7 @@ export default function SupplierInfoSection({
   );
 }
 
-// ====== کامپوننت‌های کمکی ======
+// ====== Helper components ======
 function ModalOverlay({ children, onClose }) {
   return (
     <div

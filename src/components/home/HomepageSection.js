@@ -20,7 +20,7 @@ export default function HomepageSection({ section, items = [] }) {
   const icon = section.icon || DEFAULT_ICONS[section.type] || "fa-star";
   const basePath = DEFAULT_LINKS[section.type] || "/";
 
-  // ساخت لینک View All
+  // Build the View All link
   let viewAllLink = basePath;
   if (section.mode === "category" && section.category) {
     const params = new URLSearchParams();

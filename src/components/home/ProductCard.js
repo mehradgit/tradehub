@@ -24,7 +24,7 @@ export default function ProductCard({ product }) {
       className="product-card-modern-link"
     >
       <div className="product-card-modern">
-        {/* تصویر با دکمه Enquire Now */}
+        {/* Image with the Enquire Now button */}
         <div className="product-card-modern-image-wrapper">
           <div className="product-card-modern-image">
             <img src={imageUrl} alt={product.name} />
@@ -35,7 +35,7 @@ export default function ProductCard({ product }) {
           </div>
         </div>
 
-        {/* اطلاعات */}
+        {/* Details */}
         <div className="product-card-modern-body">
           <div className="product-card-modern-category">
             {product.category || "Food Products"}
@@ -45,7 +45,7 @@ export default function ProductCard({ product }) {
 
           <div className="product-card-modern-underline" />
 
-          {/* âœ… قیمت */}
+          {/* Price */}
           {priceDisplay && (
             <div className="product-card-modern-price">
               <span className="price-currency">{currency}</span>

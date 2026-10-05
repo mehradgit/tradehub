@@ -31,11 +31,11 @@ export default function RequestActions({
   const [permissionError, setPermissionError] = useState(null);
   const [localRevealed, setLocalRevealed] = useState(false);
 
-  // ====== محاسبه وضعیت ======
+  // ====== Compute the state ======
   const isOwner = session?.user?.id === request.userId;
   const effectiveRevealed = alreadyRevealed || localRevealed;
 
-  // ====== بررسی وضعیت ذخیره ======
+  // ====== Check the saved status ======
   useEffect(() => {
     const checkSavedStatus = async () => {
       if (!session?.user || !request?.id) {
@@ -87,33 +87,33 @@ export default function RequestActions({
 
   // ====== Submit Quote ======
   const handleSubmitQuote = () => {
-    // ۱. مهمان
+    // 1. Guest
     if (!session) {
       setIsLoginModalOpen(true);
       return;
     }
 
-    // ۲. صاحب درخواست
+    // 2. Request owner
     if (isOwner) return;
 
-    // ۳. قبلاً Reveal کرده → فرم را باز کن
+    // 3. Already revealed → open the form
     if (effectiveRevealed) {
       setIsQuoteModalOpen(true);
       return;
     }
 
-    // ۴. بدون مجوز → Upgrade
+    // 4. Not permitted → Upgrade
     if (!buyerInfoPermission.allowed) {
       setPermissionError(buyerInfoPermission);
       setIsUpgradeModalOpen(true);
       return;
     }
 
-    // ۵. مجاز → مودال تأیید مصرف سهمیه
+    // 5. Allowed → quota consumption confirmation modal
     setIsConfirmModalOpen(true);
   };
 
-  // ====== تأیید مصرف سهمیه ======
+  // ====== Confirm quota consumption ======
   const handleConfirmReveal = async () => {
     setLoading(true);
     try {
@@ -142,9 +142,9 @@ export default function RequestActions({
       }
       setLocalRevealed(true);
       setIsConfirmModalOpen(false);
-      // ✅ بعد از موفقیت، فرم را باز کن
+      // ✅ On success, open the form
       setIsQuoteModalOpen(true);
-      router.refresh(); // به‌روزرسانی کارت خریدار در BuyerInfoSection
+      router.refresh(); // Refresh‌ the buyer card in BuyerInfoSection
     } catch (err) {
       toast.error(err.message || "Something went wrong");
     } finally {
@@ -152,7 +152,7 @@ export default function RequestActions({
     }
   };
 
-  // ====== محتوای Upgrade ======
+  // ====== Upgrade content ======
   const upgradeContent = (() => {
     if (!permissionError) return null;
     const isQuota = permissionError.reason === "quota_exhausted";
@@ -166,7 +166,7 @@ export default function RequestActions({
     };
   })();
 
-  // ====== متن و آیکون دکمه ======
+  // ====== Button text and icon ======
   const submitDisabled = isOwner;
   const submitLabel = isOwner
     ? "Submit Quote"
@@ -300,7 +300,7 @@ export default function RequestActions({
   );
 }
 
-// ====== کامپوننت‌های کمکی ======
+// ====== Helper components‌ ======
 function ModalOverlay({ children, onClose }) {
   return (
     <div

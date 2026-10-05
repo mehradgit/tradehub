@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
 
     const { id } = await params;
 
-    // بررسی دسترسی: فقط صاحب درخواست می‌تواند پاسخ‌ها را ببیند
+    // Access check: only the request owner can view the quotes
     const buyingRequest = await prisma.buyingRequest.findUnique({
       where: { id },
       select: { userId: true },

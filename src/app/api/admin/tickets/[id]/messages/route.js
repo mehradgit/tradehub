@@ -38,7 +38,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    // ایجاد پیام
+    // Create the message
     const newMessage = await prisma.ticketMessage.create({
       data: {
         ticketId: id,
@@ -59,7 +59,7 @@ export async function POST(request, { params }) {
       },
     });
 
-    // اگر پیام public است، وضعیت و unread را به‌روز کن
+    // If the message is public, update the status and unread flags
     if (!isInternal) {
       const updateData = {
         lastReplyAt: new Date(),
@@ -68,7 +68,7 @@ export async function POST(request, { params }) {
         unreadByAdmin: false,
       };
 
-      // اگر open بود، برو به in_progress
+      // If it was open, move it to in_progress
       if (ticket.status === "open") {
         updateData.status = "in_progress";
       }
@@ -77,9 +77,9 @@ export async function POST(request, { params }) {
         where: { id },
         data: updateData,
       });
-      // ✅ نوتیفیکیشن + Web Push + ایمیل برای صاحب تیکت.
-      //    این بلوک داخل گاردِ !isInternal است، پس یادداشت داخلی
-      //    هرگز به کاربر اطلاع داده نمی‌شود.
+      // ✅ Notification + Web Push + email for the ticket owner.
+      //    This block is inside the !isInternal guard, so internal notes
+      //    are never disclosed to the user.
       after(async () => {
         const result = await dispatchEvent("ticket.replied", {
           ticketId: ticket.id,

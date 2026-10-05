@@ -38,7 +38,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
 
       const data = await res.json();
 
-      // پروفایل ناقص
+      // Incomplete profile
       if (res.status === 400 && data.reason === "incomplete_profile") {
         toast.error("Please complete your profile first.");
         router.push("/dashboard/edit-profile");
@@ -47,14 +47,14 @@ export default function CheckoutClient({ plan, user, missingFields }) {
 
       if (!res.ok) throw new Error(data.message || "Payment failed");
 
-      // پلن رایگان
+      // Free plan
       if (data.free) {
         toast.success("Subscription activated!");
         router.push(`/dashboard/billing/invoice/${data.payment.id}`);
         return;
       }
 
-      // پرداخت با YekPay
+      // Payment via YekPay
       if (data.paymentUrl) {
         toast.info("Redirecting to payment gateway...");
         setTimeout(() => {
@@ -63,7 +63,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
         return;
       }
 
-      // Fallback شبیه‌سازی
+      // Simulated fallback
       if (data.payment?.id) {
         toast.success("Subscription activated!");
         router.push(`/dashboard/billing/invoice/${data.payment.id}`);
@@ -77,14 +77,14 @@ export default function CheckoutClient({ plan, user, missingFields }) {
     }
   };
 
-  // فرمت مبلغ
+  // Format the amount
   const formatPrice = (price) =>
     new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(price);
 
-  // مدت به فارسی/انگلیسی
+  // Duration in English
   const durationLabel =
     plan.duration === 180
       ? "6 Months"
@@ -94,7 +94,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
 
   return (
     <div className="container py-5" style={{ maxWidth: 1000 }}>
-      {/* هدر */}
+      {/* Header */}
       <div className="text-center mb-5">
         <div
           className="mx-auto mb-3 d-flex align-items-center justify-content-center"
@@ -125,7 +125,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
       </div>
 
       <div className="row g-4">
-        {/* ====== ستون چپ: خلاصه سفارش ====== */}
+        {/* ====== Left column: order summary ====== */}
         <div className="col-lg-7">
           <div
             style={{
@@ -151,7 +151,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               Order Summary
             </h3>
 
-            {/* پلن */}
+            {/* Plan */}
             <div
               style={{
                 display: "flex",
@@ -191,7 +191,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               </span>
             </div>
 
-            {/* قیمت اصلی */}
+            {/* Original price */}
             <div
               style={{
                 display: "flex",
@@ -207,7 +207,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               </span>
             </div>
 
-            {/* تخفیف */}
+            {/* Discount */}
             {discount > 0 && (
               <div
                 style={{
@@ -228,7 +228,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               </div>
             )}
 
-            {/* جمع کل */}
+            {/* Total */}
             <div
               style={{
                 display: "flex",
@@ -246,7 +246,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               <span>${formatPrice(displayAmount)}</span>
             </div>
 
-            {/* کد تخفیف */}
+            {/* Coupon code */}
             {originalAmount > 0 && (
               <div style={{ marginTop: 20 }}>
                 <label
@@ -274,7 +274,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
           </div>
         </div>
 
-        {/* ====== ستون راست: اطلاعات کاربر + دکمه ====== */}
+        {/* ====== Right column: user information + button ====== */}
         <div className="col-lg-5">
           <div
             style={{
@@ -302,7 +302,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               Billing Information
             </h3>
 
-            {/* هشدار پروفایل ناقص */}
+            {/* Incomplete profile warning */}
             {hasMissingFields && (
               <div
                 style={{
@@ -352,7 +352,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               </div>
             )}
 
-            {/* اطلاعات */}
+            {/* Information */}
             {!hasMissingFields && (
               <div
                 style={{
@@ -392,7 +392,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               </div>
             )}
 
-            {/* دکمه‌ها */}
+            {/* Buttons */}
             {hasMissingFields ? (
               <Link
                 href="/dashboard/edit-profile"
@@ -454,7 +454,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               </button>
             )}
 
-            {/* لینک بازگشت */}
+            {/* Back link */}
             <Link
               href="/plans"
               style={{
@@ -478,7 +478,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               Back to Plans
             </Link>
 
-            {/* امنیت */}
+            {/* Security */}
             <div
               style={{
                 marginTop: 16,

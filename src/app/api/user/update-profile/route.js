@@ -24,8 +24,8 @@ export async function PUT(request) {
       phone,
       bio,
       address,
-      city,              // ← جدید
-      postalCode,        // ← جدید
+      city,              // ← new
+      postalCode,        // ← new
       website,
       companyEmail,
       employeeCount,
@@ -33,10 +33,10 @@ export async function PUT(request) {
       coverImage,
       primaryCategory,
       primarySubCategory,
-      galleryImages, // آرایه‌ای از مسیرها (بعد از ترکیب عکس‌های موجود و جدید)
+      galleryImages, // array of paths (after merging existing and new images)
     } = body;
 
-    // اعتبارسنجی اولیه
+    // Basic validation
     if (!name || !companyName || !country) {
       return new Response(
         JSON.stringify({ message: "Required fields missing" }),
@@ -44,11 +44,11 @@ export async function PUT(request) {
       );
     }
 
-    // ====== دریافت پلن فعال کاربر و بررسی محدودیت عکس‌ها ======
+    // ====== Fetch the user's active plan and check the image limit ======
     const { plan } = await getUserActivePlan(userId);
 
     if (galleryImages && Array.isArray(galleryImages)) {
-      // اگر maxProfileImages برابر -1 باشد یعنی نامحدود
+      // A maxProfileImages value of -1 means unlimited
       if (plan.maxProfileImages !== -1 && galleryImages.length > plan.maxProfileImages) {
         return new Response(
           JSON.stringify({
@@ -59,7 +59,7 @@ export async function PUT(request) {
       }
     }
 
-    // ====== آماده‌سازی داده‌ها ======
+    // ====== Prepare the data ======
     const updateData = {
       name,
       companyName,
@@ -68,8 +68,8 @@ export async function PUT(request) {
       phone: phone || null,
       bio: bio || null,
       address: address || null,
-      city: city || null,              // ← جدید
-      postalCode: postalCode || null,  // ← جدید
+      city: city || null,              // ← new
+      postalCode: postalCode || null,  // ← new
       website: website || null,
       companyEmail: companyEmail || null,
       employeeCount: employeeCount || null,

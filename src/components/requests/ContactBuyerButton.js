@@ -19,21 +19,21 @@ export default function ContactBuyerButton({ requestId, ownerId }) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [pendingPermission, setPendingPermission] = useState(null);
 
-  // ====== کلیک روی دکمه ======
+  // ====== Button click ======
   const handleClick = async () => {
-    // ۱. مهمان → Login
+    // 1. Guest → Login
     if (!session) {
       setIsLoginModalOpen(true);
       return;
     }
 
-    // ۲. صاحب درخواست → مستقیم برو بدون سهمیه
+    // 2. Request owner → go straight through without quota
     if (session.user.id === ownerId) {
       await fetchContactAndGo();
       return;
     }
 
-    // ۳. دریافت وضعیت از API (بدون مصرف سهمیه - فقط بررسی)
+    // 3. Get the status from the API (no quota consumed - check only)
     setLoading(true);
     try {
       const res = await fetch(`/api/requests/${requestId}/contact-check`);
@@ -50,11 +50,11 @@ export default function ContactBuyerButton({ requestId, ownerId }) {
         return;
       }
 
-      // ۴. اگر مصرف سهمیه دارد → مودال تأیید
+      // 4. If it consumes quota → confirmation modal
       if (data.consumeQuota) {
         setIsConfirmModalOpen(true);
       } else {
-        // ۵. مجاز و بدون سهمیه → مستقیم برو
+        // 5. Allowed with no quota → go straight through
         await fetchContactAndGo();
       }
     } catch (err) {
@@ -64,7 +64,7 @@ export default function ContactBuyerButton({ requestId, ownerId }) {
     }
   };
 
-  // ====== دریافت اطلاعات تماس + انتقال ======
+  // ====== Fetch contact info + navigate ======
   const fetchContactAndGo = async () => {
     setLoading(true);
     try {
@@ -102,7 +102,7 @@ export default function ContactBuyerButton({ requestId, ownerId }) {
     }
   };
 
-  // ====== محتوای مودال Upgrade / Quota ======
+  // ====== Upgrade / Quota modal content ======
   const upgradeContent = (() => {
     if (!pendingPermission) return null;
     const isQuota = pendingPermission.reason === "quota_exhausted";
@@ -133,14 +133,14 @@ export default function ContactBuyerButton({ requestId, ownerId }) {
         Company Information
       </button>
 
-      {/* مودال Login */}
+      {/* Login modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         redirectUrl={pathname}
       />
 
-      {/* مودال Upgrade / Quota */}
+      {/* Upgrade / Quota modal */}
       {isUpgradeModalOpen && upgradeContent && (
         <ModalOverlay onClose={() => setIsUpgradeModalOpen(false)}>
           <IconCircle icon={upgradeContent.icon} variant="warning" />
@@ -152,7 +152,7 @@ export default function ContactBuyerButton({ requestId, ownerId }) {
         </ModalOverlay>
       )}
 
-      {/* مودال تأیید مصرف سهمیه */}
+      {/* Quota consumption confirmation modal */}
       {isConfirmModalOpen && (
         <ModalOverlay onClose={() => !loading && setIsConfirmModalOpen(false)}>
           <IconCircle icon="fa-info-circle" variant="info" />
@@ -202,7 +202,7 @@ export default function ContactBuyerButton({ requestId, ownerId }) {
   );
 }
 
-// ====== کامپوننت‌های کمکی ======
+// ====== Helper components‌ ======
 function ModalOverlay({ children, onClose }) {
   return (
     <div
@@ -268,7 +268,7 @@ function IconCircle({ icon, variant }) {
   );
 }
 
-// ====== استایل‌ها ======
+// ====== Styles‌ ======
 const modalTitleStyle = {
   fontSize: "18px",
   fontWeight: 800,

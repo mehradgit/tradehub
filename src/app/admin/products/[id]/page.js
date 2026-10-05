@@ -8,16 +8,16 @@ import ProductApprovalButtons from "@/components/admin/ProductApprovalButtons";
 import { getProductAttributes } from "@/lib/attributesService";
 
 // ============================================================
-// مشخصات پویا (EAV) — قالب‌بندی برای نمایش
+// Dynamic specifications (EAV) — formatting for display
 //
-// getProductAttributes() برای هر اتریبیوت این‌ها را می‌دهد:
+// getProductAttributes() returns the following for each attribute:
 //   { attributeId, key, label, dataType, unit, options, values, value }
-// مقدار خالی → null (یعنی آن ردیف رندر نمی‌شود)
+// An empty value → null (meaning that row is not rendered)
 // ============================================================
 function formatAttributeLabel(attr) {
   const base = attr?.label || attr?.key;
   if (!base) return null;
-  // واحد اندازه‌گیری داخل پرانتز کنار برچسب
+  // The measurement unit goes in parentheses next to the label
   return attr?.unit ? `${base} (${attr.unit})` : String(base);
 }
 
@@ -33,7 +33,7 @@ function formatAttributeValue(attr) {
           ? []
           : [attr.value];
 
-  // ردیف‌های خالی ("" / null / undefined / []) نمایش داده نمی‌شوند
+  // Empty rows ("" / null / undefined / []) are not displayed
   const list = rawList.filter(
     (v) =>
       v !== null &&
@@ -56,14 +56,14 @@ function formatAttributeValue(attr) {
     return truthy ? "Yes" : "No";
   }
 
-  // number → عدد (به‌همراه واحد در صورت وجود)
+  // number → number (together with the unit, if any)
   if (attr.dataType === "number") {
     const nums = list.map((v) => Number(v)).filter((n) => Number.isFinite(n));
     if (nums.length === 0) return null;
     return `${nums.join(", ")}${unit}`;
   }
 
-  // text | select | multiSelect → رشته‌ها با ", " به هم می‌چسبند
+  // text | select | multiSelect → strings joined together with ", "
   const parts = list.map((v) => String(v).trim()).filter(Boolean);
   if (parts.length === 0) return null;
   return parts.join(", ");
@@ -114,8 +114,8 @@ export default async function AdminProductDetailPage({ params }) {
   // Parse images
   const images = Array.isArray(product.images) ? product.images : [];
 
-  // ====== مشخصات پویا (EAV) ======
-  // اگر جدول/سرویس اتریبیوت‌ها در دسترس نباشد، صفحه‌ی ادمین نباید بشکند.
+  // ====== Dynamic specifications (EAV) ======
+  // If the attribute table/service is unavailable, the admin page must not break.
   let attributes = [];
   try {
     attributes = await getProductAttributes(product.id);
@@ -124,7 +124,7 @@ export default async function AdminProductDetailPage({ params }) {
     attributes = [];
   }
 
-  // فقط ردیف‌هایی که هم برچسب و هم مقدار قابل نمایش دارند
+  // Only rows that have both a displayable label and a displayable value
   const attributeRows = attributes
     .map((attr) => ({
       id: attr?.attributeId || attr?.key,
@@ -439,7 +439,7 @@ export default async function AdminProductDetailPage({ params }) {
         </FieldGrid>
       </Section>
 
-      {/* Technical Specifications — مشخصات پویا (EAV) */}
+      {/* Technical Specifications — dynamic (EAV) */}
       {attributeRows.length > 0 && (
         <Section title="Specifications" icon="fa-list-alt">
           <FieldGrid cols={2}>

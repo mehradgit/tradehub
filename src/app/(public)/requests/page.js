@@ -10,7 +10,7 @@ import { describePath } from "@/lib/categoryTree";
 const BASE_URL = "https://foodtradelink.com";
 
 // ============================================================
-// generateMetadata — پویا
+// generateMetadata — dynamic
 // ============================================================
 export async function generateMetadata({ searchParams }) {
   const {
@@ -101,30 +101,30 @@ export async function generateMetadata({ searchParams }) {
 }
 
 // ============================================================
-// صفحه (بدون تغییر)
+// Page (unchanged)
 // ============================================================
 export default async function RequestsPage({ searchParams }) {
   const resolvedParams = await searchParams;
 
   // ============================================================
-  // موتور فیلتر مشترک (همان اسکیمای محصولات، با فیلدهای درخواست)
+  // Shared filter engine (same schema as products, with request fields)
   // ============================================================
   const filters = await getFilterContext("requests", resolvedParams);
   const { orderBy, page, limit, skip } = filters.plan;
 
-  // پارامترهای مؤثر (تبدیل خودکار category/subCategory قدیمی)
+  // Effective params (automatic conversion of the legacy category/subCategory)
   const params = filters.effectiveParams;
   const search = params.search || "";
   const category = params.category || "";
   const subCategory = params.subCategory || "";
   const filter = params.filter || "all";
 
-  // شرط موتور + نگه‌داشتن فیلتر قدیمی ?filter=urgent|verified
+  // Engine clause + keep the legacy ?filter=urgent|verified filter
   const where = { ...filters.plan.where };
   if (filter === "urgent") where.isUrgent = true;
   else if (filter === "verified") where.isUrgent = false;
 
-  // برچسب دسته از مسیر سه‌سطحی
+  // Category label from the three-level path
   const categoryLabel = filters.categoryPath
     ? describePath(filters.categoryPath, filters.index)
     : category && subCategory
@@ -228,7 +228,7 @@ export default async function RequestsPage({ searchParams }) {
           </p>
         </div>
 
-        {/* ✅ نوار فیلتر یکپارچه — از اسکیمای مشترک ساخته می‌شود */}
+        {/* ✅ Unified filter bar — built from the shared schema */}
         <SharedFilterBar {...filters.barProps} resultCount={totalCount} />
 
         {requests.length > 0 ? (

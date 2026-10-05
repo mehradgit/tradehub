@@ -90,7 +90,7 @@ export default function EmailTemplateEditor({ templates = [] }) {
     setForm(toForm(tpl));
   };
 
-  // ===== متغیرهای استفاده‌شده در برابر متغیرهای اعلام‌شده =====
+  // ===== Variables used vs. variables declared =====
   const declared = useMemo(
     () => (Array.isArray(selected?.variables) ? selected.variables : []),
     [selected]
@@ -174,7 +174,7 @@ export default function EmailTemplateEditor({ templates = [] }) {
         flexWrap: "wrap",
       }}
     >
-      {/* ===== لیست قالب‌ها ===== */}
+      {/* ===== Template list ===== */}
       <div
         className="admin-card"
         style={{ width: "270px", flexShrink: 0, padding: "10px" }}
@@ -235,7 +235,7 @@ export default function EmailTemplateEditor({ templates = [] }) {
         </div>
       </div>
 
-      {/* ===== فرم ویرایش ===== */}
+      {/* ===== Edit form ===== */}
       <div className="admin-card" style={{ flex: 1, minWidth: "380px", padding: "18px" }}>
         <div
           style={{
@@ -400,7 +400,7 @@ export default function EmailTemplateEditor({ templates = [] }) {
             />
           </div>
 
-          {/* ===== متغیرها ===== */}
+          {/* ===== Variables ===== */}
           <div
             style={{
               borderTop: "1px solid var(--line)",

@@ -4,7 +4,7 @@
 import Link from "next/link";
 
 export default function RecentActivity({ activities }) {
-  // فرمت ثابت تاریخ در سمت کلاینت
+  // Fixed date formatting on the client side
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
@@ -13,7 +13,7 @@ export default function RecentActivity({ activities }) {
     });
   };
 
-  // تعیین کلاس status
+  // Determine the status class
   const getStatusClass = (status) => {
     const classes = {
       completed: "completed",

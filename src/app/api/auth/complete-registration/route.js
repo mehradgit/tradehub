@@ -36,21 +36,21 @@ export async function POST(request) {
       primarySubCategory,
     } = body;
 
-    // بررسی وجود کاربر
+    // Check whether the user exists
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // اگر قبلاً کامل شده، خطا بده
+    // If it is already completed, return an error
     if (user.registrationComplete === true) {
       return NextResponse.json({ message: "Registration already completed" }, { status: 400 });
     }
 
-    // ====== دریافت پلن فعال کاربر ======
+    // ====== Get the user's active plan ======
     const { plan } = await getUserActivePlan(userId);
 
-    // ====== بررسی محدودیت تعداد عکس‌های پروفایل ======
+    // ====== Check the profile image limit ======
     if (galleryImages && Array.isArray(galleryImages)) {
       if (plan.maxProfileImages !== -1 && galleryImages.length > plan.maxProfileImages) {
         return NextResponse.json(
@@ -60,7 +60,7 @@ export async function POST(request) {
       }
     }
 
-    // ====== به‌روزرسانی کاربر ======
+    // ====== Update the user ======
     const updateData = {
       name,
       companyName,
@@ -69,7 +69,7 @@ export async function POST(request) {
       phone: phone || null,
       bio: bio || null,
       address: address || null,
-      city: city || null,              // ← جدید
+      city: city || null,              // new
       postalCode: postalCode || null,
       website: website || null,
       companyEmail: companyEmail || null,
@@ -82,7 +82,7 @@ export async function POST(request) {
       primarySubCategory: primarySubCategory || null,
     };
 
-    // تولید profileNumber و slug (اگر وجود ندارند)
+    // Generate the profileNumber and slug (if they are missing)
     if (!user.profileNumber) {
       let profileNumber;
       let isUnique = false;

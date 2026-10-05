@@ -22,7 +22,7 @@ export async function POST(request, { params }) {
     const { id } = await params;
     const userId = session.user.id;
 
-    // ====== دریافت درخواست ======
+    // ====== Fetch the request ======
     const buyingRequest = await prisma.buyingRequest.findUnique({
       where: { id },
       select: { id: true, userId: true },
@@ -35,7 +35,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    // ====== اگر قبلاً Reveal کرده → بدون سهمیه ======
+    // ====== Already revealed → no quota ======
     const alreadyRevealed = await hasRevealedBuyerInfo(userId, id);
     if (alreadyRevealed) {
       return NextResponse.json({
@@ -45,7 +45,7 @@ export async function POST(request, { params }) {
       });
     }
 
-    // ====== بررسی مجوز ======
+    // ====== Check permission ======
     const permission = await canViewBuyerInfo(userId, buyingRequest);
     if (!permission.allowed) {
       return NextResponse.json(
@@ -54,12 +54,12 @@ export async function POST(request, { params }) {
       );
     }
 
-    // ====== آیا سهمیه مصرف می‌شود؟ ======
+    // ====== Should quota be consumed? ======
     const isOwnerOrAdmin =
       permission.reason === "owner" || permission.reason === "admin";
 
     if (!isOwnerOrAdmin) {
-      // ====== مصرف سهمیه ======
+      // ====== Consume quota ======
       const settings = await getAccessControlSettings();
       const quotaType = settings.request.buyerInfo.quotaType || "inquiry";
 
@@ -68,7 +68,7 @@ export async function POST(request, { params }) {
         await incrementUsage(userId, quotaType, subscription);
       }
 
-      // ====== ثبت Reveal در دیتابیس (فقط برای کاربران عادی) ======
+      // ====== Save the reveal in the database (regular users only) ======
       try {
         await prisma.revealedBuyerInfo.create({
           data: {
@@ -77,7 +77,7 @@ export async function POST(request, { params }) {
           },
         });
       } catch (err) {
-        // اگر قبلاً وجود دارد (race condition)، نادیده بگیر
+        // If it already exists (race condition), ignore it
         if (err.code !== "P2002") {
           console.error("Failed to save reveal record:", err);
         }

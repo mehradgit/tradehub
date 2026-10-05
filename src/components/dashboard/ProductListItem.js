@@ -654,7 +654,7 @@ export default function ProductListItem({ product }) {
             font-size: 11px;
           }
 
-          /* Actions: primary تمام عرض + 3 دکمه کنار هم */
+          /* Actions: primary full width + 3 buttons side by side */
           .pli-actions {
             grid-template-columns: 1fr 1fr 1fr auto;
           }
@@ -672,7 +672,7 @@ export default function ProductListItem({ product }) {
             font-size: 13px;
           }
 
-          /* View Inquiries همیشه آیکون + count */
+          /* View Inquiries always shows icon + count */
           :global(.pli-btn-primary span.pli-btn-badge) {
             display: inline-flex;
           }

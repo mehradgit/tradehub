@@ -16,17 +16,17 @@ export default function PushNotificationPrompt() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // اگر قبلاً بسته شده، نشان نده
+    // If it was dismissed before, do not show it
     if (localStorage.getItem(DISMISSED_KEY) === "true") return;
 
-    // اگر پشتیبانی نمی‌شود، نشان نده
+    // If push is not supported, do not show it
     if (!isPushSupported()) return;
 
-    // اگر permission قبلاً گرفته شده (granted/denied)، نشان نده
+    // If permission was already decided (granted/denied), do not show it
     const permission = getNotificationPermission();
     if (permission !== "default") return;
 
-    // ۲ ثانیه تأخیر برای اینکه صفحه کامل لود شود
+    // 2 second delay so the page finishes loading
     const timer = setTimeout(() => setShow(true), 2000);
     return () => clearTimeout(timer);
   }, []);

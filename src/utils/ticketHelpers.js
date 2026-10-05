@@ -1,6 +1,6 @@
 // src/utils/ticketHelpers.js
 
-// ====== تولید شماره تیکت یکتا (۱۰۰۰ به بالا) ======
+// ====== Generate a unique ticket number (1000 and up) ======
 export async function generateTicketNumber(prisma) {
   const lastTicket = await prisma.ticket.findFirst({
     orderBy: { ticketNumber: "desc" },
@@ -11,7 +11,7 @@ export async function generateTicketNumber(prisma) {
   return lastTicket.ticketNumber + 1;
 }
 
-// ====== دسته‌های مجاز ======
+// ====== Allowed categories ======
 export const TICKET_CATEGORIES = [
   { value: "technical", label: "Technical Issue" },
   { value: "billing", label: "Billing & Subscription" },
@@ -23,7 +23,7 @@ export const TICKET_CATEGORIES = [
   { value: "other", label: "Other" },
 ];
 
-// ====== اولویت‌ها ======
+// ====== Priorities ======
 export const TICKET_PRIORITIES = [
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
@@ -31,7 +31,7 @@ export const TICKET_PRIORITIES = [
   { value: "urgent", label: "Urgent" },
 ];
 
-// ====== وضعیت‌ها ======
+// ====== Statuses ======
 export const TICKET_STATUSES = [
   { value: "open", label: "Open" },
   { value: "in_progress", label: "In Progress" },
@@ -40,7 +40,7 @@ export const TICKET_STATUSES = [
   { value: "closed", label: "Closed" },
 ];
 
-// ====== رنگ اولویت ======
+// ====== Priority color ======
 export function getPriorityColor(priority) {
   const map = {
     low: { bg: "#e8f1ff", color: "#3b82f6" },
@@ -51,7 +51,7 @@ export function getPriorityColor(priority) {
   return map[priority] || map.medium;
 }
 
-// ====== رنگ وضعیت ======
+// ====== Status color ======
 export function getStatusColor(status) {
   const map = {
     open: { bg: "#e8f1ff", color: "#3b82f6", label: "Open" },
@@ -63,7 +63,7 @@ export function getStatusColor(status) {
   return map[status] || map.open;
 }
 
-// ====== برچسب دسته ======
+// ====== Category label ======
 export function getCategoryLabel(category) {
   const found = TICKET_CATEGORIES.find((c) => c.value === category);
   return found?.label || category;

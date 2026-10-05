@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 export default function InquiryModal({ isOpen, onClose, inquiry, tab, onMarkRead }) {
   const [loading, setLoading] = useState(false);
 
-  // ====== علامت‌گذاری درخواست به‌عنوان خوانده‌شده ======
+  // ====== Mark the inquiry as read ======
   useEffect(() => {
     if (isOpen && inquiry && !inquiry.read) {
       const markAsRead = async () => {
@@ -17,7 +17,7 @@ export default function InquiryModal({ isOpen, onClose, inquiry, tab, onMarkRead
             method: "PATCH",
           });
           if (res.ok && onMarkRead) {
-            onMarkRead(); // ✅ اطلاع به والد برای به‌روزرسانی
+            onMarkRead(); // Notify the parent so it can refresh
           }
         } catch (error) {
           console.error("Failed to mark as read:", error);
@@ -29,7 +29,7 @@ export default function InquiryModal({ isOpen, onClose, inquiry, tab, onMarkRead
 
   if (!isOpen || !inquiry) return null;
   
-  // ====== تعیین طرف مقابل بر اساس تب ======
+  // ====== Determine the other party based on the tab ======
   const otherParty = tab === "buyer" ? inquiry.supplier : inquiry.user;
   const otherPartyName = otherParty?.companyName || otherParty?.name || "Unknown";
   const otherPartyId = otherParty?.id;
@@ -125,7 +125,7 @@ export default function InquiryModal({ isOpen, onClose, inquiry, tab, onMarkRead
           </p>
         </div>
 
-        {/* ====== اطلاعات تماس ====== */}
+        {/* ====== Contact information ====== */}
         <div
           style={{
             background: "var(--light)",
@@ -171,7 +171,7 @@ export default function InquiryModal({ isOpen, onClose, inquiry, tab, onMarkRead
           </div>
         </div>
 
-        {/* ====== جزئیات درخواست ====== */}
+        {/* ====== Inquiry details ====== */}
         <div
           style={{
             display: "grid",
@@ -225,7 +225,7 @@ export default function InquiryModal({ isOpen, onClose, inquiry, tab, onMarkRead
           </div>
         </div>
 
-        {/* ====== پیام ====== */}
+        {/* ====== Message ====== */}
         <div
           style={{
             borderTop: "1px solid var(--gray-light)",
@@ -262,7 +262,7 @@ export default function InquiryModal({ isOpen, onClose, inquiry, tab, onMarkRead
           </div>
         </div>
 
-        {/* ====== دکمه‌ها ====== */}
+        {/* ====== Buttons ====== */}
         <div
           style={{
             display: "flex",

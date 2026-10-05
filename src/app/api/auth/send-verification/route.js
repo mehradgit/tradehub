@@ -31,7 +31,7 @@ export async function POST(request) {
     });
 
     if (!user) {
-      // دلایل امنیتی: به کاربر نمی‌گیم ایمیل وجود نداره
+      // Security: do not tell the user that this email does not exist
       return NextResponse.json({
         message:
           "If an account with this email exists, a verification link has been sent.",
@@ -48,12 +48,12 @@ export async function POST(request) {
       );
     }
 
-    // حذف توکن‌های قبلی
+    // Delete previous tokens
     await prisma.verificationToken.deleteMany({
       where: { identifier: normalizedEmail },
     });
 
-    // توکن جدید
+    // New token
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 

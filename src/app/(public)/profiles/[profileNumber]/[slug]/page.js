@@ -122,7 +122,7 @@ export async function generateMetadata({ params }) {
   const roleLabel = user.role === "SUPPLIER" ? "Supplier" : "Buyer";
   const profileUrl = `${BASE_URL}/profiles/${profileNumber}/${user.slug}`;
 
-  // تصویر
+  // Image
   const avatar = user.logo || user.image || user.coverImage;
   const imageUrl = avatar
     ? avatar.startsWith("http")
@@ -130,14 +130,14 @@ export async function generateMetadata({ params }) {
       : `${BASE_URL}${avatar}`
     : `${BASE_URL}/og-default.png`;
 
-  // توضیحات
+  // Description
   const bioPlain = user.bio?.replace(/<[^>]*>/g, "").trim() || "";
   const description = (
     bioPlain ||
     `${name} - Verified ${roleLabel} on FoodTradeHub${user.country ? ` from ${user.country}` : ""}. Browse products, requests, and company profile.`
   ).slice(0, 158);
 
-  // کلمات کلیدی
+  // Keywords
   const keywords = [
     name,
     roleLabel,
@@ -151,7 +151,7 @@ export async function generateMetadata({ params }) {
     "food trade",
   ].filter(Boolean);
 
-  // نوع اسکیما بر اساس نقش
+  // Schema type based on role
   const ogType = user.role === "SUPPLIER" ? "profile" : "profile";
 
   return {

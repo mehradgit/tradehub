@@ -218,7 +218,7 @@ export default function ProductAttributesFields({
           );
         }
 
-        // ---------- متن ----------
+        // ---------- Text ----------
         return (
           <div className="col-md-4" key={attr.id}>
             {label}

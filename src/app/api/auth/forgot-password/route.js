@@ -14,7 +14,7 @@ function getBaseUrl() {
   );
 }
 
-// پیشوند شناسه برای جدا کردن reset از verify
+// Identifier prefix that keeps reset tokens separate from verify tokens
 const RESET_PREFIX = "reset:";
 
 export async function POST(request) {
@@ -28,7 +28,7 @@ export async function POST(request) {
       );
     }
 
-    // ✅ بررسی کپچا
+    // Verify the captcha
     if (!verifyCaptcha(captchaAnswer, captchaToken)) {
       return NextResponse.json(
         {
@@ -46,8 +46,8 @@ export async function POST(request) {
       select: { id: true, email: true, password: true },
     });
 
-    // ⚠️ به دلایل امنیتی، همیشه پیام موفق برمی‌گردانیم
-    // (تا کسی نتونه بفهمه چه ایمیل‌هایی ثبت شدن)
+    // For security reasons we always return a success message
+    // (so nobody can find out which emails are registered)
     const genericResponse = {
       message:
         "If an account with this email exists, a password reset link has been sent. Please check your inbox.",
@@ -57,22 +57,22 @@ export async function POST(request) {
       return NextResponse.json(genericResponse);
     }
 
-    // اگر کاربر با Google ثبت‌نام کرده (پسورد نداره)
+    // If the user signed up with Google (no password set)
     if (!user.password) {
-      // باز هم پیام عمومی می‌دیم
+      // Still return the generic message
       return NextResponse.json(genericResponse);
     }
 
     const identifier = `${RESET_PREFIX}${normalizedEmail}`;
 
-    // پاک کردن توکن‌های قبلی برای این ایمیل
+    // Delete any previous tokens for this email
     await prisma.verificationToken.deleteMany({
       where: { identifier },
     });
 
-    // ساخت توکن جدید (۳۲ بایت hex)
+    // Create a new token (32 bytes, hex)
     const token = crypto.randomBytes(32).toString("hex");
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // ۱ ساعت
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await prisma.verificationToken.create({
       data: {
@@ -82,7 +82,7 @@ export async function POST(request) {
       },
     });
 
-    // ساخت URL بازیابی
+    // Build the reset URL
     const baseUrl = getBaseUrl();
     const resetUrl = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(
       normalizedEmail
@@ -90,7 +90,7 @@ export async function POST(request) {
 
     const result = await sendPasswordResetEmail(normalizedEmail, resetUrl);
 
-    // در حالت development، لینک رو تو کنسول چاپ کن
+    // In development mode, print the link to the console
     if (!result.success && process.env.NODE_ENV === "development") {
       console.log("\n========================================");
       console.log("🔒 PASSWORD RESET LINK (dev mode):");

@@ -69,7 +69,7 @@ function ResetPasswordContent() {
     }
   };
 
-  // آیکون قدرت پسورد
+  // Password strength icon
   const getStrength = () => {
     if (!password) return { level: 0, label: "", color: "" };
     if (password.length < 6) return { level: 1, label: "Weak", color: "#ef4444" };
@@ -179,7 +179,7 @@ function ResetPasswordContent() {
                       </button>
                     </div>
 
-                    {/* نشانگر قدرت */}
+                    {/* Strength indicator */}
                     {password && (
                       <div className="mt-2">
                         <div className="d-flex gap-1 mb-1">

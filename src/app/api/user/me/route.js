@@ -32,7 +32,7 @@ export async function GET() {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // آمار سریع برای badgeها
+    // Quick stats for badges
     const [unreadMessages, unreadNotifications, openTickets] =
       await Promise.all([
         prisma.message.count({

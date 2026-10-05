@@ -17,7 +17,7 @@ export default async function AdminHomepagePage() {
     getCategories(),
   ]);
 
-  // فیلتر فقط active
+  // Filter to active only
   const activeCategories = categories.filter((c) => c.isActive !== false);
 
   return (

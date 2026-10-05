@@ -54,8 +54,8 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    // ✅ اطلاع به صاحب محصول از مسیر مرکزی رویداد
-    //    (In-App + Web Push + ایمیل، پس از ارسال پاسخ)
+    // ✅ Notify the product owner via the central event path
+    //    (In-App + Web Push + Email, after the response is sent)
     after(async () => {
       const result = await dispatchEvent("product.reviewed", {
         productId: product.id,

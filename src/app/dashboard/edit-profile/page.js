@@ -48,7 +48,7 @@ export default function EditProfilePage() {
   const [existingCover, setExistingCover] = useState(null);
 
   // ===== Gallery limit from user's plan =====
-  // null = هنوز لود نشده | -1 = نامحدود | n = عدد
+  // null = not loaded yet | -1 = unlimited | n = number
   const [galleryLimit, setGalleryLimit] = useState(null);
 
   const [uploadProgress, setUploadProgress] = useState({
@@ -127,7 +127,7 @@ export default function EditProfilePage() {
         }
       })
       .catch(() => {
-        // اگه خطا داد، محدودیت رو نامحدود فرض کن (سرور موقع Save چک می‌کنه)
+        // If this fails, assume an unlimited limit (the server validates on save)
         setGalleryLimit(-1);
       });
   }, [status]);
@@ -160,7 +160,7 @@ export default function EditProfilePage() {
         return;
       }
 
-      // ✅ تعیین purpose بر اساس fieldName
+      // Determine purpose based on fieldName
       const purpose = fieldName === "logo" ? "logo" : "cover";
 
       try {
@@ -172,7 +172,7 @@ export default function EditProfilePage() {
           "profiles",
           (percent) =>
             setUploadProgress((prev) => ({ ...prev, [fieldName]: percent })),
-          purpose                                  // ✅ جدید
+          purpose                                  // New
         );
 
         setFormData((prev) => ({ ...prev, [fieldName]: result.path }));
@@ -209,7 +209,7 @@ export default function EditProfilePage() {
           "profiles",
           (percent) =>
             setUploadProgress((prev) => ({ ...prev, gallery: percent })),
-          "gallery"                                 // ✅ جدید
+          "gallery"                                 // New
         );
         uploadedPaths.push(result.path);
       }

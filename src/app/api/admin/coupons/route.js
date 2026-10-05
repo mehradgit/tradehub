@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// GET: لیست کدها
+// GET: list the codes
 export async function GET(request) {
   try {
     const session = await auth();
@@ -38,7 +38,7 @@ export async function GET(request) {
   }
 }
 
-// POST: ایجاد کد جدید
+// POST: create a new code
 export async function POST(request) {
   try {
     const session = await auth();

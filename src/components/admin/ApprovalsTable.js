@@ -172,7 +172,7 @@ export default function ApprovalsTable({ products, requests }) {
                             flexWrap: "wrap",
                           }}
                         >
-                          {/* ✅ دکمه مشاهده جزئیات (لینک به صفحه جزئیات) */}
+                          {/* ✅ View details button (links to the details page) */}
                           <Link
                             href={`/admin/products/${p.id}`}
                             style={{
@@ -192,7 +192,7 @@ export default function ApprovalsTable({ products, requests }) {
                             <i className="fa-solid fa-eye"></i> Review
                           </Link>
 
-                          {/* ✅ Approve سریع */}
+                          {/* ✅ Quick approve */}
                           <button
                             onClick={() => handleAction("product", p.id, "approve")}
                             disabled={loadingId === p.id}
@@ -214,7 +214,7 @@ export default function ApprovalsTable({ products, requests }) {
                             <i className="fa-solid fa-check"></i>
                           </button>
 
-                          {/* ✅ Reject سریع */}
+                          {/* ✅ Quick reject */}
                           <button
                             onClick={() => openRejectModal("product", p.id)}
                             disabled={loadingId === p.id}
@@ -331,7 +331,7 @@ export default function ApprovalsTable({ products, requests }) {
                             flexWrap: "wrap",
                           }}
                         >
-                          {/* ✅ دکمه مشاهده جزئیات */}
+                          {/* ✅ View details button */}
                           <Link
                             href={`/admin/requests/${r.id}`}
                             style={{
@@ -351,7 +351,7 @@ export default function ApprovalsTable({ products, requests }) {
                             <i className="fa-solid fa-eye"></i> Review
                           </Link>
 
-                          {/* ✅ Approve سریع */}
+                          {/* ✅ Quick approve */}
                           <button
                             onClick={() =>
                               handleAction("request", r.id, "approve")
@@ -375,7 +375,7 @@ export default function ApprovalsTable({ products, requests }) {
                             <i className="fa-solid fa-check"></i>
                           </button>
 
-                          {/* ✅ Reject سریع */}
+                          {/* ✅ Quick reject */}
                           <button
                             onClick={() => openRejectModal("request", r.id)}
                             disabled={loadingId === r.id}

@@ -17,7 +17,7 @@ export default function QuickActions() {
       sub: "List your products for sale",
       href: "/products/new",
     },
-    // ====== گزینه جدید اضافه شده ======
+    // ====== New option added ======
     {
       icon: "fa-shopping-cart",
       text: "My Buying Requests",

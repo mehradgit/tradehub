@@ -21,7 +21,7 @@ export async function POST(request, { params }) {
     const { id } = await params;
     const userId = session.user.id;
 
-    // ====== دریافت درخواست و اطلاعات خریدار ======
+    // ====== Fetch the request and the buyer info ======
     const buyingRequest = await prisma.buyingRequest.findUnique({
       where: { id },
       select: {
@@ -52,7 +52,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    // ====== بررسی مجوز (شامل owner/admin/plan/quota) ======
+    // ====== Check permission (includes owner/admin/plan/quota) ======
     const permission = await canViewRequestContactInfo(userId, buyingRequest);
 
     if (!permission.allowed) {
@@ -62,15 +62,15 @@ export async function POST(request, { params }) {
       );
     }
 
-    // ====== آیا این درخواست باید سهمیه مصرف کند؟ ======
+    // ====== Should this request consume quota? ======
     const shouldConsumeQuota =
       permission.reason !== "owner" && permission.reason !== "admin";
 
-    // ====== خواندن تنظیمات برای نوع سهمیه ======
+    // ====== Read the settings to determine the quota type ======
     const settings = await getAccessControlSettings();
     const quotaType = settings.request.contactInfo.quotaType || "inquiry";
 
-    // ====== مصرف سهمیه (اگر لازم باشد) ======
+    // ====== Consume quota (if needed) ======
     if (shouldConsumeQuota) {
       const { subscription } = await getUserActivePlan(userId);
       await incrementUsage(userId, quotaType, subscription);
@@ -89,7 +89,7 @@ export async function POST(request, { params }) {
   }
 }
 
-// ====== ساخت اطلاعات تماس ======
+// ====== Build the contact info ======
 function buildContactInfo(user) {
   const profileUrl =
     user.profileNumber && user.slug

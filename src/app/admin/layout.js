@@ -12,7 +12,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="admin-app">
-      {/* Overlay برای بستن سایدبار با کلیک بیرون */}
+      {/* Overlay to close the sidebar when clicking outside */}
       {isSidebarOpen && (
         <div className="admin-overlay" onClick={closeSidebar}></div>
       )}

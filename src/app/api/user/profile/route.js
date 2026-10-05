@@ -22,8 +22,8 @@ export async function GET() {
         bio: true,
         employeeCount: true,
         address: true,
-        city: true,          // ← جدید
-        postalCode: true,    // ← جدید
+        city: true,          // ← new
+        postalCode: true,    // ← new
         phone: true,
         website: true,
         companyEmail: true,
@@ -37,8 +37,8 @@ export async function GET() {
         createdAt: true,
         registrationComplete: true,
         emailVerified: true,
-        primaryCategory: true,      // ✅ اضافه شد
-        primarySubCategory: true,   // ✅ اضافه شد
+        primaryCategory: true,      // ✅ added
+        primarySubCategory: true,   // ✅ added
         galleryImages: true,
       },
     });

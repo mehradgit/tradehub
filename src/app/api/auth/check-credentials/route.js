@@ -15,7 +15,7 @@ export async function POST(request) {
       );
     }
 
-    // ✅ بررسی کپچا
+    // Verify the captcha
     if (!verifyCaptcha(captchaAnswer, captchaToken)) {
       return NextResponse.json(
         {
@@ -39,7 +39,7 @@ export async function POST(request) {
       },
     });
 
-    // ❌ کاربر پیدا نشد → پیام عمومی (برای امنیت)
+    // User not found → generic message (for security)
     if (!user) {
       return NextResponse.json(
         { message: "Invalid email or password" },
@@ -47,7 +47,7 @@ export async function POST(request) {
       );
     }
 
-    // ❌ کاربر با Google ثبت‌نام کرده (پسورد نداره)
+    // The user signed up with Google (no password set)
     if (!user.password) {
       return NextResponse.json(
         {
@@ -59,7 +59,7 @@ export async function POST(request) {
       );
     }
 
-    // ❌ پسورد اشتباه
+    // Wrong password
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function POST(request) {
       );
     }
 
-    // ❌ ایمیل تأیید نشده
+    // Email not verified
     if (!user.emailVerified) {
       return NextResponse.json(
         {
@@ -81,7 +81,7 @@ export async function POST(request) {
       );
     }
 
-    // ✅ همه چیز درسته
+    // Everything checks out
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Check credentials error:", error);

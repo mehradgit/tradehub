@@ -19,7 +19,7 @@ export default function BuyerInfoSection({
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  // ====== state اولیه بر اساس داده‌های سرور ======
+  // ====== Initial state based on the server‌ data ======
   const [isRevealed, setIsRevealed] = useState(
     alreadyRevealed || shouldAutoReveal
   );
@@ -32,15 +32,15 @@ export default function BuyerInfoSection({
   const buyerName =
     buyer.companyName || buyer.name || "Anonymous Buyer";
 
-  // ====== کلیک روی دکمه Reveal ======
+  // ====== Reveal button click ======
   const handleRevealClick = () => {
-    // ۱. مهمان → Login
+    // 1. Guest → Login
     if (!session) {
       setIsLoginModalOpen(true);
       return;
     }
 
-    // ۲. صاحب یا ادمین → بدون تأیید
+    // 2. Owner or admin → no confirmation
     if (
       initialPermission.reason === "owner" ||
       initialPermission.reason === "admin"
@@ -49,24 +49,24 @@ export default function BuyerInfoSection({
       return;
     }
 
-    // ۳. اگر already revealed → بدون سهمیه
+    // 3. If already revealed → no quota
     if (alreadyRevealed) {
       setIsRevealed(true);
       return;
     }
 
-    // ۴. اگر Basic یا بدون سهمیه → Upgrade
+    // 4. If Basic or no quota → Upgrade
     if (!initialPermission.allowed) {
       setPermissionError(initialPermission);
       setIsUpgradeModalOpen(true);
       return;
     }
 
-    // ۵. مجاز → مودال تأیید مصرف سهمیه
+    // 5. Allowed → quota consumption confirmation modal
     setIsConfirmModalOpen(true);
   };
 
-  // ====== تأیید مصرف سهمیه ======
+  // ====== Confirm quota consumption ======
   const handleConfirmReveal = async () => {
     setLoading(true);
     try {
@@ -102,7 +102,7 @@ export default function BuyerInfoSection({
     }
   };
 
-  // ====== محتوای مودال Upgrade / Quota ======
+  // ====== Upgrade / Quota modal content ======
   const upgradeContent = (() => {
     if (!permissionError) return null;
     const isQuota = permissionError.reason === "quota_exhausted";
@@ -119,14 +119,14 @@ export default function BuyerInfoSection({
   return (
     <>
       <div className="buyer-section">
-        {/* تیتر همیشه نمایش داده می‌شود */}
+        {/* The title is always displayed  */}
         <div className="buyer-section-title">
           <i className="fas fa-building"></i>
           Company Information
         </div>
 
         {isRevealed ? (
-          /* ====== کارت باز ====== */
+          /* ====== Revealed card ====== */
           <div className="buyer-card">
             <div className="buyer-avatar">
               {buyer.image || buyer.logo ? (
@@ -172,7 +172,7 @@ export default function BuyerInfoSection({
             </Link>
           </div>
         ) : (
-          /* ====== کارت بلور + دکمه Reveal ====== */
+          /* ====== Blurred card + Reveal button ====== */
           <div className="blurred-wrapper">
             <div className="blurred-content">
               <div className="buyer-card">
@@ -223,14 +223,14 @@ export default function BuyerInfoSection({
         )}
       </div>
 
-      {/* ====== مودال Login ====== */}
+      {/* ====== Login modal ====== */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         redirectUrl={pathname}
       />
 
-      {/* ====== مودال Upgrade ====== */}
+      {/* ====== Upgrade modal ====== */}
       {isUpgradeModalOpen && upgradeContent && (
         <ModalOverlay onClose={() => setIsUpgradeModalOpen(false)}>
           <IconCircle icon={upgradeContent.icon} variant="warning" />
@@ -242,7 +242,7 @@ export default function BuyerInfoSection({
         </ModalOverlay>
       )}
 
-      {/* ====== مودال تأیید Reveal ====== */}
+      {/* ====== Reveal confirmation modal ====== */}
       {isConfirmModalOpen && (
         <ModalOverlay onClose={() => !loading && setIsConfirmModalOpen(false)}>
           <IconCircle icon="fa-info-circle" variant="info" />
@@ -291,7 +291,7 @@ export default function BuyerInfoSection({
   );
 }
 
-// ====== کامپوننت‌های کمکی ======
+// ====== Helper components‌ ======
 function ModalOverlay({ children, onClose }) {
   return (
     <div

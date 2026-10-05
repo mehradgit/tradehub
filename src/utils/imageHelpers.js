@@ -1,13 +1,13 @@
 export function getImageSrc(imageData) {
   if (!imageData) return null;
-  // اگر پیشوند دارد، همان را برگردان
+  // If it already has a prefix, return it as is
   if (imageData.startsWith('data:image')) {
     return imageData;
   }
-  // اگر با /9j/ (JPEG) یا iVBOR (PNG) شروع می‌شود، پیشوند اضافه کن
+  // If it starts with /9j/ (JPEG) or iVBOR (PNG), add the prefix
   if (imageData.startsWith('/9j/') || imageData.startsWith('iVBOR')) {
     return `data:image/jpeg;base64,${imageData}`;
   }
-  // در غیر این صورت، فرض کن داده کامل است
+  // Otherwise, assume the data is complete
   return imageData;
 }

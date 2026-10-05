@@ -1,15 +1,16 @@
 // src/app/(public)/search/page.js
 // ============================================================
-// این صفحه حذف شده است.
+// This page has been removed.
 //
-// با اضافه‌شدن «مگا سرچ» در هدر و انتخابگر حوزه (Products /
-// Requests / Companies)، جست‌وجو همیشه به یکی از صفحات فیلتردار
-// می‌رود. صفحه‌ی جست‌وجوی ترکیبی دیگر لازم نیست.
+// With the addition of the "mega search" in the header and the
+// scope selector (Products / Requests / Companies), search always
+// goes to one of the filtered pages. The combined search page is
+// no longer needed.
 //
-// برای حفظ لینک‌های قدیمی و بوکمارک‌ها، به‌جای ۴۰۴ به صفحه‌ی
-// محصولات با همان عبارت جست‌وجو ریدایرکت می‌شود.
+// To preserve old links and bookmarks, instead of a 404 it
+// redirects to the products page with the same search term.
 //
-// این فایل را می‌توانی دستی حذف کنی (کل پوشه‌ی search).
+// You can delete this file manually (the whole search folder).
 // ============================================================
 import { redirect } from "next/navigation";
 

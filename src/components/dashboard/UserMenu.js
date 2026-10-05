@@ -36,7 +36,7 @@ export default function UserMenu() {
     if (session) fetchUserData();
   }, [session, fetchUserData]);
 
-  // ====== به‌روزرسانی badgeها با رویدادهای global ======
+  // ====== Update badges on global events ======
   useEffect(() => {
     const refresh = () => fetchUserData();
     window.addEventListener("notifications-updated", refresh);
@@ -134,7 +134,7 @@ export default function UserMenu() {
           )}
         </div>
 
-        {/* نام + نقش - فقط دسکتاپ */}
+        {/* Name + role - desktop only */}
         <div
           className="user-menu-info"
           style={{ textAlign: "left", display: "none" }}

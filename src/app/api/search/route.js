@@ -8,7 +8,7 @@ export async function GET(request) {
     const q = searchParams.get("q")?.trim();
     const limit = parseInt(searchParams.get("limit")) || 4;
 
-    // اگر کمتر از ۲ کاراکتر بود، خالی برگردان
+    // If fewer than 2 characters, return an empty result
     if (!q || q.length < 2) {
       return NextResponse.json({
         products: [],
@@ -19,29 +19,30 @@ export async function GET(request) {
     }
 
     // ============================================================
-    // نکته‌ی مهم درباره‌ی جست‌وجو:
+    // Important note about search:
     //
-    // `contains` در واقع LIKE '%x%' تولید می‌کند و چون الگو با
-    // کاراکتر wildcard شروع می‌شود، MySQL نمی‌تواند از هیچ
-    // ایندکس معمولی استفاده کند و ناچار full table scan می‌زند.
+    // `contains` actually produces LIKE '%x%' and because the pattern
+    // starts with a wildcard character, MySQL cannot use any regular
+    // index and is forced to do a full table scan.
     //
-    // به همین دلیل ستون یکجای searchText اضافه شده و ایندکس
-    // FULLTEXT روی آن ساخته می‌شود (prisma/sql/fulltext-indexes.sql).
-    // شرط contains روی searchText فعلاً فقط برای سازگاری است تا
-    // ردیف‌های قدیمی که searchText خالی دارند از دست نروند؛ در
-    // گام بعدی می‌توان این شرط را به MATCH(searchText) AGAINST(?)
-    // تبدیل کرد تا جست‌وجو ایندکس‌پذیر و رتبه‌بندی‌شده (ranked) شود.
+    // That is why the combined searchText column was added and a
+    // FULLTEXT index is built on it (prisma/sql/fulltext-indexes.sql).
+    // For now the contains condition on searchText exists only for
+    // compatibility so that old rows with an empty searchText are not
+    // lost; in the next step this condition can be converted to
+    // MATCH(searchText) AGAINST(?) so that search becomes indexable
+    // and ranked.
     // ============================================================
     const [products, requests, profiles] = await Promise.all([
-      // ====== محصولات عمومی ======
+      // ====== Public products ======
       prisma.product.findMany({
         where: {
           isVisible: true,
           status: "APPROVED",
           OR: [
-            // متن یکجای جست‌وجو (اگر پر شده باشد) — مسیر FULLTEXT آینده
+            // Combined search text (when populated) — the future FULLTEXT path
             { searchText: { contains: q } },
-            // fallback: ستون‌های قبلی، برای ردیف‌های قدیمی بدون searchText
+            // fallback: the previous columns, for old rows without searchText
             { name: { contains: q } },
             { shortDesc: { contains: q } },
             { category: { contains: q } },
@@ -68,7 +69,7 @@ export async function GET(request) {
         take: limit,
       }),
 
-      // ====== درخواست‌های خرید عمومی ======
+      // ====== Public buying requests ======
       prisma.buyingRequest.findMany({
         where: {
           isVisible: true,
@@ -100,7 +101,7 @@ export async function GET(request) {
         take: limit,
       }),
 
-      // ====== پروفایل‌های عمومی (کاربران تکمیل‌شده) ======
+      // ====== Public profiles (completed users) ======
       prisma.user.findMany({
         where: {
           registrationComplete: true,

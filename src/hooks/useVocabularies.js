@@ -4,8 +4,8 @@
 import { useEffect, useState } from "react";
 
 // ============================================================
-// واژگان کنترل‌شده برای فرم‌ها
-// cache سطح ماژول تا فقط یک‌بار fetch شود
+// Controlled vocabularies for forms
+// Module-level cache so it is fetched only once
 // ============================================================
 let cache = null;
 let cachePromise = null;
@@ -44,7 +44,7 @@ export function useVocabularies() {
 }
 
 /**
- * گزینه‌های یک واژگان خاص → [{value,label}]
+ * Options of a specific vocabulary → [{value,label}]
  */
 export function useVocabulary(key) {
   const { vocabularies, loading } = useVocabularies();
