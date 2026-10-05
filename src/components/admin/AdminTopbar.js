@@ -9,7 +9,7 @@ export default function AdminTopbar({ onMenuToggle }) {
 
   return (
     <header className="admin-topbar">
-      {/* دکمه همبرگری فقط در موبایل */}
+      {/* Hamburger button, mobile only */}
       <button className="admin-mobile-toggle" onClick={onMenuToggle}>
         <i className="fa-solid fa-bars"></i>
       </button>

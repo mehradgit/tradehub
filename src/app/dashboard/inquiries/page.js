@@ -102,7 +102,7 @@ export default async function InquiriesPage({ searchParams }) {
     supplier: inq.supplier,
   }));
 
-  // ===== Product name (اگر filter روی یک محصول بود) =====
+  // ===== Product name (if the filter was on a single product) =====
   let productName = "";
   if (productId) {
     const product = await prisma.product.findUnique({

@@ -2,13 +2,13 @@
 import crypto from "crypto";
 
 const SECRET = process.env.AUTH_SECRET || "captcha-fallback-secret";
-const EXPIRY_MS = 5 * 60 * 1000; // ۵ دقیقه
+const EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
 function sign(payload) {
   return crypto.createHmac("sha256", SECRET).update(payload).digest("hex");
 }
 
-// ساخت چالش جدید
+// Build a new challenge
 export function generateCaptcha() {
   const a = Math.floor(Math.random() * 20) + 1;
   const b = Math.floor(Math.random() * 20) + 1;
@@ -24,7 +24,7 @@ export function generateCaptcha() {
   };
 }
 
-// بررسی پاسخ کاربر
+// Verify the user's answer
 export function verifyCaptcha(answer, token) {
   if (!answer || !token) return false;
 

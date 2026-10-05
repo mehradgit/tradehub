@@ -21,7 +21,7 @@ export default function NewRequestPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ====== فرم دیتا ======
+  // ====== Form data ======
   const [formData, setFormData] = useState({
     title: "",
     category: "",
@@ -46,14 +46,14 @@ export default function NewRequestPage() {
     isVisible: true,
   });
 
-  // ====== تغییرات فیلدها ======
+  // ====== Field changes ======
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
 
-  // ====== تغییرات دستهبندی ======
+  // ====== Category changes ======
   const handleCategoryChange = (category) => {
     setFormData((prev) => ({
       ...prev,
@@ -75,12 +75,12 @@ export default function NewRequestPage() {
     setFormData((prev) => ({ ...prev, productType: pt || "" }));
   };
 
-  // ====== تغییرات کشور تأمینکننده ======
+  // ====== Supplier country changes ======
   const handleSupplierCountriesChange = (countries) => {
     setFormData((prev) => ({ ...prev, supplierCountries: countries }));
   };
 
-  // ====== آپلود تصاویر با پیشرفت ======
+  // ====== Image upload with progress ======
   const fileInputRef = useRef(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -136,7 +136,7 @@ export default function NewRequestPage() {
     setFormData((prev) => ({ ...prev, isVisible: !prev.isVisible }));
   };
 
-  // ====== مرحله بعد ======
+  // ====== Next step ======
   const handleNextStep = () => {
     const errors = [];
     if (!formData.title?.trim()) errors.push("Please enter a request title");
@@ -157,7 +157,7 @@ export default function NewRequestPage() {
 
   const handlePrevStep = () => setStep(1);
 
-  // ====== ارسال فرم ======
+  // ====== Submit the form ======
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -211,7 +211,7 @@ export default function NewRequestPage() {
     }
   };
 
-  // ====== اگر کاربر لاگین نیست ======
+  // ====== If the user is not logged in ======
   if (status === "loading") {
     return (
       <div className="container py-5 text-center">
@@ -318,6 +318,7 @@ export default function NewRequestPage() {
                   </label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     className="form-control"
                     name="quantity"
                     placeholder="2000"
@@ -326,6 +327,9 @@ export default function NewRequestPage() {
                     min="1"
                     required
                   />
+                  <div className="help-text">
+                    How much you want to buy, in the unit selected below.
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>
@@ -373,6 +377,7 @@ export default function NewRequestPage() {
                   <label>Target Price</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     className="form-control"
                     name="targetPrice"
                     step="0.01"

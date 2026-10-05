@@ -86,7 +86,7 @@ async function fetchSectionData(section) {
   const limit = section.limit || 6;
 
   // ============================================================
-  // حالت Manual: fetch by IDs (حفظ ترتیب)
+  // Manual mode: fetch by IDs (preserve order)
   // ============================================================
   if (section.mode === "manual") {
     const ids = Array.isArray(section.itemIds) ? section.itemIds : [];
@@ -119,7 +119,7 @@ async function fetchSectionData(section) {
         })
         .catch(() => []);
 
-      // حفظ ترتیب اصلی طبق itemIds
+      // Preserve the original order according to itemIds
       const map = new Map(products.map((p) => [p.id, p]));
       const ordered = ids.map((id) => map.get(id)).filter(Boolean);
       return { section, items: ordered };
@@ -152,7 +152,7 @@ async function fetchSectionData(section) {
   }
 
   // ============================================================
-  // حالت Category یا Latest
+  // Category or Latest mode
   // ============================================================
   const where = { isVisible: true, status: "APPROVED" };
 
@@ -244,10 +244,10 @@ async function fetchStats() {
 // HomePage
 // ============================================================
 export default async function HomePage() {
-  // ۱. دریافت بخش‌های فعال
+  // 1. Fetch active sections
   const sections = await getActiveHomepageSections();
 
-  // ۲. تفکیک بر اساس position
+  // 2. Split by position
   const topSections = sections.filter(
     (s) => (s.position || "top") === "top"
   );
@@ -258,7 +258,7 @@ export default async function HomePage() {
     (s) => s.position === "before-cta"
   );
 
-  // ۳. Fetch داده‌ها برای همه‌ی بخش‌ها + آمار
+  // 3. Fetch data for all sections + stats
   const allSections = [
     ...topSections,
     ...afterCompaniesSections,
@@ -298,7 +298,7 @@ export default async function HomePage() {
     dateModified: new Date().toISOString(),
   };
 
-  // ItemList برای بخش‌های Products
+  // ItemList for Products sections
   const productsItemLists = topSections
     .concat(afterCompaniesSections, beforeCtaSections)
     .filter((s) => s.type === "products" && dataMap[s.id]?.items?.length > 0)
@@ -315,7 +315,7 @@ export default async function HomePage() {
       })),
     }));
 
-  // ItemList برای بخش‌های Requests
+  // ItemList for Requests sections
   const requestsItemLists = topSections
     .concat(afterCompaniesSections, beforeCtaSections)
     .filter((s) => s.type === "requests" && dataMap[s.id]?.items?.length > 0)
@@ -357,12 +357,12 @@ export default async function HomePage() {
       ))}
 
       {/* ============================================================
-         ۱. Hero Section
+         1. Hero Section
          ============================================================ */}
       <HeroSection stats={stats} />
       <WhyFoodTradeLink />
       {/* ============================================================
-         ۲. Trust Bar
+         2. Trust Bar
          ============================================================ */}
       <section className="trust">
         <div className="container">
@@ -388,7 +388,7 @@ export default async function HomePage() {
       </section>
 
       {/* ============================================================
-         ۳. بخش‌های position=top
+         3. Sections with position=top
          ============================================================ */}
       {topSections.map((section, idx) => (
         <section key={section.id} className="container py-4">
@@ -397,7 +397,7 @@ export default async function HomePage() {
             items={dataMap[section.id]?.items || []}
           />
 
-          {/* Categories + Feature Group بعد از اولین بخش */}
+          {/* Categories + Feature Group after the first section */}
           {idx === 0 && (
             <>
               <div style={{ marginTop: 32 }}>
@@ -412,14 +412,14 @@ export default async function HomePage() {
       ))}
 
       {/* ============================================================
-         ۴. Trusted Partners (CompanyAdsSection)
+         4. Trusted Partners (CompanyAdsSection)
          ============================================================ */}
       <section className="container">
         <CompanyAdsSection />
       </section>
 
       {/* ============================================================
-         ۵. بخش‌های position=after-companies — زیر Trusted Partners
+         5. Sections with position=after-companies — below Trusted Partners
          ============================================================ */}
       {afterCompaniesSections.map((section) => (
         <section key={section.id} className="container py-4">
@@ -431,14 +431,14 @@ export default async function HomePage() {
       ))}
 
       {/* ============================================================
-         ۶. Marketplace (Suppliers + Buyers)
+         6. Marketplace (Suppliers + Buyers)
          ============================================================ */}
       <section className="container py-4">
         <MarketplaceSection />
       </section>
 
       {/* ============================================================
-         ۷. بخش‌های position=before-cta
+         7. Sections with position=before-cta
          ============================================================ */}
       {beforeCtaSections.map((section) => (
         <section key={section.id} className="container py-4">
@@ -450,7 +450,7 @@ export default async function HomePage() {
       ))}
 
       {/* ============================================================
-         ۸. CTA
+         8. CTA
          ============================================================ */}
       <section className="container">
         <CtaSection />

@@ -6,7 +6,7 @@ import { CRON_PRESETS } from "@/lib/cronExpression";
 import { JOB_HANDLERS } from "@/lib/jobHandlers";
 
 // ============================================================
-// GET: لیست job های زمان‌بندی‌شده + وضعیت
+// GET: list of scheduled jobs + status
 // ============================================================
 export async function GET() {
   try {
@@ -42,8 +42,8 @@ export async function GET() {
     return NextResponse.json({
       jobs: serialized,
       presets: CRON_PRESETS,
-      // کلیدهای handler موجود در کد — برای اینکه ادمین بداند چه
-      // job هایی اصلاً قابل ساختن هستند
+      // handler keys available in the code — so the admin knows which
+      // jobs can actually be created
       availableHandlers: Object.entries(JOB_HANDLERS).map(([key, def]) => ({
         key,
         name: def.name,

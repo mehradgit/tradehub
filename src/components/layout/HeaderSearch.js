@@ -12,16 +12,16 @@ import { FILTER_EVENTS, useFilterEvent } from "@/lib/filterEvents";
 import { summarizeField } from "@/components/filters/FilterModal";
 
 // ============================================================
-// مگا سرچ — تنها ورودی جست‌وجو و فیلتر کل سایت
+// Mega search — the single search and filter entry point for the whole site
 //
-//   • حالت پیش‌فرض: یک فیلد کوچک در هدر
-//   • با کلیک/فوکوس/کلید «/» → نوار بزرگ باز و فوکوس می‌شود
-//   • داخل نوار: ورودی + انتخابگر حوزه + مرتب‌سازی + Filters + چیپ‌ها
-//   • دکمه‌ی Filters داده‌ی فیلتر ندارد؛ رویداد می‌فرستد و مدال
-//     همان صفحه (که داده‌ی سرور را دارد) باز می‌شود.
+//   • Default state: a small field in the header
+//   • On click/focus or pressing "/" → the large bar opens and takes focus
+//   • Inside the bar: input + scope selector + sort + Filters + chips
+//   • The Filters button holds no filter data; it dispatches an event and the
+//     modal of the same page (which owns the server data) opens.
 // ============================================================
 
-// بخش‌های سایت که موتور فیلتر دارند
+// Site sections that have a filter engine
 const SECTIONS = [
   { prefix: "/products", schemaKey: "products", path: "/products", label: "Products" },
   { prefix: "/requests", schemaKey: "requests", path: "/requests", label: "Buying Requests" },
@@ -47,7 +47,7 @@ export default function HeaderSearch() {
   const inputRef = useRef(null);
   const scopeRef = useRef(null);
 
-  // ===== اسکیمای بخش فعلی + مقادیر فیلتر از URL =====
+  // ===== Current section schema + filter values from the URL =====
   const schema = section ? FILTER_SCHEMAS[section.schemaKey] : null;
 
   const values = useMemo(() => {
@@ -59,7 +59,7 @@ export default function HeaderSearch() {
     }
   }, [schema, searchParams]);
 
-  // ===== گزینه‌ها برای برچسب چیپ‌ها (واژگان + کشورها) =====
+  // ===== Options for chip labels (vocabularies + countries) =====
   const headerOptions = useMemo(() => {
     const out = {};
     if (!schema) return out;
@@ -82,13 +82,13 @@ export default function HeaderSearch() {
   const sortValue =
     (schema && (values?.sort || searchParams.get("sort"))) || "";
 
-  // ===== همگام‌سازی ورودی با URL =====
+  // ===== Keep the input in sync with the URL =====
   useEffect(() => {
     if (!section) return;
     setQuery(searchParams.get("search") || searchParams.get("q") || "");
   }, [section, pathname, searchParams]);
 
-  // ===== باز/بستن =====
+  // ===== Open/close =====
   const openBar = useCallback(() => {
     setIsOpen(true);
     setTimeout(() => inputRef.current?.focus(), 320);
@@ -99,10 +99,10 @@ export default function HeaderSearch() {
     setScopeOpen(false);
   };
 
-  // فیلد مصنوعی داخل صفحه → همین نوار باز شود
+  // Synthetic in-page field → opens this same bar
   useFilterEvent(FILTER_EVENTS.OPEN_MEGA, openBar);
 
-  // کلید میان‌بر «/»
+  // "/" keyboard shortcut
   useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "/") return;
@@ -128,7 +128,7 @@ export default function HeaderSearch() {
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, scopeOpen]);
 
-  // کلیک بیرون از انتخابگر حوزه
+  // Click outside the scope selector
   useEffect(() => {
     const onDown = (e) => {
       if (scopeRef.current && !scopeRef.current.contains(e.target)) {
@@ -139,7 +139,7 @@ export default function HeaderSearch() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [scopeOpen]);
 
-  // ===== ناوبری =====
+  // ===== Navigation =====
   const goToSection = (s, extra = {}) => {
     const params = new URLSearchParams();
     const q = (extra.search !== undefined ? extra.search : query).trim();
@@ -153,7 +153,7 @@ export default function HeaderSearch() {
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     if (section) {
-      // فیلترهای فعلی حفظ می‌شوند، فقط search عوض می‌شود
+      // Current filters are preserved; only search changes
       const params = new URLSearchParams(searchParams.toString());
       const q = query.trim();
       if (q) params.set("search", q);
@@ -183,7 +183,7 @@ export default function HeaderSearch() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // ===== چیپ‌های فیلتر فعال (فیلدهای اسکیما) =====
+  // ===== Active filter chips (schema fields) =====
   const chips = useMemo(() => {
     if (!schema) return [];
     const out = [];
@@ -199,9 +199,9 @@ export default function HeaderSearch() {
 
   return (
     <>
-      {/* ==================== فیلد کوچک ====================
-          روی صفحه‌های پهن کنار آیکن گرد دیده می‌شود؛ روی باریک‌ترها
-          مخفی می‌شود و آیکن تنها می‌ماند (آیکن همیشه هست). */}
+      {/* ==================== Small field ====================
+          On wide screens it appears next to the round icon; on narrower ones
+          it is hidden and only the icon remains (the icon is always there). */}
       <button
         type="button"
         className="hs-mini"
@@ -215,7 +215,7 @@ export default function HeaderSearch() {
         </span>
       </button>
 
-      {/* آیکن گرد — همیشه دیده می‌شود (روی موبایل تنها راه ورود) */}
+      {/* Round icon — always visible (on mobile it is the only way in) */}
       <button
         type="button"
         className={`hs-toggle ${isOpen ? "active" : ""}`}
@@ -228,7 +228,7 @@ export default function HeaderSearch() {
         <i className="fa-solid fa-xmark hs-icon-close" />
       </button>
 
-      {/* ==================== نوار مگا ==================== */}
+      {/* ==================== Mega bar ==================== */}
       <div id="hs-search-bar" className={`hs-bar ${isOpen ? "open" : ""}`} role="search">
         <div className="container">
           <form className="hs-pill" onSubmit={handleSubmit}>
@@ -248,7 +248,7 @@ export default function HeaderSearch() {
 
             <span className="hs-divider" />
 
-            {/* ---------- انتخابگر حوزه ---------- */}
+            {/* ---------- Scope selector ---------- */}
             <div className="hs-scope" ref={scopeRef}>
               <button
                 type="button"
@@ -281,7 +281,7 @@ export default function HeaderSearch() {
 
             <span className="hs-divider" />
 
-            {/* ---------- مرتب‌سازی ---------- */}
+            {/* ---------- Sort ---------- */}
             {section && (
               <>
                 <select
@@ -301,7 +301,7 @@ export default function HeaderSearch() {
               </>
             )}
 
-            {/* ---------- دکمه فیلترها → مدال همان صفحه ---------- */}
+            {/* ---------- Filters button → same-page modal ---------- */}
             {section && (
               <button
                 type="button"
@@ -323,7 +323,7 @@ export default function HeaderSearch() {
             </button>
           </form>
 
-          {/* ---------- وضعیت + چیپ‌ها ---------- */}
+          {/* ---------- Status + chips ---------- */}
           <div className="hs-meta">
             {section ? (
               <span>

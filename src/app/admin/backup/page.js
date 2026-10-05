@@ -17,7 +17,7 @@ export default function AdminBackupPage() {
   const [restoreResult, setRestoreResult] = useState(null);
 
   // ============================================================
-  // دانلود بکاپ
+  // Download backup
   // ============================================================
   const handleDownload = async () => {
     setDownloading(true);
@@ -32,7 +32,7 @@ export default function AdminBackupPage() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
 
-      // استخراج نام فایل از هدر Content-Disposition
+      // Extract the file name from the Content-Disposition header
       const disposition = res.headers.get("Content-Disposition") || "";
       const match = disposition.match(/filename="(.+)"/);
       const filename = match ? match[1] : `backup-${Date.now()}.json`;
@@ -54,7 +54,7 @@ export default function AdminBackupPage() {
   };
 
   // ============================================================
-  // آپلود فایل بکاپ
+  // Upload the backup file
   // ============================================================
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -66,7 +66,7 @@ export default function AdminBackupPage() {
       return;
     }
 
-    // محدودیت حجم: ۵۰ مگابایت
+    // Size limit: 50 megabytes
     if (file.size > 50 * 1024 * 1024) {
       toast.error("Backup file is too large (max 50MB)");
       e.target.value = "";
@@ -96,7 +96,7 @@ export default function AdminBackupPage() {
   };
 
   // ============================================================
-  // اجرای ریستور
+  // Run the restore
   // ============================================================
   const handleRestore = async () => {
     if (!parsedBackup) return;
@@ -130,7 +130,7 @@ export default function AdminBackupPage() {
       setRestoreResult(data.counts);
       toast.success("Backup restored successfully!");
 
-      // ریست URL های وابسته
+      // Refresh the dependent URLs
       setTimeout(() => {
         router.refresh();
       }, 1500);
@@ -156,7 +156,7 @@ export default function AdminBackupPage() {
       />
 
       {/* ============================================================ */}
-      {/* دانلود بکاپ */}
+      {/* Download backup */}
       {/* ============================================================ */}
       <div
         className="admin-card"
@@ -273,7 +273,7 @@ export default function AdminBackupPage() {
       </div>
 
       {/* ============================================================ */}
-      {/* ریستور */}
+      {/* Restore */}
       {/* ============================================================ */}
       <div
         className="admin-card"
@@ -374,7 +374,7 @@ export default function AdminBackupPage() {
                   borderRadius: 12,
                 }}
               >
-                {/* فایل انتخاب‌شده */}
+                {/* Selected file */}
                 <div
                   style={{
                     display: "flex",
@@ -443,7 +443,7 @@ export default function AdminBackupPage() {
                   </button>
                 </div>
 
-                {/* پیش‌نمایش محتوا */}
+                {/* Content preview */}
                 <div
                   style={{
                     fontSize: 12,
@@ -484,7 +484,7 @@ export default function AdminBackupPage() {
                   </div>
                 </div>
 
-                {/* تأیید */}
+                {/* Confirmation */}
                 <div
                   style={{
                     padding: 14,
@@ -598,7 +598,7 @@ export default function AdminBackupPage() {
       </div>
 
       {/* ============================================================ */}
-      {/* نتیجه ریستور */}
+      {/* Restore result */}
       {/* ============================================================ */}
       {restoreResult && (
         <div

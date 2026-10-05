@@ -2,13 +2,13 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache"; // ✅ رفع باگ: قبلاً import نشده بود و POST بعد از insert خطا می‌داد
+import { revalidatePath } from "next/cache"; // ✅ Bug fix: it was not imported before and POST threw after the insert
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { generateNumber, generateSlug } from "@/utils/generate";
 import { canAddProduct, getUserActivePlan } from "@/lib/planService";
-// ====== دسته‌بندی سه‌سطحی + متن جست‌وجو + اتریبیوت‌های پویا ======
+// ====== Three-level category + search text + dynamic attributes ======
 import { buildCategoryTree, resolveCategoryPath } from "@/lib/categoryTree";
 import { getCategories } from "@/lib/categoriesService";
 import {
@@ -20,7 +20,7 @@ import {
   getProductAttributes,
 } from "@/lib/attributesService";
 
-// ====== تابع ذخیره تصویر Base64 ======
+// ====== Base64 image saving helper ======
 async function saveBase64Image(base64String, folder = "products") {
   if (!base64String) return null;
 
@@ -84,9 +84,9 @@ export async function POST(request) {
       shippingTerms,
       paymentTerms,
       isVisible,
-      // توجه: دیگر specs وجود ندارد — مشخصات به‌صورت اتریبیوت (EAV)
-      // با attributes ذخیره می‌شوند. specs قبلاً اینجا destructure
-      // می‌شد ولی هرگز ذخیره نمی‌شد (ستونی هم در شِما نداشت).
+      // Note: specs no longer exists — specifications are stored as attributes (EAV)
+      // via `attributes`. specs used to be destructured here
+      // but was never saved (and had no column in the schema).
       attributes,
     } = body;
 
@@ -112,10 +112,10 @@ export async function POST(request) {
       );
     }
 
-    // ====== اتریبیوت‌های ورودی ======
-    // فقط ردیف‌هایی که attributeId رشته‌ای دارند نگه داشته می‌شوند؛
-    // اعتبارسنجی و تبدیل نوع (عدد/بولین/چندانتخابی) داخل
-    // setProductAttributes انجام می‌شود و اینجا تکرار نمی‌شود.
+    // ====== Incoming attributes ======
+    // Only rows with a string attributeId are kept;
+    // validation and type conversion (number/boolean/multi-select) happen inside
+    // setProductAttributes and are not repeated here.
     const attributeItems = Array.isArray(attributes)
       ? attributes.filter((a) => a && typeof a.attributeId === "string")
       : [];
@@ -132,18 +132,18 @@ export async function POST(request) {
       }
     }
 
-    // ====== مسیر سه‌سطحی دسته‌بندی ======
-    // قبل از create محاسبه می‌شود تا همراه بقیه‌ی فیلدها در همان
-    // یک INSERT نوشته شود: "grains-cereals/rice/basmati"
+    // ====== Three-level category path ======
+    // Computed before create so it is written together with the other
+    // fields in the same INSERT: "grains-cereals/rice/basmati"
     const tree = buildCategoryTree(await getCategories());
     const categoryPath = resolveCategoryPath(
       { category, subCategory, productType },
       tree,
     );
 
-    // ====== فیلدهایی که نوشته می‌شوند ======
-    // همان آبجکت برای ساخت searchText استفاده می‌شود تا متن جست‌وجو
-    // دقیقاً از مقادیر ذخیره‌شده ساخته شود.
+    // ====== Fields that get written ======
+    // The same object builds searchText so the search text
+    // is built from exactly the stored values.
     const productData = {
       name,
       category,
@@ -172,7 +172,7 @@ export async function POST(request) {
     const product = await prisma.product.create({
       data: {
         ...productData,
-        // متن یکجای جست‌وجو (اتریبیوت‌ها در گام بعد اضافه می‌شوند)
+        // Combined search text (attributes are added in the next step)
         searchText: buildProductSearchText({
           product: productData,
           attributeValues: [],
@@ -185,9 +185,9 @@ export async function POST(request) {
       },
     });
 
-    // ====== ذخیره‌ی اتریبیوت‌ها (EAV) ======
-    // فقط وقتی آرایه غیرخالی است. خطای اتریبیوت نباید ساخت محصول را
-    // شکست دهد، پس داخل try/catch است.
+    // ====== Save the attributes (EAV) ======
+    // Only when the array is non-empty. An attribute error must not
+    // break product creation, so it is wrapped in try/catch.
     let attributesSaved = false;
     if (attributeItems.length > 0) {
       try {
@@ -198,10 +198,10 @@ export async function POST(request) {
       }
     }
 
-    // ====== همسان‌کردن searchText با مقادیر اتریبیوت‌ها ======
-    // nice-to-have: مقادیر ذخیره‌شده دوباره خوانده می‌شوند (چون
-    // setProductAttributes نوع داده را تبدیل می‌کند) و searchText
-    // یک‌بار دیگر نوشته می‌شود. شکست این مرحله محصول را باطل نمی‌کند.
+    // ====== Align searchText with the attribute values ======
+    // nice-to-have: the stored values are read back (because
+    // setProductAttributes converts the data type) and searchText
+    // is written once more. A failure here does not invalidate the product.
     if (attributesSaved) {
       try {
         const savedAttributes = await getProductAttributes(product.id);
@@ -241,7 +241,7 @@ export async function POST(request) {
   }
 }
 
-// ====== DELETE: حذف محصول ======
+// ====== DELETE: delete a product ======
 export async function DELETE(request, { params }) {
   try {
     const session = await auth();
@@ -283,7 +283,7 @@ export async function DELETE(request, { params }) {
   }
 }
 
-// ====== PATCH: به‌روزرسانی جزئی (visibility) ======
+// ====== PATCH: partial update (visibility) ======
 export async function PATCH(request, { params }) {
   try {
     const session = await auth();

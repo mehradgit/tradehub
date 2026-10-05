@@ -11,7 +11,7 @@ export async function POST(request) {
       );
     }
 
-    // پیدا کردن کد در دیتابیس
+    // Look up the code in the database
     const verification = await prisma.verificationToken.findFirst({
       where: {
         identifier: email,
@@ -27,7 +27,7 @@ export async function POST(request) {
       );
     }
 
-    // کد معتبر است، آن را حذف می‌کنیم
+    // The code is valid, so delete it
     await prisma.verificationToken.delete({
       where: { id: verification.id },
     });

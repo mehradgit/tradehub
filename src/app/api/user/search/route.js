@@ -14,7 +14,7 @@ export async function GET(request) {
     const q = searchParams.get("q")?.trim();
     const limit = parseInt(searchParams.get("limit")) || 3;
 
-    // اگر کمتر از ۲ کاراکتر بود، خالی برگردان
+    // If fewer than 2 characters, return empty results
     if (!q || q.length < 2) {
       return NextResponse.json({
         products: [],
@@ -28,7 +28,7 @@ export async function GET(request) {
     const userId = session.user.id;
 
     const [products, requests, tickets, messages] = await Promise.all([
-      // ====== محصولات کاربر ======
+      // ====== User products ======
       prisma.product.findMany({
         where: {
           userId,
@@ -50,7 +50,7 @@ export async function GET(request) {
         take: limit,
       }),
 
-      // ====== درخواست‌های خرید کاربر ======
+      // ====== User buying requests ======
       prisma.buyingRequest.findMany({
         where: {
           userId,
@@ -71,7 +71,7 @@ export async function GET(request) {
         take: limit,
       }),
 
-      // ====== تیکت‌های کاربر ======
+      // ====== User tickets ======
       prisma.ticket.findMany({
         where: {
           userId,
@@ -90,7 +90,7 @@ export async function GET(request) {
         take: limit,
       }),
 
-      // ====== پیام‌ها ======
+      // ====== Messages ======
       prisma.message.findMany({
         where: {
           OR: [

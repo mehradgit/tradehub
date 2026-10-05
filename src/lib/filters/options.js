@@ -1,10 +1,10 @@
 // src/lib/filters/options.js
 // ============================================================
-// حل کردن گزینه‌های هر فیلد (سمت سرور)
+// Resolving the options of each field (server side)
 //
-// اسکیما فقط می‌گوید optionsFrom چیست؛ اینجا از دیتابیس
-// (واژگان) یا منابع استاتیک (کشورها) پر می‌شود و به کلاینت
-// پاس داده می‌شود تا کلاینت نیازی به دسترسی به دیتابیس نداشته باشد.
+// The schema only says what optionsFrom is; here it is filled from the
+// database (vocabularies) or from static sources (countries) and passed
+// to the client so the client needs no database access.
 // ============================================================
 import { countries } from "@/lib/countries";
 import { getVocabularies } from "@/lib/vocabularies";
@@ -13,17 +13,17 @@ import { FILTER_SCHEMAS } from "./schemas";
 function countryOptions() {
   return (countries || [])
     .map((c) => ({
-      // مقدار ذخیره‌شده در دیتابیس **نام** کشور است (نه کد)
+      // The value stored in the database is the country **name** (not the code)
       value: c.name,
       label: c.name,
-      // کد فقط برای نمایش پرچم در لیست فیلتر استفاده می‌شود
+      // The code is only used to show the flag in the filter list
       code: c.code,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 // ============================================================
-// گزینه‌های همه‌ی فیلدهای یک اسکیما
+// Options of all fields of one schema
 // → { [fieldName]: [{ value, label }] }
 // ============================================================
 export async function resolveFilterOptions(schemaKey) {
@@ -64,7 +64,7 @@ export async function resolveFilterOptions(schemaKey) {
 }
 
 // ============================================================
-// گزینه‌های یک فیلد خاص (برای موارد تک‌مصرف)
+// Options of one specific field (for one-off cases)
 // ============================================================
 export async function resolveFieldOptions(field) {
   if (!field) return [];

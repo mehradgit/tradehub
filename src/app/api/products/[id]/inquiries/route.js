@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
 
     const { id } = await params;
 
-    // بررسی دسترسی: فقط صاحب محصول می‌تواند درخواست‌ها را ببیند
+    // Access check: only the product owner can view the inquiries
     const product = await prisma.product.findUnique({
       where: { id },
       select: { userId: true },
@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // دریافت درخواست‌های مربوط به این محصول
+    // Fetch the inquiries for this product
     const inquiries = await prisma.productInquiry.findMany({
       where: { productId: id },
       include: {

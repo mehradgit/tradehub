@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { categories as defaultCategories } from "@/lib/categories";
 import { buildCategoryTree, buildCategoryIndex } from "@/lib/categoryTree";
 
-// Cache سطح ماژول برای جلوگیری از fetch تکراری
+// Module-level cache to avoid duplicate fetches
 let cache = null; // { categories, tree, flat }
 let cachePromise = null;
 
@@ -58,7 +58,7 @@ export function useCategories() {
     });
   }, []);
 
-  // ===== ایندکس و helper ها =====
+  // ===== Index and helpers =====
   const index = useMemo(() => buildCategoryIndex(data.tree || []), [data.tree]);
 
   return {
@@ -71,7 +71,7 @@ export function useCategories() {
 }
 
 /**
- * پاک کردن cache — بعد از تغییرات ادمین مفید است
+ * Clear the cache — useful after admin changes
  */
 export function invalidateCategoriesCache() {
   cache = null;

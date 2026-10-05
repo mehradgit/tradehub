@@ -116,7 +116,7 @@ export default function CategoryManager({
   const handleDelete = async (category) => {
     const subs = getSubs(category.id);
 
-    // âœ… شمارش با ID (نه name)
+    // Count by ID (not name)
     const productCount = productCounts[category.id] || 0;
     const requestCount = requestCounts[category.id] || 0;
 
@@ -219,7 +219,7 @@ export default function CategoryManager({
         {mainCategories.map((cat) => {
           const subs = getSubs(cat.id);
 
-          // âœ… شمارش با ID
+          // Count by ID
           const productCount = productCounts[cat.id] || 0;
           const requestCount = requestCounts[cat.id] || 0;
 
@@ -263,7 +263,7 @@ export default function CategoryManager({
                     )}
                   </div>
                   <div className="admin-subtitle">
-                    {subs.length} subcategories آ· {productCount} products آ·{" "}
+                    {subs.length} subcategories · {productCount} products ·{" "}
                     {requestCount} requests
                   </div>
                 </div>
@@ -417,7 +417,7 @@ export default function CategoryManager({
               {modal.mode === "create" && modal.parentId !== 0
                 ? `Under: ${
                     categories.find((c) => c.id === modal.parentId)?.name ||
-                    "â€”"
+                    "—"
                   }`
                 : modal.mode === "edit"
                   ? `ID: ${modal.category?.id}`
@@ -459,11 +459,11 @@ export default function CategoryManager({
                   marginTop: 4,
                 }}
               >
-                Font Awesome class name (مثل fa-leaf یا fa-crown)
+                Font Awesome class name (e.g. fa-leaf or fa-crown)
               </div>
             </div>
 
-            {/* âœ… نمایش فقط-خواندنی productTypes در حالت edit */}
+            {/* Read-only display of productTypes in edit mode */}
             {modal.mode === "edit" &&
               modal.category?.parent !== 0 &&
               modal.category?.productTypes?.length > 0 && (

@@ -14,12 +14,12 @@ export default function ProfileTabs({ user, products = [] }) {
 
   const isSupplier = user.role === "SUPPLIER";
 
-  // ✅ گالری تصاویر از ثبت‌نام
+  // Image gallery from registration
   const galleryImages = Array.isArray(user.galleryImages)
     ? user.galleryImages
     : [];
 
-  // ✅ تب‌ها (بدون Requests)
+  // Tabs (without Requests)
   const tabs = [
     { id: "overview", label: "Overview", icon: "fa-info-circle" },
     { id: "products", label: "Products", count: products.length, icon: "fa-box" },

@@ -8,7 +8,7 @@ import {
   createSubscriptionFromPayment,
 } from "@/lib/paymentService";
 
-// ====== GET: لیست همه پرداخت‌ها ======
+// ====== GET: list all payments ======
 export async function GET(request) {
   try {
     const session = await auth();
@@ -93,7 +93,7 @@ export async function GET(request) {
   }
 }
 
-// ====== POST: ایجاد دستی Payment توسط ادمین ======
+// ====== POST: create a Payment manually (by an admin) ======
 export async function POST(request) {
   try {
     const session = await auth();
@@ -133,7 +133,7 @@ export async function POST(request) {
       createdById: session.user.id,
     });
 
-    // اگر status = paid بود، اشتراک بساز
+    // If status = paid, create the subscription
     if (status === "paid") {
       await createSubscriptionFromPayment(payment);
     }

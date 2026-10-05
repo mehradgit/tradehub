@@ -16,7 +16,7 @@ import { getCountryName } from "@/lib/countries";
 
 const STORAGE_KEY = "complete-registration-form";
 
-// ====== Helper: خواندن از sessionStorage ======
+// ====== Helper: read from sessionStorage ======
 function loadFromStorage() {
   try {
     const saved = sessionStorage.getItem(STORAGE_KEY);
@@ -26,7 +26,7 @@ function loadFromStorage() {
   }
 }
 
-// ====== Helper: نوشتن در sessionStorage ======
+// ====== Helper: write to sessionStorage ======
 function saveToStorage(data) {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -49,7 +49,7 @@ function CompleteRegistrationContent() {
   const [hasRedirected, setHasRedirected] = useState(false);
   const [autoLoggingIn, setAutoLoggingIn] = useState(false);
 
-  // ====== State فرم ======
+  // ====== Form state ======
   const [formData, setFormData] = useState(() => {
     const saved = loadFromStorage();
     return (
@@ -88,7 +88,7 @@ function CompleteRegistrationContent() {
   });
 
   // ===== Gallery limit from user's plan =====
-  // null = هنوز لود نشده | -1 = نامحدود | n = عدد
+  // null = not loaded yet | -1 = unlimited | n = number
   const [galleryLimit, setGalleryLimit] = useState(null);
 
   const [uploadProgress, setUploadProgress] = useState({
@@ -110,7 +110,7 @@ function CompleteRegistrationContent() {
   const autoLoginAttempted = useRef(false);
 
   // ============================================================
-  // ۱. Auto-login با توکن تأیید ایمیل
+  // 1. Auto-login with the email verification token
   // ============================================================
   useEffect(() => {
     if (status === "loading") return;
@@ -133,9 +133,9 @@ function CompleteRegistrationContent() {
             `/login?verified=true&email=${encodeURIComponent(emailFromUrl)}`,
           );
         } else {
-          // URL رو تمیز کن (توکن رو از آدرس حذف کن)
+          // Clean up the URL (remove the token from the address)
           window.history.replaceState({}, "", "/complete-registration");
-          // به NextAuth فرصت بده تا session رو رفرش کنه
+          // Give NextAuth a chance to refresh the session
           setTimeout(() => {
             router.refresh();
           }, 100);
@@ -153,42 +153,42 @@ function CompleteRegistrationContent() {
   }, [status, session, tokenFromUrl, emailFromUrl, router]);
 
   // ============================================================
-  // ۲. هدایت‌های شرطی
+  // 2. Conditional redirects
   // ============================================================
   useEffect(() => {
     if (status === "loading" || hasRedirected) return;
 
-    // اگر کاربر قبلاً ثبت‌نامش را تکمیل کرده
+    // If the user has already completed their registration
     if (session?.user?.registrationComplete === true) {
       router.replace("/dashboard");
       setHasRedirected(true);
       return;
     }
 
-    // اگر هیچ session و هیچ لینکی نیست → برو لاگین
+    // If there is no session and no link → go to login
     if (!session && !emailFromUrl && !tokenFromUrl) {
       router.replace("/login");
       setHasRedirected(true);
       return;
     }
 
-    // اگر session نداریم ولی email/token داریم → منتظر auto-login بمون
+    // If we have no session but do have email/token → wait for auto-login
     if (!session && (emailFromUrl || tokenFromUrl)) {
       return;
     }
   }, [session, status, emailFromUrl, tokenFromUrl, router, hasRedirected]);
 
   // ============================================================
-  // ۳. دریافت اطلاعات کاربر (فقط یک‌بار)
+  // 3. Fetch user information (only once)
   // ============================================================
   useEffect(() => {
     if (status === "loading") return;
     if (isInitialized.current) return;
 
-    // اگر session نداری، صبر کن (auto-login در جریانه)
+    // If you have no session, wait (auto-login is in progress)
     if (!session) return;
 
-    // از sessionStorage اگه چیزی ذخیره‌شده داریم
+    // From sessionStorage if we have something saved
     const saved = loadFromStorage();
     if (saved?.formData) {
       setFormData(saved.formData);
@@ -199,7 +199,7 @@ function CompleteRegistrationContent() {
       return;
     }
 
-    // در غیر این صورت از API دریافت کن
+    // Otherwise fetch it from the API
     const fetchUserProfile = async () => {
       try {
         const res = await fetch("/api/user/profile");
@@ -258,7 +258,7 @@ function CompleteRegistrationContent() {
   }, [session, status, router]);
 
   // ============================================================
-  // ۴. Fetch gallery limit from user's plan
+  // 4. Fetch gallery limit from user's plan
   // ============================================================
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -272,13 +272,13 @@ function CompleteRegistrationContent() {
         }
       })
       .catch(() => {
-        // اگه خطا داد، محدودیت رو نامحدود فرض کن (سرور موقع Save چک می‌کنه)
+        // If it errors, assume the limit is unlimited (the server checks it on save)
         setGalleryLimit(-1);
       });
   }, [status]);
 
   // ============================================================
-  // ۵. ذخیره خودکار در sessionStorage
+  // 5. Auto-save to sessionStorage
   // ============================================================
   useEffect(() => {
     if (isInitialized.current) {
@@ -291,7 +291,7 @@ function CompleteRegistrationContent() {
   }, [formData, existingLogo, existingCover]);
 
   // ============================================================
-  // ۶. تغییرات فیلدها
+  // 6. Field changes
   // ============================================================
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -313,13 +313,13 @@ function CompleteRegistrationContent() {
   };
 
   // ============================================================
-  // ۷. آپلود تصاویر
+  // 7. Upload images
   // ============================================================
   const handleFileChange = async (e, fieldName) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // فایل تکی (logo, coverImage)
+    // Single file (logo, coverImage)
     if (fieldName !== "galleryImages") {
       const file = files[0];
 
@@ -338,7 +338,7 @@ function CompleteRegistrationContent() {
         return;
       }
 
-      // ✅ تعیین purpose بر اساس fieldName
+      // ✅ Determine purpose based on fieldName
       const purpose = fieldName === "logo" ? "logo" : "cover";
 
       try {
@@ -351,7 +351,7 @@ function CompleteRegistrationContent() {
           (percent) => {
             setUploadProgress((prev) => ({ ...prev, [fieldName]: percent }));
           },
-          purpose                                  // ✅ جدید
+          purpose                                  // ✅ new
         );
 
         setFormData((prev) => ({ ...prev, [fieldName]: result.path }));
@@ -367,7 +367,7 @@ function CompleteRegistrationContent() {
       return;
     }
 
-    // گالری (چند فایل)
+    // Gallery (multiple files)
     setIsUploading((prev) => ({ ...prev, gallery: true }));
     setUploadProgress((prev) => ({ ...prev, gallery: 0 }));
 
@@ -390,7 +390,7 @@ function CompleteRegistrationContent() {
           (percent) => {
             setUploadProgress((prev) => ({ ...prev, gallery: percent }));
           },
-          "gallery"                                 // ✅ جدید
+          "gallery"                                 // ✅ new
         );
         uploadedPaths.push(result.path);
       }
@@ -412,7 +412,7 @@ function CompleteRegistrationContent() {
   };
 
   // ============================================================
-  // ۸. حذف تصاویر
+  // 8. Remove images
   // ============================================================
   const removeImage = (fieldName, index = null, isExisting = false) => {
     if (fieldName === "galleryImages" && index !== null) {
@@ -438,7 +438,7 @@ function CompleteRegistrationContent() {
   };
 
   // ============================================================
-  // ۹. ارسال فرم
+  // 9. Submit form
   // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -485,15 +485,15 @@ function CompleteRegistrationContent() {
         throw new Error(data.message || "Failed to complete registration");
       }
 
-      // پاک کردن draft
+      // Clear the draft
       sessionStorage.removeItem(STORAGE_KEY);
 
-      // ✅ JWT رو آپدیت کن
+      // ✅ Update the JWT
       await update({ registrationComplete: true });
 
       toast.success("Registration completed successfully!");
 
-      // ✅ کمی صبر کن تا JWT واقعاً آپدیت بشه، بعد برو داشبورد
+      // ✅ Wait a moment for the JWT to actually update, then go to the dashboard
       setTimeout(() => {
         window.location.href = "/dashboard";
       }, 400);
@@ -505,7 +505,7 @@ function CompleteRegistrationContent() {
   };
 
   // ============================================================
-  // ۱۰. حالت‌های بارگذاری
+  // 10. Loading states
   // ============================================================
   if (status === "loading" || autoLoggingIn || fetching) {
     return (
@@ -537,7 +537,7 @@ function CompleteRegistrationContent() {
   const isGalleryFull = isLimitKnown && currentGalleryCount >= galleryLimit;
 
   // ============================================================
-  // ۱۱. رندر فرم
+  // 11. Render form
   // ============================================================
   return (
     <Layout>
@@ -546,7 +546,7 @@ function CompleteRegistrationContent() {
         style={{ maxWidth: "800px", marginTop: "40px", marginBottom: "60px" }}
       >
         <div className="card shadow border-0 rounded-4 p-4 p-md-5">
-          {/* ====== هدر ====== */}
+          {/* ====== Header ====== */}
           <div className="text-center mb-4">
             <div
               className="mx-auto mb-3 d-flex align-items-center justify-content-center"
@@ -576,7 +576,7 @@ function CompleteRegistrationContent() {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* ====== ایمیل ====== */}
+            {/* ====== Email ====== */}
             <div className="form-group mb-3">
               <label className="form-label fw-semibold">Email Address</label>
               <input
@@ -591,7 +591,7 @@ function CompleteRegistrationContent() {
               </small>
             </div>
 
-            {/* ====== نام ====== */}
+            {/* ====== Name ====== */}
             <div className="form-group mb-3">
               <label className="form-label fw-semibold">
                 Full Name <span className="text-danger">*</span>
@@ -607,7 +607,7 @@ function CompleteRegistrationContent() {
               />
             </div>
 
-            {/* ====== نام شرکت ====== */}
+            {/* ====== Company name ====== */}
             <div className="form-group mb-3">
               <label className="form-label fw-semibold">
                 Company Name <span className="text-danger">*</span>
@@ -623,7 +623,7 @@ function CompleteRegistrationContent() {
               />
             </div>
 
-            {/* ====== کشور + نوع کسب‌وکار ====== */}
+            {/* ====== Country + business type ====== */}
             <div className="row g-3">
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
@@ -657,7 +657,7 @@ function CompleteRegistrationContent() {
               </div>
             </div>
 
-            {/* ====== دسته‌بندی ====== */}
+            {/* ====== Category ====== */}
             <div className="form-group mt-3">
               <label className="form-label fw-semibold">Product Category</label>
               <CategorySelect
@@ -682,7 +682,7 @@ function CompleteRegistrationContent() {
               />
             </div>
 
-            {/* ====== تلفن + ایمیل شرکت ====== */}
+            {/* ====== Phone + company email ====== */}
             <div className="row g-3 mt-1">
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Phone Number</label>
@@ -708,7 +708,7 @@ function CompleteRegistrationContent() {
               </div>
             </div>
 
-            {/* ====== وب‌سایت ====== */}
+            {/* ====== Website ====== */}
             <div className="form-group mt-3">
               <label className="form-label fw-semibold">Company Website</label>
               <input
@@ -721,7 +721,7 @@ function CompleteRegistrationContent() {
               />
             </div>
 
-            {/* ====== بیوگرافی ====== */}
+            {/* ====== Biography ====== */}
             <div className="form-group mt-3">
               <label className="form-label fw-semibold">
                 Company Bio / Description
@@ -734,7 +734,7 @@ function CompleteRegistrationContent() {
               />
             </div>
 
-            {/* ====== آدرس، شهر، کدپستی، تعداد کارکنان ====== */}
+            {/* ====== Address, city, postal code, number of employees ====== */}
             <div className="row g-3 mt-1">
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Address</label>
@@ -790,14 +790,14 @@ function CompleteRegistrationContent() {
               </div>
             </div>
 
-            {/* ====== تصاویر ====== */}
+            {/* ====== Images ====== */}
             <h5 className="fw-bold mt-4 mb-3">Company Images</h5>
             <p className="text-muted small">
               <i className="fas fa-info-circle me-1"></i>
               Maximum file size: 3MB · Supported formats: JPG, PNG, WEBP
             </p>
 
-            {/* پیش‌نمایش ترکیبی */}
+            {/* Combined preview */}
             <div className="mb-3">
               <label className="form-label fw-semibold">Profile Preview</label>
               <div
@@ -937,7 +937,7 @@ function CompleteRegistrationContent() {
               onChange={(e) => handleFileChange(e, "logo")}
             />
 
-            {/* گالری */}
+            {/* Gallery */}
             <div className="form-group mb-3">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <label className="form-label fw-semibold mb-0">
@@ -1077,7 +1077,7 @@ function CompleteRegistrationContent() {
               </div>
             </div>
 
-            {/* ====== نقش ====== */}
+            {/* ====== Role ====== */}
             <div className="form-group mt-3">
               <label className="form-label fw-semibold">
                 I want to register as <span className="text-danger">*</span>
@@ -1120,7 +1120,7 @@ function CompleteRegistrationContent() {
               </div>
             </div>
 
-            {/* ====== دکمه ارسال ====== */}
+            {/* ====== Submit button ====== */}
             <button
               type="submit"
               className="btn btn-primary btn-lg w-100 mt-4"

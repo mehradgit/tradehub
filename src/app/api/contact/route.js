@@ -22,12 +22,12 @@ export async function POST(request) {
       );
     }
 
-    // ارسال ایمیل به ادمین (اگر SMTP تنظیم باشد)
+    // Send the email to the admin (if SMTP is configured)
     try {
       await sendContactEmail({ name, email, subject, message });
     } catch (emailError) {
       console.error("Contact email failed:", emailError);
-      // شکست ارسال ایمیل، مانع پاسخ موفق نمی‌شود
+      // A failed email send does not prevent a successful response
     }
 
     console.log("[Contact Form]", { name, email, subject });

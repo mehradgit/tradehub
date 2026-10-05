@@ -61,7 +61,7 @@ export default function BlurredContent({
 
   return (
     <div className={`blurred-wrapper ${compact ? "blurred-compact" : ""}`}>
-      {/* محتوای بلور شده */}
+      {/* Blurred content */}
       <div className="blurred-content">{children}</div>
 
       {/* Overlay */}

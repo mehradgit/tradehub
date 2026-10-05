@@ -18,7 +18,7 @@ function getBaseUrl() {
   );
 }
 
-// ====== تولید profileNumber یکتا ======
+// ====== Generate a unique profileNumber ======
 async function generateUniqueProfileNumber() {
   let profileNumber;
   let isUnique = false;
@@ -41,7 +41,7 @@ async function generateUniqueProfileNumber() {
   return profileNumber;
 }
 
-// ====== تولید slug یکتا ======
+// ====== Generate a unique slug ======
 async function generateUniqueSlug(baseText) {
   const baseSlug = generateSlug(baseText || "user");
   let slug = baseSlug;
@@ -66,7 +66,7 @@ async function generateUniqueSlug(baseText) {
 
 export async function POST(request) {
   try {
-    // ✅ اصلاح: استخراج همه فیلدها از body
+    // Extract every field from the body
     const { email, password, captchaAnswer, captchaToken } = await request.json();
 
     if (!email || !password) {
@@ -76,7 +76,7 @@ export async function POST(request) {
       );
     }
 
-    // ✅ بررسی کپچا (حالا متغیرها تعریف شده‌اند)
+    // Verify the captcha (the variables are now defined)
     if (!verifyCaptcha(captchaAnswer, captchaToken)) {
       return NextResponse.json(
         {
@@ -87,7 +87,7 @@ export async function POST(request) {
       );
     }
 
-    // اعتبارسنجی ایمیل
+    // Validate the email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -105,7 +105,7 @@ export async function POST(request) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // بررسی وجود کاربر
+    // Check whether the user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
@@ -130,14 +130,14 @@ export async function POST(request) {
       );
     }
 
-    // هش رمز عبور
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // تولید profileNumber و slug
+    // Generate the profileNumber and slug
     const profileNumber = await generateUniqueProfileNumber();
     const slug = await generateUniqueSlug(normalizedEmail.split("@")[0]);
 
-    // ساخت کاربر
+    // Create the user
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
@@ -150,7 +150,7 @@ export async function POST(request) {
       },
     });
 
-    // ساخت توکن تأیید
+    // Create the verification token
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -162,7 +162,7 @@ export async function POST(request) {
       },
     });
 
-    // ارسال ایمیل
+    // Send the email
     const baseUrl = getBaseUrl();
     const verificationUrl = `${baseUrl}/verify-email?token=${token}&email=${encodeURIComponent(
       normalizedEmail,
@@ -179,9 +179,9 @@ export async function POST(request) {
       console.log(verificationUrl);
       console.log("========================================\n");
     }
-    // ✅ ایمیل خوش‌آمدگویی از مسیر مرکزی رویداد، بعد از ارسال پاسخ.
-    //    after() تضمین می‌کند اگر فرآیند سرورلس/ری‌استارت شود،
-    //    کار نیمه‌کاره رها نشود.
+    // Welcome email through the central event dispatcher, after the response is sent.
+    //    after() guarantees that if the serverless process restarts,
+    //    the work is not left half-finished.
     after(async () => {
       const result = await dispatchEvent("user.registered", {
         userId: user.id,

@@ -1,28 +1,28 @@
 // src/lib/categoryTree.js
 // ============================================================
-// درخت سه‌سطحی دسته‌بندی
+// Three-level category tree
 //
-// ساختار فعلی (categories.json / Setting["categories"]) دو سطح
-// دارد و لیست «productTypes» روی هر زیردسته. همان لیست در واقع
-// سطح سوم است، پس درخت سه‌سطحی از آن ساخته می‌شود:
+// The current structure (categories.json / Setting["categories"]) has two
+// levels plus a "productTypes" list on each subcategory. That list is in fact
+// the third level, so a three-level tree is built from it:
 //
-//   سطح ۱: grains-cereals        (Grains & Cereals)
-//   سطح ۲: rice                  (Rice)
-//   سطح ۳: basmati               (Basmati)
+//   Level 1: grains-cereals        (Grains & Cereals)
+//   Level 2: rice                  (Rice)
+//   Level 3: basmati               (Basmati)
 //
-// مسیر (path) کلید یکتاست: "grains-cereals/rice/basmati"
-// و روی Product/BuyingRequest در ستون categoryPath ذخیره می‌شود
-// تا فیلتر پیشوندی روی ایندکس انجام شود.
+// The path is a unique key: "grains-cereals/rice/basmati"
+// and it is stored on Product/BuyingRequest in the categoryPath column
+// so that prefix filtering can run on the index.
 //
-// این فایل PURE است (بدون prisma) تا هم سمت سرور و هم کلاینت
-// قابل استفاده باشد.
+// This file is PURE (no prisma) so it can be used on both the server
+// and the client.
 // ============================================================
 import { categories as staticCategories } from "@/lib/categories";
 
 export const MAX_CATEGORY_LEVEL = 3;
 
 // ============================================================
-// slugify — ساخت نام ماشینی از نام نمایشی
+// slugify — build a machine name from a display name
 // ============================================================
 export function slugify(text) {
   if (!text) return "";
@@ -41,7 +41,7 @@ function bySortOrder(a, b) {
 }
 
 // ============================================================
-// ساخت درخت سه‌سطحی از لیست flat
+// Build a three-level tree from a flat list
 // ============================================================
 export function buildCategoryTree(flat = staticCategories) {
   const list = Array.isArray(flat) ? flat : [];
@@ -60,7 +60,6 @@ export function buildCategoryTree(flat = staticCategories) {
       id: l1.id,
       slug: l1Slug,
       name: l1.name,
-      nameFa: l1.nameFa || null,
       icon: l1.icon || null,
       description: l1.description || null,
       sortOrder: l1.sortOrder ?? 0,
@@ -76,7 +75,6 @@ export function buildCategoryTree(flat = staticCategories) {
           id: l2.id,
           slug: l2Slug,
           name: l2.name,
-          nameFa: l2.nameFa || null,
           icon: l2.icon || null,
           description: l2.description || null,
           sortOrder: l2.sortOrder ?? 0,
@@ -92,7 +90,6 @@ export function buildCategoryTree(flat = staticCategories) {
                 id: `${l2.id}--${tSlug}`,
                 slug: tSlug,
                 name: String(typeName),
-                nameFa: null,
                 icon: null,
                 description: null,
                 sortOrder: idx * 10,
@@ -110,7 +107,7 @@ export function buildCategoryTree(flat = staticCategories) {
 }
 
 // ============================================================
-// flat کردن درخت (با path و level)
+// Flatten the tree (with path and level)
 // ============================================================
 export function flattenTree(tree) {
   const out = [];
@@ -121,7 +118,6 @@ export function flattenTree(tree) {
         id: node.id,
         slug: node.slug,
         name: node.name,
-        nameFa: node.nameFa,
         icon: node.icon,
         description: node.description,
         sortOrder: node.sortOrder,
@@ -139,12 +135,12 @@ export function flattenTree(tree) {
 }
 
 // ============================================================
-// ایندکس‌ها برای جست‌وجوی سریع
+// Indexes for fast lookup
 // ============================================================
 export function buildCategoryIndex(tree) {
   const byPath = new Map();
   const byId = new Map();
-  const byNameKey = new Map(); // "نام سطح۱|نام سطح۲|نام سطح۳" → path
+  const byNameKey = new Map(); // "level1 name|level2 name|level3 name" → path
 
   const walk = (nodes) => {
     for (const node of nodes || []) {
@@ -165,7 +161,7 @@ export function buildCategoryIndex(tree) {
 }
 
 // ============================================================
-// تبدیل مسیر به نام‌های نمایشی
+// Convert a path into display names
 // ============================================================
 export function describePath(path, index) {
   if (!path) return "";
@@ -176,7 +172,7 @@ export function describePath(path, index) {
       .map((p) => index.byPath.get(p)?.name || index.byPath.get(p)?.slug || p);
     return parts.join(" › ");
   }
-  // اگر ایندکس نداشتیم، از slug ها نام بساز
+  // If we have no index, build the names from the slugs
   return path
     .split("/")
     .map((s) => s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))
@@ -184,10 +180,9 @@ export function describePath(path, index) {
 }
 
 // ============================================================
-// حل کردن (category, subCategory, productType) → path
+// Resolve (category, subCategory, productType) → path
 //
-// تطبیق اول با نام، بعد با slug، و در نهایت بدون حساسیت به
-// بزرگی/کوچکی حروف.
+// Match by name first, then by slug, and finally case-insensitively.
 // ============================================================
 export function resolveCategoryPath(
   { category, subCategory, productType },
@@ -220,7 +215,7 @@ export function resolveCategoryPath(
 }
 
 // ============================================================
-// مسیرهای والد (برای فیلتر پیشوندی)
+// Ancestor paths (for prefix filtering)
 //   "a/b/c" → ["a", "a/b", "a/b/c"]
 // ============================================================
 export function getAncestorPaths(path) {
@@ -237,7 +232,7 @@ export function getAncestorPaths(path) {
 }
 
 // ============================================================
-// آیا این مسیر زیرمجموعه‌ی والد داده‌شده است؟
+// Is this path a descendant of the given parent path?
 // ============================================================
 export function isPathUnder(childPath, parentPath) {
   if (!childPath || !parentPath) return false;
@@ -245,7 +240,7 @@ export function isPathUnder(childPath, parentPath) {
 }
 
 // ============================================================
-// گزینه‌های سطح بعدی برای یک مسیر (برای cascader)
+// Next-level options for a path (for the cascader)
 // ============================================================
 export function getChildrenByPath(path, index) {
   if (!path) return index.flat.filter((n) => n.level === 1);
@@ -254,7 +249,7 @@ export function getChildrenByPath(path, index) {
 }
 
 // ============================================================
-// ساخت ایندکس از لیست flat (کمکی برای سرور و کلاینت)
+// Build an index from a flat list (helper for server and client)
 // ============================================================
 export function makeCategoryIndex(flat) {
   return buildCategoryIndex(buildCategoryTree(flat));

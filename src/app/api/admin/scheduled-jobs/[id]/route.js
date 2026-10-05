@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { parseCron, getNextRunAt } from "@/lib/cronExpression";
 
 // ============================================================
-// PATCH: ویرایش زمان‌بندی / نام / فعال بودن
+// PATCH: edit schedule / name / active state
 // ============================================================
 export async function PATCH(request, { params }) {
   try {
@@ -26,7 +26,7 @@ export async function PATCH(request, { params }) {
       data.description = description.trim() || null;
     if (typeof isActive === "boolean") data.isActive = isActive;
 
-    // ===== اعتبارسنجی زمان‌بندی =====
+    // ===== Schedule validation =====
     if (typeof cronExpression === "string" && cronExpression.trim()) {
       const expr = cronExpression.trim();
       const parsed = parseCron(expr);

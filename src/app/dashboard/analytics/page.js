@@ -11,7 +11,7 @@ export default async function AnalyticsPage({ searchParams }) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  // بررسی نقش - فقط SUPPLIER
+  // Role check - SUPPLIER only
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { role: true, isAdmin: true },
@@ -30,7 +30,7 @@ export default async function AnalyticsPage({ searchParams }) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - daysBack);
 
-  // ====== کوئری‌های همزمان ======
+  // ====== Concurrent queries ======
   const [
     totalViews,
     totalInquiries,
@@ -39,23 +39,23 @@ export default async function AnalyticsPage({ searchParams }) {
     recentInquiries,
     allProducts,
   ] = await Promise.all([
-    // مجموع بازدید
+    // Total views
     prisma.product.aggregate({
       where: { userId },
       _sum: { views: true },
     }),
 
-    // تعداد کل inquiry
+    // Total number of inquiries
     prisma.productInquiry.count({
       where: { supplierId: userId },
     }),
 
-    // تعداد کل quote
+    // Total number of quotes
     prisma.quote.count({
       where: { supplierId: userId },
     }),
 
-    // ۵ محصول برتر
+    // Top 5 products
     prisma.product.findMany({
       where: { userId, isVisible: true },
       orderBy: { views: "desc" },
@@ -71,7 +71,7 @@ export default async function AnalyticsPage({ searchParams }) {
       },
     }),
 
-    // برای محاسبه روزانه
+    // For the daily calculation
     prisma.productInquiry.findMany({
       where: {
         supplierId: userId,
@@ -80,15 +80,15 @@ export default async function AnalyticsPage({ searchParams }) {
       select: { createdAt: true },
     }),
 
-    // برای نمودار بازدید روزانه
+    // For the daily views chart
     prisma.product.findMany({
       where: { userId },
       select: { views: true, createdAt: true },
     }),
   ]);
 
-  // ====== بازدید روزانه (بر اساس products) ======
-  // چون views تجمعی است، از توزیع ساده استفاده می‌کنیم
+  // ====== Daily views (based on products) ======
+  // Because views are cumulative, we use a simple distribution
   const dailyBuckets = {};
   for (let i = daysBack; i >= 0; i--) {
     const d = new Date();
@@ -97,8 +97,8 @@ export default async function AnalyticsPage({ searchParams }) {
     dailyBuckets[key] = 0;
   }
 
-  // توزیع ساده: بازدید هر محصول به تاریخ ایجادش نسبت می‌دهیم
-  // (برای دقت بیشتر باید جدول جداگانه views داشته باشیم)
+  // Simple distribution: we attribute each product's views to its creation date
+  // (For better accuracy we would need a separate views table)
   const totalProductsViews = totalViews._sum.views || 0;
   const productsCount = allProducts.length || 1;
   const avgViewsPerProduct = Math.floor(totalProductsViews / productsCount);
@@ -125,7 +125,7 @@ export default async function AnalyticsPage({ searchParams }) {
   );
   const dailyViews = Object.values(dailyBuckets);
 
-  // ====== درخواست‌های روزانه ======
+  // ====== Daily inquiries ======
   const inquiryBuckets = {};
   Object.keys(dailyBuckets).forEach((k) => {
     inquiryBuckets[k] = 0;
@@ -140,7 +140,7 @@ export default async function AnalyticsPage({ searchParams }) {
 
   const dailyInquiries = Object.values(inquiryBuckets);
 
-  // ====== کشورهای برتر ======
+  // ====== Top countries ======
   const inquiriesWithCountry = await prisma.productInquiry.findMany({
     where: { supplierId: userId },
     select: {
@@ -166,11 +166,11 @@ export default async function AnalyticsPage({ searchParams }) {
 
   const maxCountry = topCountries[0]?.count || 1;
 
-  // ====== میانگین بازدید هر محصول ======
+  // ====== Average views per product ======
   const avgViews =
     productsCount > 0 ? Math.floor(totalProductsViews / productsCount) : 0;
 
-  // ====== نرخ تبدیل ======
+  // ====== Conversion rate ======
   const conversionRate =
     totalProductsViews > 0
       ? ((totalInquiries / totalProductsViews) * 100).toFixed(2)

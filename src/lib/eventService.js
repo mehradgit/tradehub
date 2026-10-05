@@ -7,12 +7,12 @@ import { getOrCreatePreferences } from "@/lib/notificationPreferenceService";
 import { HANDLERS } from "@/lib/eventHandlers";
 
 // ============================================================
-// dispatchEvent — تابع مرکزی
+// dispatchEvent — central function
 //
 // eventName: "inquiry.created" | "user.registered" | ...
-// payload:   داده‌های مربوط به رویداد
+// payload:   the data related to the event
 //
-// همیشه fire-and-forget است. هرگز throw نمی‌کند.
+// It is always fire-and-forget. It never throws.
 // ============================================================
 export async function dispatchEvent(eventName, payload = {}) {
   try {
@@ -22,7 +22,7 @@ export async function dispatchEvent(eventName, payload = {}) {
       return { dispatched: 0 };
     }
 
-    // handler یک یا چند action برمی‌گرداند
+    // the handler returns one or more actions
     const actions = await handler(payload);
     if (!Array.isArray(actions) || actions.length === 0) {
       return { dispatched: 0 };
@@ -46,18 +46,18 @@ export async function dispatchEvent(eventName, payload = {}) {
 }
 
 // ============================================================
-// dispatchAction — ارسال به یک کاربر در چند کانال
+// dispatchAction — send to one user over several channels
 //
 // action = {
 //   userId,
 //   category,           // "inquiry" | "quote" | ...
 //   templateKey,        // "new_inquiry"
-//   variables,          // متغیرهای قالب
+//   variables,          // template variables
 //   channels,           // ["email", "push", "inApp"]
 //   inAppData,          // { title, body, link, icon, metadata }
 //   pushData,           // { title, body, url, icon }
-//   metadata,           // برای EmailLog
-//   bypassPreferences,  // اگر true، Preferences نادیده گرفته می‌شود
+//   metadata,           // for EmailLog
+//   bypassPreferences,  // if true, the Preferences are ignored
 // }
 // ============================================================
 async function dispatchAction(action) {
@@ -88,7 +88,7 @@ async function dispatchAction(action) {
     return;
   }
 
-  // بررسی Preferences (مگر اینکه bypassPreferences = true)
+  // Check Preferences (unless bypassPreferences = true)
   let prefs = {
     emailEnabled: true,
     pushEnabled: true,
@@ -111,7 +111,7 @@ async function dispatchAction(action) {
       link: inAppData.link || null,
       icon: inAppData.icon || null,
       metadata: inAppData.metadata || null,
-      skipPush: true, // ✅ پوش را خودِ همین تابع پایین‌تر مدیریت می‌کند
+      skipPush: true, // ✅ Push is handled by this same function further below
     });
   }
 
@@ -132,7 +132,7 @@ async function dispatchAction(action) {
     templateKey &&
     user.email
   ) {
-    // در فاز ۱ فقط instant ارسال می‌شود؛ daily/weekly در فاز ۲
+    // In phase 1 only instant is sent; daily/weekly come in phase 2
     if (prefs.frequency === "instant" || bypassPreferences) {
       await queueEmail({
         userId,
@@ -146,6 +146,6 @@ async function dispatchAction(action) {
         metadata,
       });
     }
-    // اگر frequency != instant بود، در فاز ۲ به digest اضافه می‌شود
+    // If frequency != instant, it is added to the digest in phase 2
   }
 }

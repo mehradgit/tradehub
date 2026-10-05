@@ -5,7 +5,7 @@ import { ACCESS_CONTROL_DEFAULT } from "@/lib/defaultSettings";
 
 const SETTING_KEY = "accessControl";
 
-// ====== دریافت تنظیمات ======
+// ====== Get settings ======
 export async function getAccessControlSettings() {
   const setting = await prisma.setting.findUnique({
     where: { key: SETTING_KEY },
@@ -14,7 +14,7 @@ export async function getAccessControlSettings() {
   return deepMerge(ACCESS_CONTROL_DEFAULT, setting.value);
 }
 
-// ====== ذخیره تنظیمات ======
+// ====== Save settings ======
 export async function saveAccessControlSettings(value) {
   return prisma.setting.upsert({
     where: { key: SETTING_KEY },
@@ -23,7 +23,7 @@ export async function saveAccessControlSettings(value) {
   });
 }
 
-// ====== ادغام عمیق ======
+// ====== Deep merge ======
 function deepMerge(target, source) {
   const result = { ...target };
   for (const key in source) {
@@ -40,7 +40,7 @@ function deepMerge(target, source) {
   return result;
 }
 
-// ====== بررسی Reveal قبلی (درخواست) ======
+// ====== Check a previous Reveal (request) ======
 export async function hasRevealedBuyerInfo(userId, requestId) {
   if (!userId || !requestId) return false;
   try {
@@ -54,7 +54,7 @@ export async function hasRevealedBuyerInfo(userId, requestId) {
   }
 }
 
-// ====== ✅ بررسی Reveal قبلی (محصول) ======
+// ====== ✅ Check a previous Reveal (product) ======
 export async function hasRevealedSupplierInfo(userId, productId) {
   if (!userId || !productId) return false;
   try {
@@ -68,7 +68,7 @@ export async function hasRevealedSupplierInfo(userId, productId) {
   }
 }
 
-// ====== بررسی مجوز پایه ======
+// ====== Check the base permission ======
 async function checkAccess(section, userId, options = {}) {
   const { isOwner = false } = options;
 
@@ -153,7 +153,7 @@ async function checkAccess(section, userId, options = {}) {
   return { allowed: false, reason: "unknown_visibility" };
 }
 
-// ====== اطلاعات خریدار درخواست ======
+// ====== Request buyer info ======
 export async function canViewBuyerInfo(userId, request) {
   const settings = await getAccessControlSettings();
   const isOwner = request.userId === userId;
@@ -168,7 +168,7 @@ export async function canViewBuyerInfo(userId, request) {
   return checkAccess(settings.request.buyerInfo, userId, { isOwner });
 }
 
-// ====== اطلاعات تماس خریدار درخواست ======
+// ====== Request buyer contact info ======
 export async function canViewRequestContactInfo(userId, request) {
   const settings = await getAccessControlSettings();
   return checkAccess(
@@ -178,7 +178,7 @@ export async function canViewRequestContactInfo(userId, request) {
   );
 }
 
-// ====== ✅ اطلاعات تأمین‌کننده محصول ======
+// ====== ✅ Product supplier info ======
 export async function canViewSupplierInfo(userId, product) {
   const settings = await getAccessControlSettings();
   const isOwner = product.userId === userId;
@@ -193,7 +193,7 @@ export async function canViewSupplierInfo(userId, product) {
   return checkAccess(settings.product.supplierInfo, userId, { isOwner });
 }
 
-// ====== اطلاعات تماس پروفایل ======
+// ====== Profile contact info ======
 export async function canViewProfileContactInfo(userId, targetUserId) {
   const settings = await getAccessControlSettings();
   return checkAccess(settings.profile.contactInfo, userId, {

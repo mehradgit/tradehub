@@ -6,7 +6,7 @@ export default function BuyingRequests({ requests }) {
   console.log(requests)
   return (
     <div className="featured-products-section">
-      {/* ====== هدر با عنوان، زیرنویس و لینک ====== */}
+      {/* ====== Header with title, subtitle and link ====== */}
       <div className="section-header">
         <div>
           <h2 className="section-title">
@@ -21,7 +21,7 @@ export default function BuyingRequests({ requests }) {
         </Link>
       </div>
 
-      {/* گرید درخواست‌ها */}
+      {/* Requests grid */}
       <div className="requests-grid">
         {requests.map((request) => (
           <RequestCard key={request.id} request={request} />

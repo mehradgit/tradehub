@@ -4,24 +4,24 @@
 import { useState } from "react";
 
 // ============================================================
-// مشخصات پویا (EAV) — قالب‌بندی برای نمایش
+// Dynamic attributes (EAV) — formatting for display
 //
-// getProductAttributes() برای هر اتریبیوت این‌ها را می‌دهد:
-//   { attributeId, key, label, labelFa, dataType, unit, options, values, value }
-//   - value  : برای multiSelect آرایه، در غیر این صورت مقدار تکی
-//   - values : همیشه آرایه‌ی خام (string | number | boolean)
+// getProductAttributes() returns the following for each attribute:
+//   { attributeId, key, label, dataType, unit, options, values, value }
+//   - value  : an array for multiSelect, otherwise a single value
+//   - values : always the raw array (string | number | boolean)
 // ============================================================
 function formatAttributeLabel(attr) {
-  const base = attr?.label || attr?.labelFa || attr?.key;
+  const base = attr?.label || attr?.key;
   if (!base) return null;
-  // واحد اندازه‌گیری داخل پرانتز کنار برچسب
+  // Measurement unit in parentheses next to the label
   return attr?.unit ? `${base} (${attr.unit})` : String(base);
 }
 
 function formatAttributeValue(attr) {
   if (!attr) return null;
 
-  // مقادیر خام را یکدست می‌کنیم (آرایه یا مقدار تکی)
+  // Normalise the raw values into a single shape (array or single value)
   const rawList =
     Array.isArray(attr.values) && attr.values.length > 0
       ? attr.values
@@ -31,7 +31,7 @@ function formatAttributeValue(attr) {
           ? []
           : [attr.value];
 
-  // ردیف‌های خالی ("" / null / undefined / []) نمایش داده نمی‌شوند
+  // Empty rows ("" / null / undefined / []) are not displayed
   const list = rawList.filter(
     (v) =>
       v !== null &&
@@ -54,14 +54,14 @@ function formatAttributeValue(attr) {
     return truthy ? "Yes" : "No";
   }
 
-  // number → عدد (به‌همراه واحد در صورت وجود)
+  // number → number (together with the unit, if any)
   if (attr.dataType === "number") {
     const nums = list.map((v) => Number(v)).filter((n) => Number.isFinite(n));
     if (nums.length === 0) return null;
     return `${nums.join(", ")}${unit}`;
   }
 
-  // text | select | multiSelect → رشته‌ها با ", " به هم می‌چسبند
+  // text | select | multiSelect → strings joined together with ", "
   const parts = list.map((v) => String(v).trim()).filter(Boolean);
   if (parts.length === 0) return null;
   return parts.join(", ");
@@ -70,14 +70,14 @@ function formatAttributeValue(attr) {
 export default function ProductTabs({ product, attributes }) {
   const [activeTab, setActiveTab] = useState("desc");
 
-  // attributes هم می‌تواند به‌صورت پراپ بیاید و هم داخل product باشد
+  // attributes can be passed as a prop or come from inside product
   const attributeList = Array.isArray(attributes)
     ? attributes
     : Array.isArray(product?.attributes)
       ? product.attributes
       : [];
 
-  // فقط ردیف‌هایی که هم برچسب و هم مقدار قابل نمایش دارند
+  // Only rows that have both a displayable label and a displayable value
   const attributeRows = attributeList
     .map((attr) => ({
       id: attr?.attributeId || attr?.key,
@@ -92,7 +92,7 @@ export default function ProductTabs({ product, attributes }) {
     { id: "reviews", label: "Reviews" },
   ];
 
-  // تاریخ به‌صورت خوانا
+  // Human-readable date
   const formattedDate = product.createdAt
     ? new Date(product.createdAt).toLocaleDateString("en-US", {
       year: "numeric",
@@ -101,14 +101,14 @@ export default function ProductTabs({ product, attributes }) {
     })
     : "—";
 
-  // بررسی وجود توضیحات
+  // Check whether a description exists
   const hasShortDesc = product.shortDesc && product.shortDesc.length > 0;
   const hasFullDesc = product.fullDesc && product.fullDesc.length > 0;
   const hasAnyDescription = hasShortDesc || hasFullDesc;
 
   return (
     <div id="product-description" className="product-tabs-wrapper">
-      {/* ====== هدر تب‌ها ====== */}
+      {/* ====== Tabs header ====== */}
       <div className="tabs-header">
         {tabs.map((tab) => (
           <button
@@ -121,11 +121,11 @@ export default function ProductTabs({ product, attributes }) {
         ))}
       </div>
 
-      {/* ====== تب Description ====== */}
+      {/* ====== Description tab ====== */}
       <div className={`tab-content ${activeTab === "desc" ? "active" : ""}`}>
         {hasAnyDescription ? (
           <>            
-            {/* توضیحات کامل */}
+            {/* Full description */}
             {hasFullDesc && (
               <div>
                 <h5 className="description-label">Full Description</h5>
@@ -141,7 +141,7 @@ export default function ProductTabs({ product, attributes }) {
         )}
       </div>
 
-      {/* ====== تب Specifications ====== */}
+      {/* ====== Specifications tab ====== */}
       <div className={`tab-content ${activeTab === "specs" ? "active" : ""}`}>
         <table className="tab-spec-table">
           <tbody>
@@ -247,8 +247,8 @@ export default function ProductTabs({ product, attributes }) {
         </table>
 
         {/* ============================================================
-            مشخصات پویا (EAV) — فقط وقتی مقداری ذخیره شده باشد
-            (اگر اتریبیوتی نباشد، هیچ عنوان/جدول خالی رندر نمی‌شود)
+            Dynamic attributes (EAV) — only when a value has been stored
+            (if there are no attributes, no empty heading/table is rendered)
             ============================================================ */}
         {attributeRows.length > 0 && (
           <>
@@ -274,7 +274,7 @@ export default function ProductTabs({ product, attributes }) {
         )}
       </div>
 
-      {/* ====== تب Reviews ====== */}
+      {/* ====== Reviews tab ====== */}
       <div className={`tab-content ${activeTab === "reviews" ? "active" : ""}`}>
         <div className="review-item">
           <div className="review-header">
@@ -329,7 +329,7 @@ export default function ProductTabs({ product, attributes }) {
           </p>
         </div>
 
-        {/* دکمه افزودن نظر (نمونه) */}
+        {/* Add review button (sample) */}
         <div className="text-center mt-4">
           <button className="btn btn-outline-primary rounded-pill px-4">
             <i className="fas fa-plus me-2"></i>Write a Review
@@ -337,7 +337,7 @@ export default function ProductTabs({ product, attributes }) {
         </div>
       </div>
 
-      {/* ====== استایل‌های داخلی ====== */}
+      {/* ====== Scoped styles ====== */}
       <style jsx>{`
         .product-tabs-wrapper {
           width: 100%;
@@ -398,7 +398,7 @@ export default function ProductTabs({ product, attributes }) {
           }
         }
 
-        /* ====== تب Description ====== */
+        /* ====== Description tab ====== */
         .description-label {
           font-size: 14px;
           font-weight: 600;
@@ -466,7 +466,7 @@ export default function ProductTabs({ product, attributes }) {
           margin: 8px 0;
         }
 
-        /* ====== جدول مشخصات ====== */
+        /* ====== Specifications table ====== */
         .tab-spec-table {
   width: 100%;
   border-collapse: collapse;
@@ -491,7 +491,7 @@ export default function ProductTabs({ product, attributes }) {
   overflow-wrap: break-word;
 }
 
-/* سلول label — آیکون و متن در یک خط */
+/* Label cell — icon and text on a single line */
 .tab-spec-table td.label {
   font-weight: 700;
   color: #0b1f18;
@@ -500,7 +500,7 @@ export default function ProductTabs({ product, attributes }) {
   min-width: 120px;
 }
 
-/* ✅ کلید حل مشکل: آیکون و متن در یک flex row */
+/* Key fix: icon and text in a single flex row */
 .tab-spec-table td.label .label-inner {
   display: flex;
   align-items: center;
@@ -547,7 +547,7 @@ export default function ProductTabs({ product, attributes }) {
     width: 12px;
   }
 
-  /* ✅ روی موبایل متن label هم nowrap بمونه */
+  /* Keep the label text nowrap on mobile too */
   .tab-spec-table td.label .label-text {
     font-size: 12px;
     white-space: nowrap;
@@ -582,7 +582,7 @@ export default function ProductTabs({ product, attributes }) {
   }
 }
 
-        /* ====== نظرات ====== */
+        /* ====== Reviews ====== */
         .review-item {
           border-bottom: 1px solid var(--gray-light);
           padding: 16px 0;
@@ -622,7 +622,7 @@ export default function ProductTabs({ product, attributes }) {
           margin: 4px 0 0 0;
         }
 
-        /* ====== ریسپانسیو ====== */
+        /* ====== Responsive ====== */
         @media (max-width: 768px) {
           .product-tabs-wrapper {
             padding: 16px;

@@ -1,14 +1,14 @@
 // src/lib/filters/params.js
 // ============================================================
-// تبدیل پارامترهای URL ↔ شیء فیلتر
+// Converting URL parameters ↔ filter object
 //
-// PURE و مشترک بین سرور (searchParams) و کلاینت (useSearchParams)
-// تا منطق در دو جا تکرار نشود.
+// PURE and shared between the server (searchParams) and the client (useSearchParams)
+// so the logic is not duplicated in two places.
 // ============================================================
 
 // ============================================================
-// دسترسی یکنواخت به searchParams
-// (می‌تواند URLSearchParams، آبجکت Next، یا آبجکت ساده باشد)
+// Uniform access to searchParams
+// (can be URLSearchParams, a Next object, or a plain object)
 // ============================================================
 export function makeGetter(searchParams) {
   if (!searchParams) return () => null;
@@ -26,7 +26,7 @@ export function makeGetter(searchParams) {
 }
 
 // ============================================================
-// پیمایش همه‌ی کلید/مقدارها
+// Iterating over all key/value pairs
 // ============================================================
 export function entriesOf(searchParams) {
   const out = [];
@@ -34,7 +34,7 @@ export function entriesOf(searchParams) {
   if (!searchParams) return out;
 
   if (typeof searchParams.forEach === "function" && !Array.isArray(searchParams)) {
-    // URLSearchParams یا ReadonlyURLSearchParams
+    // URLSearchParams or ReadonlyURLSearchParams
     searchParams.forEach((value, key) => out.push([key, value]));
     return out;
   }
@@ -52,7 +52,7 @@ export function entriesOf(searchParams) {
 }
 
 // ============================================================
-// "a,b,c" یا ["a","b"] → ["a","b","c"]
+// "a,b,c" or ["a","b"] → ["a","b","c"]
 // ============================================================
 export function parseList(raw) {
   if (!raw) return [];
@@ -71,9 +71,9 @@ export function joinList(list) {
 }
 
 // ============================================================
-// خواندن مقادیر فیلتر از searchParams بر اساس اسکیما
+// Reading filter values from searchParams based on the schema
 //
-// خروجی نمونه برای products:
+// Example output for products:
 // {
 //   search: "honey",
 //   categoryPath: "honey",
@@ -125,7 +125,7 @@ export function readFilterValues(fields = [], searchParams) {
 
           if (key.endsWith("Min") || key.endsWith("Max")) continue;
 
-          // بازه‌ی عددی
+          // numeric range
           const minRaw = get(`attr_${id}Min`);
           const maxRaw = get(`attr_${id}Max`);
           if (minRaw || maxRaw) {
@@ -157,7 +157,7 @@ export function readFilterValues(fields = [], searchParams) {
 }
 
 // ============================================================
-// تبدیل مقادیر فیلتر به پارامترهای URL
+// Converting filter values into URL parameters
 // ============================================================
 export function filtersToParams(values = {}, fields = []) {
   const params = new URLSearchParams();
@@ -223,7 +223,7 @@ export function filtersToParams(values = {}, fields = []) {
 }
 
 // ============================================================
-// شمارش فیلترهای فعال (برای بج روی دکمه «فیلترهای بیشتر»)
+// Counting active filters (for the badge on the "More filters" button)
 // ============================================================
 export function countActiveFilters(values = {}, { includeSearch = false, includeSort = false } = {}) {
   let count = 0;
@@ -232,7 +232,7 @@ export function countActiveFilters(values = {}, { includeSearch = false, include
     if (!includeSearch && key === "search") continue;
     if (!includeSort && key === "sort") continue;
     if (key === "categoryPath" && !includeSearch) {
-      // دسته‌بندی را حساب می‌کنیم چون فیلتر مهمی است
+      // We do count the category, because it is an important filter
     }
 
     if (value === null || value === undefined || value === "") continue;
@@ -253,7 +253,7 @@ export function countActiveFilters(values = {}, { includeSearch = false, include
 }
 
 // ============================================================
-// ساخت URL جدید با اعمال تغییرات (برای کلاینت)
+// Building a new URL with the changes applied (for the client)
 // ============================================================
 export function buildUrl(pathname, currentParams, updates = {}, { resetPage = true } = {}) {
   const params =
@@ -282,7 +282,7 @@ export function buildUrl(pathname, currentParams, updates = {}, { resetPage = tr
 }
 
 // ============================================================
-// حذف همه‌ی فیلترها (حفظ sort در صورت تمایل)
+// Removing all filters (keeping sort if desired)
 // ============================================================
 export function clearFilterParams(fields = [], { keepSort = false } = {}) {
   const updates = {};
@@ -293,7 +293,7 @@ export function clearFilterParams(fields = [], { keepSort = false } = {}) {
       updates[field.maxParam || `${field.name}Max`] = "";
       continue;
     }
-    if (field.type === "dynamicAttributes") continue; // جداگانه پاک می‌شود
+    if (field.type === "dynamicAttributes") continue; // cleared separately
     if (field.type === "sort" && keepSort) continue;
     updates[field.name] = "";
   }

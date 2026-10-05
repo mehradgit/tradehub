@@ -16,7 +16,7 @@ export async function PATCH(request) {
       return NextResponse.json({ message: "senderId is required" }, { status: 400 });
     }
 
-    // علامت‌گذاری تمام پیام‌های دریافتی از فرستنده به‌عنوان خوانده‌شده
+    // Mark all received messages from this sender as read
     await prisma.message.updateMany({
       where: {
         receiverId: session.user.id,

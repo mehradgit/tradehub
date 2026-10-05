@@ -1,15 +1,15 @@
 // src/lib/attributeValues.js
 // ============================================================
-// تبدیل شکل مقادیر اتریبیوت بین «فرم» و «API»
+// Converting the shape of attribute values between "form" and "API"
 //
-//   فرم  → { [attributeId]: value }
-//   API  → [{ attributeId, value }]
+//   form -> { [attributeId]: value }
+//   API  -> [{ attributeId, value }]
 //
-// این فایل PURE است و هم در کلاینت و هم سرور قابل استفاده است.
+// This file is PURE and can be used both on the client and the server.
 // ============================================================
 
 // ============================================================
-// مقدار خالی مناسب هر نوع
+// The appropriate empty value for each type
 // ============================================================
 export function emptyAttributeValue(dataType) {
   switch (dataType) {
@@ -27,7 +27,7 @@ export function emptyAttributeValue(dataType) {
 // ============================================================
 // { id: value } → [{ attributeId, value }]
 //
-// مقادیر خالی حذف می‌شوند تا ردیف بی‌معنی ساخته نشود.
+// Empty values are dropped so a meaningless row is not created.
 // ============================================================
 export function attributesMapToArray(map = {}) {
   if (!map || typeof map !== "object") return [];
@@ -44,7 +44,7 @@ export function attributesMapToArray(map = {}) {
     } else if (typeof value === "string") {
       if (value.trim() === "") continue;
     } else if (typeof value === "boolean") {
-      // false یعنی «خیر» که یک مقدار معتبر است، پس نگه داشته می‌شود
+      // false means "no", which is a valid value, so it is kept
     } else if (typeof value === "number") {
       if (!Number.isFinite(value)) continue;
     } else {
@@ -59,7 +59,7 @@ export function attributesMapToArray(map = {}) {
 
 // ============================================================
 // [{ attributeId, value }] → { id: value }
-// برای پر کردن فرم ویرایش از داده‌ی ذخیره‌شده
+// For filling the edit form from the stored data
 // ============================================================
 export function attributesArrayToMap(list = []) {
   const map = {};
@@ -75,8 +75,8 @@ export function attributesArrayToMap(list = []) {
 }
 
 // ============================================================
-// خروجی getProductAttributes() سرویس → map فرم
-// (هر آیتم: { attributeId, dataType, value })
+// The service's getProductAttributes() output -> form map
+// (each item: { attributeId, dataType, value })
 // ============================================================
 export function productAttributesToMap(attributes = []) {
   const map = {};
@@ -104,7 +104,7 @@ export function productAttributesToMap(attributes = []) {
 }
 
 // ============================================================
-// آیا فرم هیچ اتریبیوتی پر نکرده؟
+// Has the form filled in no attributes at all?
 // ============================================================
 export function isAttributesMapEmpty(map = {}) {
   return attributesMapToArray(map).length === 0;

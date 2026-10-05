@@ -642,7 +642,7 @@ export default function HomepagePreview({ isOpen, onClose, sections }) {
   return createPortal(previewContent, document.body);
 }
 
-// ===== Product Card (کوچک) =====
+// ===== Product Card (compact) =====
 function PreviewProductCard({ product }) {
   const img =
     Array.isArray(product.images) && product.images[0]
@@ -752,7 +752,7 @@ function PreviewProductCard({ product }) {
   );
 }
 
-// ===== Request Card (کوچک) =====
+// ===== Request Card (compact) =====
 function PreviewRequestCard({ request }) {
   return (
     <div className="prc-card">

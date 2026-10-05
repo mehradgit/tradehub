@@ -4,13 +4,13 @@
 import { useMemo } from "react";
 
 // ============================================================
-// انتخابگر دسته‌بندی سه‌سطحی
+// Three-level category cascader
 //
-// سه select پشت‌سرهم؛ هر کدام گزینه‌هایش را از سطح بالاتر
-// می‌گیرد. خروجی یک path است: "grains-cereals/rice/basmati"
+// Three selects in a row; each one takes its options from the
+// level above. The output is a path: "grains-cereals/rice/basmati"
 //
-// اگر فقط سطح ۱ انتخاب شود، path همان "grains-cereals" است و
-// فیلتر پیشوندی همه‌ی زیرشاخه‌ها را برمی‌گرداند.
+// If only level 1 is selected, the path is just "grains-cereals"
+// and the prefix filter returns all of its descendants.
 // ============================================================
 export default function CategoryCascader({
   tree = [],
@@ -21,7 +21,7 @@ export default function CategoryCascader({
   const parts = String(value || "").split("/").filter(Boolean);
   const [l1Slug, l2Slug, l3Slug] = parts;
 
-  // ===== گزینه‌های هر سطح =====
+  // ===== Options for each level =====
   const level1 = useMemo(() => tree || [], [tree]);
 
   const level2 = useMemo(() => {
@@ -59,7 +59,7 @@ export default function CategoryCascader({
 
   return (
     <div style={{ display: "grid", gap: "8px" }}>
-      {/* سطح ۱ */}
+      {/* Level 1 */}
       <select
         style={baseStyle}
         value={l1Slug || ""}
@@ -74,7 +74,7 @@ export default function CategoryCascader({
         ))}
       </select>
 
-      {/* سطح ۲ */}
+      {/* Level 2 */}
       {l1Slug && level2.length > 0 && (
         <select
           style={baseStyle}
@@ -91,7 +91,7 @@ export default function CategoryCascader({
         </select>
       )}
 
-      {/* سطح ۳ */}
+      {/* Level 3 */}
       {l1Slug && l2Slug && level3.length > 0 && (
         <select
           style={baseStyle}

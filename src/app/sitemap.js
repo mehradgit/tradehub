@@ -3,14 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { getCategories } from "@/lib/categoriesService";
 import { buildCategoryTree, buildCategoryIndex } from "@/lib/categoryTree";
 
-// بدون این، sitemap فقط یک‌بار در زمان build ساخته می‌شود و
-// محصولات/دسته‌های جدید هرگز به آن اضافه نمی‌شوند.
+// Without this, the sitemap is only built once at build time and
+// new products/categories are never added to it.
 export const revalidate = 3600;
 
 export default async function sitemap() {
   const baseUrl = "https://foodtradelink.com";
 
-  // صفحات ثابت
+  // Static pages
   const staticPages = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
     { url: `${baseUrl}/products`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
@@ -20,7 +20,7 @@ export default async function sitemap() {
     { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
   ];
 
-  // محصولات تأییدشده
+  // Approved products
   const products = await prisma.product.findMany({
     where: { isVisible: true, status: "APPROVED" },
     select: { productNumber: true, slug: true, updatedAt: true },
@@ -33,7 +33,7 @@ export default async function sitemap() {
     priority: 0.7,
   }));
 
-  // درخواست‌های خرید تأییدشده
+  // Approved buying requests
   const requests = await prisma.buyingRequest.findMany({
     where: { isVisible: true, status: "APPROVED" },
     select: { requestNumber: true, slug: true, updatedAt: true },
@@ -46,7 +46,7 @@ export default async function sitemap() {
     priority: 0.7,
   }));
 
-  // پروفایل‌های تکمیل‌شده
+  // Completed profiles
   const profiles = await prisma.user.findMany({
     where: { registrationComplete: true },
     select: { profileNumber: true, slug: true, updatedAt: true },
@@ -59,8 +59,8 @@ export default async function sitemap() {
     priority: 0.6,
   }));
 
-  // ===== لندینگ‌های دسته‌بندی (سه‌سطحی) =====
-  // این صفحات هدف اصلی ترافیک ارگانیک‌اند، پس در sitemap می‌آیند.
+  // ===== Category landing pages (three levels) =====
+  // These pages are the main source of organic traffic, so they are included in the sitemap.
   let categoryUrls = [];
   try {
     const flat = await getCategories();

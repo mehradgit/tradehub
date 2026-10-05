@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 
 export default function ImageGallery({ images, productName }) {
-  // ====== نرمال‌سازی تصاویر ======
+  // ====== Normalise the images ======
   const normalizeImages = (imgData) => {
     if (!imgData) return [];
     if (Array.isArray(imgData)) return imgData;
@@ -29,13 +29,13 @@ export default function ImageGallery({ images, productName }) {
   const displayThumbnails = allImages.slice(0, 4);
   const hasMoreImages = allImages.length > 4;
 
-  // وقتی تصویر اصلی عوض می‌شه، ایندکس رو هم به‌روز کن
+  // When the main image changes, keep the index in sync
   useEffect(() => {
     const idx = allImages.indexOf(mainImage);
     if (idx !== -1) setCurrentIndex(idx);
   }, [mainImage, allImages]);
 
-  // ====== باز کردن Lightbox ======
+  // ====== Open the Lightbox ======
   const openLightbox = (index) => {
     if (allImages.length === 0) return;
     setCurrentIndex(Math.min(index, allImages.length - 1));
@@ -48,7 +48,7 @@ export default function ImageGallery({ images, productName }) {
     document.body.style.overflow = "auto";
   };
 
-  // ====== قبلی/بعدی ======
+  // ====== Previous/Next ======
   const goToPrevious = (e) => {
     e.stopPropagation();
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
@@ -59,7 +59,7 @@ export default function ImageGallery({ images, productName }) {
     setCurrentIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
   };
 
-  // ====== کیبورد ======
+  // ====== Keyboard ======
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!isLightboxOpen) return;
@@ -85,7 +85,7 @@ export default function ImageGallery({ images, productName }) {
     openLightbox(5);
   };
 
-  // ====== حالت بدون تصویر ======
+  // ====== No-image state ======
   if (allImages.length === 0) {
     return (
       <div className="product-gallery-wrapper">
@@ -103,7 +103,7 @@ export default function ImageGallery({ images, productName }) {
 
   return (
     <>
-      {/* ====== گالری اصلی ====== */}
+      {/* ====== Main gallery ====== */}
       <div className="product-gallery-wrapper">
         <div className="product-thumbnails">
           {displayThumbnails.map((img, index) => (

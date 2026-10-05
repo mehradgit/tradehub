@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { retryAllFailedEmails, processEmailQueue } from "@/lib/emailQueueService";
 
 // ============================================================
-// GET: لیست لاگ ایمیل‌ها + آمار
+// GET: list the email logs + stats
 // ============================================================
 export async function GET(request) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request) {
     const templateKey = searchParams.get("templateKey") || "";
     const search = searchParams.get("search") || "";
 
-    // ✅ محدودسازی صفحه/تعداد، تا کسی نتواند کل جدول را بکشد
+    // ✅ Clamp page/limit so nobody can pull the whole table
     const page = Math.max(
       1,
       parseInt(searchParams.get("page") || "1", 10) || 1
@@ -46,7 +46,7 @@ export async function GET(request) {
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
-        // ⚠️ metadata عمداً انتخاب نمی‌شود؛ حاوی HTML کامل ایمیل است
+        // ⚠️ metadata is deliberately not selected; it holds the full email HTML
         select: {
           id: true,
           userId: true,
@@ -102,7 +102,7 @@ export async function GET(request) {
 }
 
 // ============================================================
-// POST: عملیات گروهی
+// POST: bulk operations
 // body: { action: "retry-all-failed" | "process-queue" }
 // ============================================================
 export async function POST(request) {

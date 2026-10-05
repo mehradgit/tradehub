@@ -6,7 +6,7 @@ import fs from "fs/promises";
 import path from "path";
 
 // ============================================================
-// GET: آمار چیزی که قراره پاک بشه
+// GET: stats for what is about to be deleted
 // ============================================================
 export async function GET() {
   try {
@@ -65,7 +65,7 @@ export async function GET() {
       prisma.usageCounter.count(),
     ]);
 
-    // آمار فایل‌های آپلود شده
+    // Stats for the uploaded files
     let uploadStats = { requests: 0, products: 0, profiles: 0, tickets: 0 };
     const uploadRoot = path.join(process.cwd(), "public", "uploads");
     try {
@@ -126,7 +126,7 @@ export async function GET() {
 }
 
 // ============================================================
-// POST: انجام ریست
+// POST: perform the reset
 // ============================================================
 export async function POST(request) {
   try {
@@ -139,7 +139,7 @@ export async function POST(request) {
     const body = await request.json();
     const { confirmation } = body;
 
-    // ✅ بررسی تأیید قوی
+    // Strong confirmation check
     if (confirmation !== "RESET") {
       return NextResponse.json(
         {
@@ -151,18 +151,18 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // مرحله ۱: پاک کردن دیتابیس (به ترتیب برای احترام به FK)
+    // Step 1: clear the database (ordered to respect foreign keys)
     // ============================================================
     const results = await prisma.$transaction(async (tx) => {
       const counts = {};
 
-      // وابسته‌های کوپن
+      // Coupon dependencies
       counts.couponUsages = (await tx.couponUsage.deleteMany({})).count;
 
-      // پرداخت‌ها
+      // Payments
       counts.payments = (await tx.payment.deleteMany({})).count;
 
-      // کوپن‌ها (بعد از پرداخت‌ها)
+      // Coupons (after payments)
       counts.coupons = (await tx.coupon.deleteMany({})).count;
 
       // Push
@@ -208,13 +208,13 @@ export async function POST(request) {
       // Product inquiries
       counts.inquiries = (await tx.productInquiry.deleteMany({})).count;
 
-      // Buying requests (بعد از quotes، messages، inquiries)
+      // Buying requests (after quotes, messages and inquiries)
       counts.requests = (await tx.buyingRequest.deleteMany({})).count;
 
       // Products
       counts.products = (await tx.product.deleteMany({})).count;
 
-      // Account + Session + VerificationToken برای همه به‌جز ادمین فعلی
+      // Account + Session + VerificationToken for everyone except the current admin
       counts.accounts = (
         await tx.account.deleteMany({
           where: { userId: { not: currentAdminId } },
@@ -231,7 +231,7 @@ export async function POST(request) {
         await tx.verificationToken.deleteMany({})
       ).count;
 
-      // کاربران (به‌جز ادمین فعلی)
+      // Users (except the current admin)
       counts.users = (
         await tx.user.deleteMany({
           where: { id: { not: currentAdminId } },
@@ -242,7 +242,7 @@ export async function POST(request) {
     });
 
     // ============================================================
-    // مرحله ۲: پاک کردن فایل‌های آپلود شده
+    // Step 2: delete the uploaded files
     // ============================================================
     const uploadResult = {
       deletedFiles: 0,
@@ -277,12 +277,12 @@ export async function POST(request) {
         uploadResult.deletedFiles += deleted;
         uploadResult.deletedFolders.push({ folder, deleted });
       } catch {
-        // پوشه وجود نداره - مشکلی نیست
+        // The folder does not exist - that is fine
       }
     }
 
     // ============================================================
-    // نتیجه
+    // Result
     // ============================================================
     return NextResponse.json({
       message: "Site data has been reset successfully.",

@@ -18,7 +18,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers"; // اختیاری
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers"; // optional
 import ItemPickerModal from "./ItemPickerModal";
 import SortableSectionItem from "./SortableSectionItem";
 import HomepagePreview from "./HomepagePreview";
@@ -30,7 +30,7 @@ export default function HomepageManager({ initialSections, categories }) {
   );
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false); // ✅ جدید
+  const [previewOpen, setPreviewOpen] = useState(false); // ✅ New
 
   const [modal, setModal] = useState({
     open: false,
@@ -55,7 +55,7 @@ export default function HomepageManager({ initialSections, categories }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // شروع درگ بعد از ۵px حرکت
+        distance: 5, // Start dragging after 5px of movement
       },
     }),
     useSensor(KeyboardSensor, {
@@ -79,7 +79,7 @@ export default function HomepageManager({ initialSections, categories }) {
     // Optimistic update
     setSections(reordered);
 
-    // ذخیره در سرور
+    // Save to the server
     try {
       const res = await fetch("/api/admin/homepage-sections", {
         method: "PUT",
@@ -91,7 +91,7 @@ export default function HomepageManager({ initialSections, categories }) {
       router.refresh();
     } catch (err) {
       toast.error(err.message);
-      // برگردون به حالت قبل
+      // Revert to the previous state
       setSections(sections);
     }
   };
@@ -341,7 +341,7 @@ export default function HomepageManager({ initialSections, categories }) {
         sections={sections}
       />
 
-      {/* ===== Edit/Create Modal (بدون تغییر) ===== */}
+      {/* ===== Edit/Create Modal (unchanged) ===== */}
       {modal.open && (
         <div onClick={closeModal} style={overlayStyle}>
           <form

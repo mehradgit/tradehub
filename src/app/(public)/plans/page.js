@@ -5,11 +5,11 @@ import PlanPurchase from "@/components/plans/PlanPurchase";
 
 export const metadata = { title: "Membership Plans | B2B Food Hub" };
 
-// ✅ ترتیب نمایش از چپ به راست
+// ✅ Display order, from left to right
 const PLAN_ORDER = ["Basic", "Bronze", "Silver", "Gold"];
 
 export default async function PlansPage() {
-  // دریافت مدت‌های فعال از تنظیمات (با پارس ایمن)
+  // Get the active durations from settings (with safe parsing)
   const setting = await prisma.setting.findUnique({
     where: { key: "subscriptionDurations" },
   });
@@ -27,13 +27,13 @@ export default async function PlansPage() {
     }
   }
 
-  // ✅ بدون orderBy از دیتابیس؛ بعداً خودمون مرتب می‌کنیم
+  // ✅ No orderBy from the database; we sort them ourselves afterwards
   const plans = await prisma.plan.findMany({
     where: { isActive: true },
     include: { prices: true },
   });
 
-  // سریالایز + مرتب‌سازی طبق ترتیب دلخواه
+  // Serialize + sort according to the desired order
   const serializedPlans = plans
     .map((plan) => ({
       ...plan,
@@ -50,7 +50,7 @@ export default async function PlansPage() {
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     });
 
-  // پلن فعلی کاربر
+  // The user's current plan
   const session = await auth();
   let currentPlanName = null;
   if (session?.user) {

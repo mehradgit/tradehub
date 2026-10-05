@@ -42,8 +42,8 @@ async function getProductData(productNumber) {
     notFound();
   }
 
-  // ====== مشخصات پویا (EAV) ======
-  // اگر جدول/سرویس اتریبیوت‌ها در دسترس نباشد، صفحه نباید بشکند.
+  // ====== Dynamic specifications (EAV) ======
+  // If the attribute table/service is unavailable, the page must not break.
   let attributes = [];
   try {
     attributes = await getProductAttributes(product.id);
@@ -78,8 +78,8 @@ async function getProductData(productNumber) {
     certifications: product.certifications || null,
     leadTime: product.leadTime || null,
     unit: product.unit || null,
-    // ====== مشخصات پویا (EAV) — آرایه‌ای از plain objects ======
-    // { attributeId, key, label, labelFa, dataType, unit, options, values, value }
+    // ====== Dynamic specifications (EAV) — an array of plain objects ======
+    // { attributeId, key, label, dataType, unit, options, values, value }
     attributes,
     shippingCountries: ["Worldwide"],
     features: product.certifications?.split(",").map((s) => s.trim()) || [
@@ -115,7 +115,7 @@ async function getProductData(productNumber) {
 }
 
 // ============================================================
-// generateMetadata — SEO پیشرفته
+// generateMetadata — advanced SEO
 // ============================================================
 export async function generateMetadata({ params }) {
   const { productNumber, slug } = await params;
@@ -154,7 +154,7 @@ export async function generateMetadata({ params }) {
 
   const productUrl = `${BASE_URL}/products/${productNumber}/${product.slug}`;
 
-  // تصویر اصلی
+  // Main image
   const firstImage = Array.isArray(product.images) ? product.images[0] : null;
   const imageUrl = firstImage
     ? firstImage.startsWith("http")
@@ -162,14 +162,14 @@ export async function generateMetadata({ params }) {
       : `${BASE_URL}${firstImage}`
     : `${BASE_URL}/og-default.png`;
 
-  // توضیحات
+  // Description
   const rawDesc =
     product.shortDesc ||
     product.fullDesc?.replace(/<[^>]*>/g, "").trim() ||
     `${product.name} - Buy wholesale from verified suppliers on FoodTradeLink.`;
   const description = rawDesc.slice(0, 158);
 
-  // کلمات کلیدی
+  // Keywords
   const keywords = [
     product.name,
     product.category,
@@ -183,7 +183,7 @@ export async function generateMetadata({ params }) {
     `${product.name} supplier`,
   ].filter(Boolean);
 
-  // اگر محصول APPROVED نبود، noindex
+  // If the product is not APPROVED, use noindex
   const isIndexable = product.status === "APPROVED";
 
   return {
@@ -238,7 +238,7 @@ export default async function ProductPage({ params }) {
   const { productData, supplierData, rawProduct } =
     await getProductData(productNum);
 
-  // ====== بررسی دسترسی ======
+  // ====== Access check ======
   const session = await auth();
   const productSettings = await getSectionSettings("product");
   const supplierInfoPermission = await canViewSupplierInfo(

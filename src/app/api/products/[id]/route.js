@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { getUserActivePlan } from "@/lib/planService";
-import { revalidatePath } from "next/cache"; // ✅ جدید
-// ====== دسته‌بندی سه‌سطحی + متن جست‌وجو + اتریبیوت‌های پویا ======
+import { revalidatePath } from "next/cache"; // ✅ new
+// ====== Three-level category + search text + dynamic attributes ======
 import { buildCategoryTree, resolveCategoryPath } from "@/lib/categoryTree";
 import { getCategories } from "@/lib/categoriesService";
 import {
@@ -42,8 +42,8 @@ export async function GET(request, { params }) {
       );
     }
 
-    // ====== اتریبیوت‌های محصول ======
-    // نبود جدول اتریبیوت یا هر خطای دیگر نباید GET را بشکند.
+    // ====== Product attributes ======
+    // A missing attributes table or any other error must not break GET.
     let attributes = [];
     try {
       attributes = await getProductAttributes(id);
@@ -62,7 +62,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// ===== PUT: ویرایش کامل =====
+// ===== PUT: full update =====
 export async function PUT(request, { params }) {
   try {
     const session = await auth();
@@ -118,7 +118,7 @@ export async function PUT(request, { params }) {
         userId: true,
         productNumber: true,
         slug: true,
-        // برای fallback در محاسبه‌ی categoryPath و searchText
+        // for the fallback when computing categoryPath and searchText
         category: true,
         subCategory: true,
         productType: true,
@@ -137,9 +137,9 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // ====== دسته‌بندی: مقادیر مؤثر ======
-    // هر سطحی که در body نیامده باشد، از ردیف موجود استفاده می‌شود
-    // تا categoryPath با دسته‌ی واقعاً ذخیره‌شده هم‌خوان بماند.
+    // ====== Category: effective values ======
+    // Any level missing from the body falls back to the existing row
+    // so categoryPath stays consistent with the actually stored category.
     const hasCategoryFields =
       category !== undefined ||
       subCategory !== undefined ||
@@ -149,8 +149,8 @@ export async function PUT(request, { params }) {
     const effectiveSubCategory = subCategory ?? existingProduct.subCategory;
     const effectiveProductType = productType ?? existingProduct.productType;
 
-    // اگر دسته‌بندی تغییر نکرده، همان مسیر قبلی حفظ می‌شود؛
-    // در غیر این صورت از درخت فعلی دسته‌بندی‌ها دوباره حل می‌شود.
+    // If the category did not change, the previous path is kept;
+    // otherwise it is resolved again from the current category tree.
     let categoryPath = existingProduct.categoryPath;
     if (hasCategoryFields) {
       const tree = buildCategoryTree(await getCategories());
@@ -164,13 +164,13 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // ====== ذخیره‌ی اتریبیوت‌ها (EAV) ======
-    // اگر attributes در body باشد (حتی آرایه‌ی خالی = پاک‌کردن همه)
-    // setProductAttributes صدا زده می‌شود. خطای اتریبیوت هرگز نباید
-    // به‌روزرسانی محصول را بشکند.
+    // ====== Save the attributes (EAV) ======
+    // If attributes is present in the body (even an empty array = clear all)
+    // setProductAttributes is called. An attribute error must never
+    // break the product update.
     if (Array.isArray(attributes)) {
-      // فقط ردیف‌های دارای attributeId رشته‌ای؛ اعتبارسنجی و تبدیل
-      // نوع داخل setProductAttributes انجام می‌شود.
+      // Only rows with a string attributeId; validation and type
+      // conversion happen inside setProductAttributes.
       const attributeItems = attributes.filter(
         (a) => a && typeof a.attributeId === "string",
       );
@@ -181,9 +181,9 @@ export async function PUT(request, { params }) {
       }
     }
 
-    // ====== اتریبیوت‌های فعلی (برای searchText) ======
-    // اگر همین حالا ذخیره شده‌اند، مقادیر نرمال‌شده‌ی آن‌ها خوانده
-    // می‌شود؛ در غیر این صورت مقادیر قبلی محصول.
+    // ====== Current attributes (for searchText) ======
+    // If they were just saved, their normalized values are read;
+    // otherwise the product's previous values are used.
     let currentAttributes = [];
     try {
       currentAttributes = await getProductAttributes(id);
@@ -192,7 +192,7 @@ export async function PUT(request, { params }) {
       currentAttributes = [];
     }
 
-    // ====== فیلدهایی که نوشته می‌شوند ======
+    // ====== Fields that get written ======
     const productData = {
       name,
       category: effectiveCategory,
@@ -219,7 +219,7 @@ export async function PUT(request, { params }) {
       where: { id },
       data: {
         ...productData,
-        // متن یکجای جست‌وجو از مقادیر جدید + اتریبیوت‌های فعلی
+        // Combined search text from the new values + the current attributes
         searchText: buildProductSearchText({
           product: productData,
           attributeValues: flattenAttributeValues(currentAttributes),
@@ -330,13 +330,13 @@ export async function DELETE(request, { params }) {
 
     await prisma.product.delete({ where: { id } });
 
-    // ✅ Invalidate caches — این خط حیاتی است
+    // ✅ Invalidate caches — this line is critical
     revalidatePath("/");
     revalidatePath("/products");
     revalidatePath(`/products/${product.productNumber}/${product.slug}`);
 
-    // اگر این محصول در homepage section از نوع manual بوده،
-    // بهتر است itemIds هم پاک شود (اختیاری — بخش پایین توضیح داده شده)
+    // If this product was in a manual homepage section,
+    // it is better to clear itemIds as well (optional — explained further below)
 
     return NextResponse.json(
       { message: "Product deleted successfully" },

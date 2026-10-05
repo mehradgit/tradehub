@@ -1,20 +1,20 @@
 // src/lib/vocabularies.js
 // ============================================================
-// واژگان کنترل‌شده
+// Controlled vocabularies
 //
-// فیلدهایی مثل شرایط تحویل، شرایط پرداخت، گواهینامه‌ها و نوع شرکت
-// قبلاً متن آزاد بودند؛ یعنی «FOB» و «fob» و «F.O.B» سه گروه جدا
-// می‌ساختند و فیلتر روی آن‌ها بی‌اعتبار بود.
+// Fields such as delivery terms, payment terms, certifications and company type
+// used to be free text, so "FOB", "fob" and "F.O.B" created three separate
+// groups and filtering on them was unreliable.
 //
-// این ماژول یک لیست مجاز مرکزی نگه می‌دارد (در Setting) تا
-// هم فرم‌ها از dropdown استفاده کنند و هم فیلترها معتبر باشند.
+// This module keeps one central allow-list (in Setting) so that
+// forms use a dropdown and filters stay reliable.
 // ============================================================
 import { prisma } from "@/lib/prisma";
 
 const SETTING_KEY = "vocabularies";
 
 // ============================================================
-// مقادیر پیش‌فرض (قابل ویرایش از پنل ادمین)
+// Default values (editable from the admin panel)
 // ============================================================
 export const DEFAULT_VOCABULARIES = {
   incoterms: [
@@ -98,7 +98,7 @@ export const DEFAULT_VOCABULARIES = {
   currencies: ["USD", "EUR", "AED", "IRR", "CNY", "TRY", "INR", "GBP"],
 };
 
-// ترتیب نمایش در پنل ادمین
+// Display order in the admin panel
 export const VOCABULARY_META = [
   { key: "incoterms", label: "Incoterms / Delivery Terms" },
   { key: "paymentTerms", label: "Payment Terms" },
@@ -110,7 +110,7 @@ export const VOCABULARY_META = [
 ];
 
 // ============================================================
-// نرمال‌سازی: هر آیتم می‌تواند رشته یا {value,label} باشد
+// Normalization: each item can be a string or {value,label}
 // ============================================================
 export function normalizeItems(items) {
   if (!Array.isArray(items)) return [];
@@ -133,7 +133,7 @@ export function normalizeItems(items) {
     }
   }
 
-  // حذف تکراری‌ها (بر اساس value، بدون حساسیت به بزرگی/کوچکی)
+  // Remove duplicates (by value, case-insensitive)
   const seen = new Set();
   return out.filter((i) => {
     const k = i.value.toLowerCase();
@@ -144,7 +144,7 @@ export function normalizeItems(items) {
 }
 
 // ============================================================
-// خواندن
+// Read
 // ============================================================
 export async function getVocabularies() {
   let stored = null;
@@ -172,7 +172,7 @@ export async function getVocabularies() {
 }
 
 // ============================================================
-// فقط مقادیر یک واژگان (آرایه‌ی رشته)
+// Values of a single vocabulary only (array of strings)
 // ============================================================
 export async function getVocabularyValues(key) {
   const all = await getVocabularies();
@@ -180,7 +180,7 @@ export async function getVocabularyValues(key) {
 }
 
 // ============================================================
-// ذخیره (از پنل ادمین)
+// Save (from the admin panel)
 // ============================================================
 export async function saveVocabularies(value) {
   const clean = {};
@@ -199,7 +199,7 @@ export async function saveVocabularies(value) {
 }
 
 // ============================================================
-// اگر تنظیمات نبود، مقادیر پیش‌فرض را بنویس
+// If no settings exist, write the default values
 // ============================================================
 export async function ensureVocabularies() {
   try {
@@ -222,23 +222,23 @@ export async function ensureVocabularies() {
 }
 
 // ============================================================
-// نگاشت صریح مقادیر قدیمی (رشته‌های نمایشی) → مقدار استاندارد واژگان
+// Explicit mapping of legacy values (display strings) -> the standard vocabulary value
 //
-// قاعده‌ی سخت‌گیرانه:
-//   هر هدف باید عیناً یکی از مقادیر DEFAULT_VOCABULARIES همان کلید
-//   باشد. اگر مقدار قدیمی مبهم باشد (چند گزینه‌ی ممکن) عمداً هیچ
-//   نگاشتی نداریم تا حدس نزنیم؛ آن مقدار unmatched گزارش می‌شود و
-//   دست‌نخورده می‌ماند. نمونه‌های عمداً نگاشت‌نشده:
-//     paymentTerms: "L/C" و "Letter of Credit" (چهار گزینه‌ی L/C ...)
-//                   "PayPal" (در واژگان وجود ندارد)
-//     certifications: "Organic" (بین Organic (EU) و Organic (USDA))
-//     currencies: "toman" (۱۰ برابر ریال است، نه معادل آن)
-//     units/currencies: "pound" (بین lb و GBP مبهم است)
+// Strict rule:
+//   Each target must be exactly one of the DEFAULT_VOCABULARIES values of that key.
+//   If a legacy value is ambiguous (several possible options) we intentionally have no
+//   mapping so we do not guess; that value is reported as unmatched and
+//   left untouched. Examples intentionally left unmapped:
+//     paymentTerms: "L/C" and "Letter of Credit" (four L/C options ...)
+//                   "PayPal" (does not exist in the vocabulary)
+//     certifications: "Organic" (between Organic (EU) and Organic (USDA))
+//     currencies: "toman" (it is 10 times the rial, not an equivalent of it)
+//     units/currencies: "pound" (ambiguous between lb and GBP)
 //
-// نکته: کلیدها هنگام تطبیق بدون حساسیت به بزرگی/کوچکی و با فاصله‌های
-// جمع‌شده مقایسه می‌شوند. کلیدهایی که کامای سطح-بالا دارند عملاً
-// بی‌استفاده‌اند (چون CSV قبل از تطبیق تقسیم می‌شود)، پس این‌جا فقط
-// کامای داخل پرانتز داریم.
+// Note: keys are compared case-insensitively and with collapsed
+// whitespace. Keys containing a top-level comma are effectively
+// unused (because the CSV is split before matching), so here we only have
+// commas inside parentheses.
 // ============================================================
 export const VOCABULARY_ALIASES = {
   incoterms: {
@@ -443,10 +443,10 @@ export const VOCABULARY_ALIASES = {
 };
 
 // ============================================================
-// ابزارهای داخلی تطبیق (خالص و بدون I/O)
+// Internal matching helpers (pure, no I/O)
 // ============================================================
 
-// کلید مقایسه: trim + جمع‌کردن فاصله‌های تکراری + lowercase
+// Comparison key: trim + collapse repeated spaces + lowercase
 function toMatchKey(value) {
   return String(value ?? "")
     .trim()
@@ -454,19 +454,19 @@ function toMatchKey(value) {
     .toLowerCase();
 }
 
-// حذف پرانتز انتهایی: "FOB (Free On Board)" → "FOB"
+// Strip trailing parentheses: "FOB (Free On Board)" -> "FOB"
 function stripTrailingParens(text) {
   return text.replace(/\s*\([^()]*\)\s*$/, "").trim();
 }
 
-// بریدن از اولین پرانتز: "FOB (Free On Board) named port" → "FOB"
+// Cut at the first parenthesis: "FOB (Free On Board) named port" -> "FOB"
 function cutAtFirstParen(text) {
   const index = text.indexOf("(");
   return (index === -1 ? text : text.slice(0, index)).trim();
 }
 
-// تقسیم CSV فقط روی کاماهای سطح-بالا، تا مقادیری مثل
-// "CIF (Cost, Insurance, Freight)" تکه‌تکه نشوند.
+// Split the CSV only on top-level commas, so values like
+// "CIF (Cost, Insurance, Freight)" are not broken apart.
 function splitTopLevel(text) {
   const parts = [];
   let depth = 0;
@@ -488,7 +488,7 @@ function splitTopLevel(text) {
   return parts.map((p) => p.trim()).filter(Boolean);
 }
 
-// ایندکس گزینه‌ها: value و label → value (بدون حساسیت به بزرگی/کوچکی)
+// Option indexes: value and label -> value (case-insensitive)
 function buildOptionIndexes(options) {
   const byValue = new Map();
   const byLabel = new Map();
@@ -510,23 +510,23 @@ function buildOptionIndexes(options) {
 }
 
 // ============================================================
-// یک مقدار → مقدار استاندارد، یا null اگر تطبیق پیدا نشد
+// One value -> the standard value, or null if no match was found
 //
-// ترتیب تطبیق (بدون حساسیت به بزرگی/کوچکی، trim شده):
-//   1) تطبیق دقیق با value یک گزینه
-//   2) تطبیق دقیق با label یک گزینه
-//   3) حذف پرانتز انتهایی و تکرار ۱ و ۲
-//   4) بریدن از اولین "(" و تکرار ۱ و ۲
-//   5) جدول alias (هدف باید در واژگان زنده موجود باشد)
-//   6) مقداری که رشته با آن شروع می‌شود و کاراکتر بعدی
-//      "(" یا فاصله یا پایان رشته است
+// Matching order (case-insensitive, trimmed):
+//   1) exact match with an option value
+//   2) exact match with an option label
+//   3) strip trailing parentheses and repeat 1 and 2
+//   4) cut at the first "(" and repeat 1 and 2
+//   5) alias table (the target must exist in the live vocabulary)
+//   6) a value the string starts with, where the next character
+//      is "(", a space, or the end of the string
 //   7) null
 //
-// options می‌تواند آرایه‌ی رشته یا آرایه‌ی {value,label} باشد.
-// اگر لیست گزینه‌ها خالی باشد، هدف alias بدون بررسی برگردانده
-// می‌شود؛ ولی وقتی گزینه‌ها معلوم‌اند هیچ‌وقت مقداری خارج از واژگان
-// نوشته نمی‌شود (هدف حذف‌شده → null → unmatched).
-// خالص است: نه prisma، نه async.
+// options can be an array of strings or an array of {value,label}.
+// If the options list is empty, the alias target is returned without checking;
+// but when the options are known, a value outside the vocabulary is never
+// written (removed target -> null -> unmatched).
+// Pure: no prisma, no async.
 // ============================================================
 export function normalizeVocabularyValue(raw, options, aliases) {
   if (raw === null || raw === undefined) return null;
@@ -537,7 +537,7 @@ export function normalizeVocabularyValue(raw, options, aliases) {
   const { byValue, byLabel } = buildOptionIndexes(options);
   const optionCount = byValue.size;
 
-  // جدول alias → کلید نرمال‌شده
+  // alias table -> normalized key
   const aliasMap = new Map();
   if (aliases && typeof aliases === "object") {
     for (const [alias, target] of Object.entries(aliases)) {
@@ -547,20 +547,20 @@ export function normalizeVocabularyValue(raw, options, aliases) {
     }
   }
 
-  // شکل‌های ممکن ورودی، به ترتیب اولویت (کلید نرمال‌شده)
+  // Possible input forms, in priority order (normalized key)
   const candidates = [];
   for (const form of [text, stripTrailingParens(text), cutAtFirstParen(text)]) {
     const key = toMatchKey(form);
     if (key && !candidates.includes(key)) candidates.push(key);
   }
 
-  // ===== گام ۱ و ۲: تطبیق دقیق value / label =====
+  // ===== Steps 1 and 2: exact value / label match =====
   for (const key of candidates) {
     if (byValue.has(key)) return byValue.get(key);
     if (byLabel.has(key)) return byLabel.get(key);
   }
 
-  // ===== گام ۵: جدول alias =====
+  // ===== Step 5: alias table =====
   for (const key of candidates) {
     const target = aliasMap.get(key);
     if (!target) continue;
@@ -568,13 +568,13 @@ export function normalizeVocabularyValue(raw, options, aliases) {
     const targetKey = toMatchKey(target);
     if (byValue.has(targetKey)) return byValue.get(targetKey);
 
-    // هدف در واژگان زنده نیست → حدس نمی‌زنیم
+    // The target is not in the live vocabulary -> we do not guess
     if (optionCount > 0) continue;
     return target;
   }
 
-  // ===== گام ۶: پیشوند مقداری موجود =====
-  // بلندترین مقدار اول، تا کوتاه‌ترها زودتر تطبیق ندهند
+  // ===== Step 6: prefix of an existing value =====
+  // Longest value first, so shorter ones do not match earlier
   const prefixEntries = [...byValue.entries()].sort(
     (a, b) => b[0].length - a[0].length
   );
@@ -588,25 +588,25 @@ export function normalizeVocabularyValue(raw, options, aliases) {
     }
   }
 
-  // ===== گام ۷ =====
+  // ===== Step 7 =====
   return null;
 }
 
 // ============================================================
-// مقدار CSV (چندگانه) → CSV استاندارد
+// CSV value (multiple) -> standard CSV
 //
-//   value      → رشته‌ی نرمال‌شده با جداکننده‌ی ", "
-//   changed    → آیا خروجی با مقدار ذخیره‌شده (trim شده) فرق دارد
-//   unmatched  → زیرمقادیر تطبیق‌نشده (برای گزارش)
+//   value      -> normalized string with a ", " separator
+//   changed    -> whether the output differs from the stored (trimmed) value
+//   unmatched  -> unmatched sub-values (for reporting)
 //
-// هیچ زیرمقداری حذف نمی‌شود: تطبیق‌نشده‌ها عیناً در خروجی می‌مانند.
-// خالص است: نه prisma، نه async.
+// No sub-value is dropped: unmatched ones stay in the output as-is.
+// Pure: no prisma, no async.
 // ============================================================
 export function normalizeCsvValue(raw, options, aliases) {
   const text = raw === null || raw === undefined ? "" : String(raw).trim();
   const parts = splitTopLevel(text);
 
-  // اگر چیزی برای تقسیم نبود، مقدار اصلی دست‌نخورده برمی‌گردد
+  // If there was nothing to split, the original value is returned untouched
   if (parts.length === 0) {
     return { value: text, changed: false, unmatched: [] };
   }
@@ -618,7 +618,7 @@ export function normalizeCsvValue(raw, options, aliases) {
 
   for (const part of parts) {
     const normalized = normalizeVocabularyValue(part, options, aliases);
-    const kept = normalized || part; // تطبیق‌نشده → عیناً حفظ می‌شود
+    const kept = normalized || part; // unmatched -> kept exactly as-is
 
     if (!normalized) {
       const unmatchedKey = toMatchKey(part);

@@ -55,7 +55,7 @@ export default function InquiryTable({ inquiries, tab }) {
                           borderRadius: "8px",
                         }}
                       />
-                      {/* ✅ لینک به صفحه محصول */}
+                      {/* Link to the product page */}
                       <Link
                         href={`/products/${inquiry.product.id}`}
                         className="fw-semibold text-decoration-none"
@@ -67,7 +67,7 @@ export default function InquiryTable({ inquiries, tab }) {
                     </div>
                   </td>
                   <td>
-                    {/* ✅ لینک به پروفایل شرکت/فروشنده */}
+                    {/* Link to the company/seller profile */}
                     {companyId ? (
                       <Link
                         href={`/profile/${companyId}`}
@@ -96,7 +96,7 @@ export default function InquiryTable({ inquiries, tab }) {
                     {new Date(inquiry.createdAt).toLocaleDateString()}
                   </td>
                   <td>
-                    {/* ✅ دکمه جزئیات */}
+                    {/* Details button */}
                     <button
                       className="btn btn-sm btn-outline-primary"
                       onClick={() => setSelectedInquiry(inquiry)}
@@ -111,7 +111,7 @@ export default function InquiryTable({ inquiries, tab }) {
         </table>
       </div>
 
-      {/* مودال جزئیات */}
+      {/* Details modal */}
       <InquiryModal
         isOpen={!!selectedInquiry}
         onClose={() => setSelectedInquiry(null)}

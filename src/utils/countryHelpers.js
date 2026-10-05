@@ -33,7 +33,7 @@ const countryNameToCode = {
 
 export function getCountryCode(countryName) {
   if (!countryName) return null;
-  // اگر خودش کد دوحرفی باشد
+  // If it is already a two-letter code
   if (countryName.length === 2 && /^[A-Za-z]{2}$/.test(countryName)) {
     return countryName.toLowerCase();
   }

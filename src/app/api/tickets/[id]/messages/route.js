@@ -82,9 +82,9 @@ export async function POST(request, { params }) {
         status: ticket.status === "resolved" ? "open" : ticket.status,
       },
     });
-    // ✅ نوتیفیکیشن + Web Push + ایمیل برای همه‌ی ادمین‌ها
-    //    از مسیر مرکزی رویداد (قبلاً یک حلقه‌ی ایمیل detached و
-    //    بدون retry اینجا بود که ممکن بود نیمه‌کاره بماند).
+    // ✅ Notification + Web Push + email for all admins
+    //    through the central event pipeline (previously a detached email
+    //    loop with no retry lived here and could be left half-finished).
     after(async () => {
       const result = await dispatchEvent("ticket.replied", {
         ticketId: ticket.id,

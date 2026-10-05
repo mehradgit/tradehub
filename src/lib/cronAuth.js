@@ -2,18 +2,18 @@
 import { timingSafeEqual } from "crypto";
 
 // ============================================================
-// بررسی مجوز فراخوانی endpoint های cron
+// Authorizes calls to the cron endpoints
 //
-// قواعد امنیتی (fail-closed):
-//   ۱. اگر CRON_SECRET ست نشده باشد، هیچ درخواستی مجاز نیست.
-//      (قبلاً بررسی کلاً رد می‌شد و endpoint عمومی می‌شد.)
-//   ۲. راز فقط از هدر خوانده می‌شود، نه query string؛
-//      چون ?secret= در access logهای Nginx/Cloudflare ثبت می‌شود.
-//   ۳. مقایسه به‌صورت timing-safe انجام می‌شود.
+// Security rules (fail-closed):
+//   1. If CRON_SECRET is not set, no request is authorized.
+//      (Previously the check was skipped entirely and the endpoint became public.)
+//   2. The secret is read only from headers, never from the query string,
+//      because ?secret= is recorded in Nginx/Cloudflare access logs.
+//   3. The comparison is performed in a timing-safe way.
 //
-// هدرهای پذیرفته‌شده:
+// Accepted headers:
 //   x-cron-secret: <secret>
-//   Authorization: Bearer <secret>     ← برای Vercel Cron و سرویس‌های ابری
+//   Authorization: Bearer <secret>     <- for Vercel Cron and cloud services
 // ============================================================
 export function isAuthorizedCron(request) {
   const secret = process.env.CRON_SECRET;
@@ -31,7 +31,7 @@ export function isAuthorizedCron(request) {
   const a = Buffer.from(provided);
   const b = Buffer.from(secret);
 
-  // timingSafeEqual روی طول‌های نابرابر خطا می‌دهد
+  // timingSafeEqual throws when the lengths differ
   if (a.length !== b.length) return false;
 
   return timingSafeEqual(a, b);

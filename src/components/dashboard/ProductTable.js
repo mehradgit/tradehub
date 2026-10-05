@@ -20,7 +20,7 @@ export default function ProductTable({ products }) {
     }
   };
 
-  // ====== تعیین وضعیت محصول با استایل مدرن ======
+  // ====== Determine the product status with a modern style ======
   const getStatusInfo = (product) => {
     if (product.status === "PENDING") {
       return {
@@ -140,7 +140,7 @@ export default function ProductTable({ products }) {
                     <span className="unit">/ {product.unit}</span>
                   </td>
                   <td>
-                    {/* ✅ بج وضعیت مدرن */}
+                    {/* Modern status badge */}
                     <span
                       style={{
                         display: "inline-flex",
@@ -163,7 +163,7 @@ export default function ProductTable({ products }) {
                       {status.label}
                     </span>
 
-                    {/* ✅ دلیل رد شدن در صورت وجود */}
+                    {/* Rejection reason, if any */}
                     {status.type === "rejected" && product.rejectionNote && (
                       <div
                         style={{

@@ -26,7 +26,7 @@ export async function POST(request) {
     const normalizedEmail = email.toLowerCase().trim();
     const identifier = `${RESET_PREFIX}${normalizedEmail}`;
 
-    // پیدا کردن توکن معتبر
+    // Find a valid token
     const record = await prisma.verificationToken.findFirst({
       where: {
         identifier,
@@ -57,16 +57,16 @@ export async function POST(request) {
       );
     }
 
-    // هش پسورد جدید
+    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // به‌روزرسانی پسورد
+    // Update the password
     await prisma.user.update({
       where: { id: user.id },
       data: { password: hashedPassword },
     });
 
-    // پاک کردن توکن (یک‌بارمصرف)
+    // Delete the token (single use)
     await prisma.verificationToken.deleteMany({
       where: { identifier, token },
     });

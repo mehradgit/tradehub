@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// ====== GET: جزئیات کامل تیکت (با internal notes) ======
+// ====== GET: Full ticket details (with internal notes) ======
 export async function GET(request, { params }) {
   try {
     const session = await auth();
@@ -101,7 +101,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// ====== PATCH: تغییر وضعیت، اولویت، تخصیص ======
+// ====== PATCH: Change status, priority, assignment ======
 export async function PATCH(request, { params }) {
   try {
     const session = await auth();

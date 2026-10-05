@@ -5,8 +5,8 @@ import { useState } from "react";
 import CategoryCascader from "./CategoryCascader";
 import CountryFlag from "@/components/ui/CountryFlag";
 
-// آستانه‌ی نمایش کادر جست‌وجو: لیست‌های بلند (کشورها ~۲۰۰ مورد)
-// بدون جست‌وجو غیرقابل‌استفاده‌اند، ولی برای ۳ گزینه لازم نیست.
+// Threshold for showing the search box: long lists (countries ~200 items)
+// are unusable without search, but it is not needed for 3 options.
 const SEARCH_THRESHOLD = 8;
 
 const inputStyle = {
@@ -31,7 +31,7 @@ const optionRowStyle = {
   color: "var(--text)",
 };
 
-// ===== کادر جست‌وجوی داخل لیست گزینه‌ها =====
+// ===== Search box inside the option list =====
 const listSearchStyle = {
   display: "flex",
   alignItems: "center",
@@ -71,12 +71,12 @@ function OptionCount({ count }) {
 }
 
 // ============================================================
-// لیست چک‌باکسی با شمارش (facet) + جست‌وجو + پرچم
+// Checkbox list with counts (facets) + search + flag
 //
-// • لیست‌های بلند (کشورها) بدون جست‌وجو غیرقابل‌استفاده‌اند
-// • گزینه‌ای که code دارد (کشور) پرچم هم نشان می‌دهد
-// • گزینه‌های انتخاب‌شده حتی وقتی با عبارت جست‌وجو نمی‌خوانند
-//   دیده می‌شوند تا کاربر بتواند حذفشان کند
+// • Long lists (countries) are unusable without search
+// • An option that has a code (country) also shows a flag
+// • Selected options stay visible even when they do not match
+//   the search term, so the user can remove them
 // ============================================================
 function MultiSelectList({ options = [], value = [], onChange, counts = {} }) {
   const [term, setTerm] = useState("");
@@ -162,7 +162,7 @@ function MultiSelectList({ options = [], value = [], onChange, counts = {} }) {
                   checked={selectedSet.has(v)}
                   onChange={() => toggle(v)}
                 />
-                {/* پرچم — فقط وقتی گزینه کد کشور دارد */}
+                {/* Flag — only when the option has a country code */}
                 {opt.code && <CountryFlag countryCode={opt.code} size="18px" />}
                 <span style={{ flex: 1 }}>{opt.label ?? opt.value}</span>
                 <OptionCount count={count} />
@@ -182,15 +182,15 @@ function MultiSelectList({ options = [], value = [], onChange, counts = {} }) {
 }
 
 // ============================================================
-// بازه‌ی عددی
+// Number range
 // ============================================================
 function NumberRange({ value = {}, onChange, field, bounds }) {
   const min = value?.min ?? "";
   const max = value?.max ?? "";
 
-  // نکته: facet وقتی هیچ محصولی این اتریبیوت را ندارد
-  // { min: null, max: null } برمی‌گرداند. بدون این بررسی،
-  // placeholder literally می‌شد «null».
+  // Note: when no product has this attribute, the facet
+  // returns { min: null, max: null }. Without this check the
+  // placeholder would literally become "null".
   const hasMin = bounds?.min !== undefined && bounds?.min !== null;
   const hasMax = bounds?.max !== undefined && bounds?.max !== null;
 
@@ -223,10 +223,10 @@ function NumberRange({ value = {}, onChange, field, bounds }) {
 }
 
 // ============================================================
-// یک اتریبیوت پویا
+// A single dynamic attribute
 //
-// به‌صورت named export است چون مدال فیلترها هر اتریبیوت را جداگانه
-// (یکی در هر مدال سطح ۲) رندر می‌کند، نه همه را یک‌جا.
+// It is a named export because the filter modal renders each attribute
+// separately (one per level-2 modal), not all of them at once.
 // ============================================================
 export function DynamicAttributeField({ def, value, onChange, facet }) {
   const label = (
@@ -313,7 +313,7 @@ export function DynamicAttributeField({ def, value, onChange, facet }) {
 }
 
 // ============================================================
-// رندرکننده‌ی اصلی
+// Main renderer
 // ============================================================
 export default function FilterField({
   field,

@@ -1,25 +1,26 @@
 // src/lib/searchText.js
 // ============================================================
-// متن یکجای جست‌وجو (searchText)
+// Combined search text (searchText)
 //
-// هدف: تمام متن‌های قابل‌جست‌وجوی یک محصول/درخواست خرید را در
-// یک ستون واحد (@db.Text) جمع کنیم تا بعداً با FULLTEXT ایندکس
-// شود و جست‌وجوی رتبه‌بندی‌شده (MATCH ... AGAINST) ممکن باشد.
+// Goal: gather all searchable text of a product/purchase request into
+// a single column (@db.Text) so it can later be indexed with FULLTEXT
+// and ranked search (MATCH ... AGAINST) becomes possible.
 //
-// این فایل PURE است (بدون prisma) تا هم در API و هم در جاهای
-// دیگر قابل استفاده باشد و تست‌پذیر بماند.
+// This file is PURE (no prisma) so it can be used both in the API and
+// elsewhere, and stays testable.
 //
-// قاعده‌ی کلی: هیچ ورودی null/undefined/خالی نباید throw کند؛
-// خروجی در بدترین حالت "" است.
+// General rule: no null/undefined/empty input may throw;
+// the output is "" in the worst case.
 // ============================================================
 
-// حداکثر طول متن جست‌وجو.
-// ستون @db.Text ظرفیت بیشتری دارد، ولی ۴۰۰۰ کاراکتر برای FULLTEXT
-// سبک‌تر و معقول‌تر است (max_ft_word_len هم به همین ترتیب کوچک می‌ماند).
+// Maximum length of the search text.
+// The @db.Text column has more capacity, but 4000 characters is
+// lighter and more sensible for FULLTEXT (max_ft_word_len also stays
+// small accordingly).
 export const MAX_SEARCH_TEXT_LENGTH = 4000;
 
 // ============================================================
-// انتیتی‌های رایج HTML
+// Common HTML entities
 // ============================================================
 const HTML_ENTITIES = {
   "&amp;": "&",
@@ -34,12 +35,12 @@ const HTML_ENTITIES = {
 // ============================================================
 // normalizeForSearch
 //
-//  ۱) تگ‌های HTML حذف می‌شوند  (<p> ... </p>)
-//  ۲) انتیتی‌های رایج decode می‌شوند (&amp; → &)
-//  ۳) به حروف کوچک تبدیل می‌شود
-//  ۴) همه‌ی فاصله‌ها (فاصله، تب، newline، NBSP) به یک فاصله
-//     (شامل نیم‌فاصله‌ی فارسی \u200c که در جست‌وجو مزاحم است)
-//  ۵) trim
+//  1) HTML tags are removed  (<p> ... </p>)
+//  2) Common entities are decoded (&amp; -> &)
+//  3) Converted to lowercase
+//  4) All whitespace (space, tab, newline, NBSP) becomes a single space
+//     (including the Persian zero-width non-joiner \u200c which disturbs search)
+//  5) trim
 // ============================================================
 export function normalizeForSearch(text) {
   if (text === null || text === undefined) return "";
@@ -48,27 +49,27 @@ export function normalizeForSearch(text) {
   try {
     out = String(text);
   } catch {
-    // اگر به هر دلیلی String() شکست خورد (مثلاً Symbol)
+    // If String() failed for any reason (for example a Symbol)
     return "";
   }
 
-  // حذف تگ‌ها — اول script/style کامل، بعد بقیه‌ی تگ‌ها
+  // Remove tags - first complete script/style blocks, then the other tags
   out = out
     .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, " ")
     .replace(/<[^>]*>/g, " ");
 
-  // decode انتیتی‌های رایج
-  // نکته: &nbsp; باید قبل از بقیه به فاصله تبدیل شود تا مرحله‌ی
-  // جمع‌کردن فاصله‌ها آن را هم پاک کند.
+  // Decode the common entities
+  // Note: &nbsp; must be turned into a space before the rest so that the
+  // whitespace-collapsing step clears it as well.
   out = out.replace(
     /&(?:amp|lt|gt|quot|#39|apos|nbsp);/gi,
     (match) => HTML_ENTITIES[match.toLowerCase()] ?? " "
   );
 
-  // حروف کوچک
+  // Lowercase
   out = out.toLowerCase();
 
-  // هر نوع فضای خالی (شامل \u00a0 و \u200c) → یک فاصله
+  // Any kind of whitespace (including \u00a0 and \u200c) -> a single space
   out = out.replace(/[\s\u00a0\u200b\u200c\u200d\ufeff]+/g, " ");
 
   return out.trim();
@@ -77,10 +78,9 @@ export function normalizeForSearch(text) {
 // ============================================================
 // toPlainText
 //
-// ورودی می‌تواند رشته، عدد، boolean یا آبجکت باشد.
-// از آبجکت‌های { label, value } هم label و هم value استخراج
-// می‌شود تا هم اتریبیوت‌های کلید‌دار و هم مقادیر آزاد پوشش
-// داده شوند.
+// Input can be a string, number, boolean or object.
+// For { label, value } objects both label and value are extracted
+// so that keyed attributes and free-form values are both covered.
 // ============================================================
 function toPlainText(input) {
   if (input === null || input === undefined) return "";
@@ -98,7 +98,7 @@ function toPlainText(input) {
   }
 
   if (type === "object") {
-    // Date یا آبجکت‌های خاص → رشته‌ی ساده
+    // Date or special objects -> plain string
     if (input instanceof Date) {
       return Number.isNaN(input.getTime()) ? "" : input.toISOString();
     }
@@ -106,7 +106,7 @@ function toPlainText(input) {
       try {
         return toPlainText(input.toJSON());
       } catch {
-        /* ادامه با مسیر عمومی */
+        /* continue with the general path */
       }
     }
 
@@ -116,7 +116,7 @@ function toPlainText(input) {
     if (input.name !== undefined) parts.push(toPlainText(input.name));
     if (parts.length > 0) return parts.filter(Boolean).join(" ");
 
-    // تلاش آخر: مقادیر آبجکت
+    // Last attempt: the object's values
     try {
       return Object.values(input)
         .map((v) => toPlainText(v))
@@ -133,8 +133,8 @@ function toPlainText(input) {
 // ============================================================
 // truncateOnWordBoundary
 //
-// بریدن متن روی مرز کلمه تا کلمه‌ی نصفه در ایندکس نیفتد.
-// اگر مرز کلمه خیلی عقب بود (کلمه‌ی بسیار بلند)، بریدن خام.
+// Cutting the text on a word boundary so half a word does not land in the index.
+// If the word boundary is too far back (a very long word), cut raw.
 // ============================================================
 export function truncateOnWordBoundary(text, maxLength = MAX_SEARCH_TEXT_LENGTH) {
   const str = typeof text === "string" ? text : text ? String(text) : "";
@@ -145,7 +145,7 @@ export function truncateOnWordBoundary(text, maxLength = MAX_SEARCH_TEXT_LENGTH)
 
   const sliced = str.slice(0, limit);
 
-  // آخرین فاصله را پیدا کن (حداقل ۷۰٪ طول مجاز باشد تا برش بی‌معنی نشود)
+  // Find the last space (must be at least 70% of the allowed length so the cut is not meaningless)
   const lastSpace = sliced.lastIndexOf(" ");
   if (lastSpace > Math.floor(limit * 0.7)) {
     return sliced.slice(0, lastSpace).trim();
@@ -157,20 +157,20 @@ export function truncateOnWordBoundary(text, maxLength = MAX_SEARCH_TEXT_LENGTH)
 // ============================================================
 // flattenAttributeValues
 //
-// ورودی: خروجی getProductAttributes() — آرایه‌ای از
+// Input: the output of getProductAttributes() - an array of
 //   { attributeId, key, label, dataType, unit, value }
 //
-// خروجی: آرایه‌ای از رشته‌ها برای چسباندن به searchText.
+// Output: an array of strings to append to searchText.
 //
-// قواعد:
-//   multiSelect → آرایه با فاصله به هم می‌چسبد
-//   boolean     → فقط اگر true بود "yes" تولید می‌شود (false = هیچ)
-//   number      → String(value)
-//   select/text → همان رشته
+// Rules:
+//   multiSelect -> the array is joined with spaces
+//   boolean     -> "yes" is produced only when true (false = nothing)
+//   number      -> String(value)
+//   select/text -> the string itself
 //
-// مقدار خالی هرگز به آرایه اضافه نمی‌شود و label فقط وقتی
-// اضافه می‌شود که مقدار واقعی وجود داشته باشد (تا متن بی‌مورد
-// ساخته نشود).
+// An empty value is never added to the array, and the label is added
+// only when a real value exists (so that needless text is not
+// produced).
 // ============================================================
 export function flattenAttributeValues(attributes) {
   if (!Array.isArray(attributes)) return [];
@@ -179,7 +179,7 @@ export function flattenAttributeValues(attributes) {
 
   for (const attr of attributes) {
     if (!attr || typeof attr !== "object") {
-      // اگر به جای آبجکت، رشته‌ی خام داده شده بود
+      // If a raw string was given instead of an object
       const raw = toPlainText(attr);
       if (raw) out.push(raw);
       continue;
@@ -187,7 +187,7 @@ export function flattenAttributeValues(attributes) {
 
     const { dataType, value, label } = attr;
 
-    // آیا مقدار واقعی وجود دارد؟
+    // Does a real value exist?
     const hasValue =
       value !== null &&
       value !== undefined &&
@@ -197,7 +197,7 @@ export function flattenAttributeValues(attributes) {
     if (!hasValue) continue;
 
     if (dataType === "boolean") {
-      // فقط true معنی دارد؛ false متنی برای جست‌وجو تولید نمی‌کند
+      // Only true is meaningful; false produces no search text
       if (value === true || value === "true") out.push("yes");
       continue;
     }
@@ -214,7 +214,7 @@ export function flattenAttributeValues(attributes) {
       continue;
     }
 
-    // text | select | ناشناخته
+    // text | select | unknown
     const text = toPlainText(value);
     if (text) out.push(text);
   }
@@ -223,7 +223,7 @@ export function flattenAttributeValues(attributes) {
 }
 
 // ============================================================
-// ترکیب امن فیلدها
+// Safe combination of fields
 // ============================================================
 function collectParts(sources) {
   const parts = [];
@@ -251,8 +251,8 @@ function finalize(parts) {
 //
 //   { product, attributeValues }
 //
-// product: آبجکت محصول (فقط فیلدهای موجود استفاده می‌شوند)
-// attributeValues: آرایه‌ای از رشته‌ها یا { label, value }
+// product: the product object (only the fields that exist are used)
+// attributeValues: an array of strings or { label, value }
 // ============================================================
 export function buildProductSearchText({ product, attributeValues } = {}) {
   try {
@@ -274,13 +274,13 @@ export function buildProductSearchText({ product, attributeValues } = {}) {
       p.paymentTerms,
       p.unit,
       p.badge,
-      // اتریبیوت‌ها (ممکن است رشته، عدد، boolean یا { label, value } باشند)
+      // Attributes (may be strings, numbers, booleans or { label, value })
       flattenAttributeValues(attributeValues),
     ]);
 
     return finalize(parts);
   } catch (err) {
-    // این تابع هرگز نباید ingestion را متوقف کند
+    // This function must never stop ingestion
     console.error("[searchText] buildProductSearchText failed:", err?.message);
     return "";
   }

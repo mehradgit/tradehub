@@ -34,7 +34,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    // اگر قبلاً Reveal کرده → بدون سهمیه
+    // Already revealed before → no quota consumed
     const alreadyRevealed = await hasRevealedSupplierInfo(userId, id);
     if (alreadyRevealed) {
       return NextResponse.json({
@@ -44,7 +44,7 @@ export async function POST(request, { params }) {
       });
     }
 
-    // بررسی مجوز
+    // Check permission
     const permission = await canViewSupplierInfo(userId, product);
     if (!permission.allowed) {
       return NextResponse.json(
@@ -53,7 +53,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    // بررسی owner/admin
+    // Check owner/admin
     const isOwnerOrAdmin =
       permission.reason === "owner" || permission.reason === "admin";
 
@@ -66,7 +66,7 @@ export async function POST(request, { params }) {
         await incrementUsage(userId, quotaType, subscription);
       }
 
-      // ثبت Reveal
+      // Record the reveal
       try {
         await prisma.revealedSupplierInfo.create({
           data: { userId, productId: id },

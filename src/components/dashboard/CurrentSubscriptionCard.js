@@ -34,7 +34,7 @@ export default function CurrentSubscriptionCard({ subscription, planName }) {
       })
     : "—";
 
-  // رنگ نوار بر اساس درصد مصرف
+  // Bar colour based on usage percentage
   let barColor = "linear-gradient(90deg, #0f9e6e, #14b881)";
   if (percentUsed >= 80) barColor = "linear-gradient(90deg, #f59e0b, #d97706)";
   if (percentUsed >= 95) barColor = "linear-gradient(90deg, #ef4444, #dc2626)";

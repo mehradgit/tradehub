@@ -1,8 +1,8 @@
 // src/app/api/cron/auto-close-tickets/route.js
 // ============================================================
-// این روت دستی است. اگر از پنل ادمین استفاده می‌کنی، می‌توانی
-// زمان‌بند سیستم را به /api/cron/tick تغییر دهی و این را فقط
-// برای اجرای دستی نگه داری.
+// This route is manual. If you use the admin panel, you can
+// change the system scheduler to /api/cron/tick and keep this
+// one only for manual runs.
 // ============================================================
 import { NextResponse, after } from "next/server";
 import { isAuthorizedCron } from "@/lib/cronAuth";
@@ -10,7 +10,7 @@ import { dispatchEvent } from "@/lib/eventService";
 import { closeStaleTickets } from "@/lib/jobHandlers";
 
 export async function GET(request) {
-  // ✅ fail-closed: بدون CRON_SECRET هیچ درخواستی مجاز نیست
+  // ✅ fail-closed: without CRON_SECRET no request is authorized
   if (!isAuthorizedCron(request)) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
@@ -25,7 +25,7 @@ export async function GET(request) {
       });
     }
 
-    // ✅ اطلاع به صاحبان تیکت‌ها از مسیر مرکزی رویداد
+    // ✅ Notify ticket owners through the central event route
     after(async () => {
       for (const t of tickets) {
         const res = await dispatchEvent("ticket.auto_closed", {

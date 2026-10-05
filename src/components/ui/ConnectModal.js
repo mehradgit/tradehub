@@ -8,12 +8,12 @@ import { toast } from "react-toastify";
 export default function ConnectModal({
   isOpen,
   onClose,
-  supplierId,     // برای حالت محصول
+  supplierId,     // for product mode
   supplierName,
-  productId,      // برای حالت محصول
-  targetUserId,   // برای حالت پروفایل
-  targetName,     // برای حالت پروفایل
-  mode = "product", // "product" یا "profile"
+  productId,      // for product mode
+  targetUserId,   // for profile mode
+  targetName,     // for profile mode
+  mode = "product", // "product" or "profile"
 }) {
   const { data: session } = useSession();
   const [message, setMessage] = useState("");
@@ -31,7 +31,7 @@ export default function ConnectModal({
       let url, payload;
 
       if (mode === "product") {
-        // ارسال درخواست محصول
+        // Send a product inquiry
         url = "/api/product-inquiries";
         payload = {
           productId,
@@ -39,7 +39,7 @@ export default function ConnectModal({
           message: message.trim(),
         };
       } else {
-        // ارسال پیام مستقیم به کاربر
+        // Send a direct message to the user
         url = "/api/messages";
         payload = {
           receiverId: targetUserId,

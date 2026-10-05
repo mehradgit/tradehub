@@ -40,7 +40,7 @@ export async function POST(request) {
       });
     }
 
-    // ✅ توکن رو اینجا پاک نکن! برای auto-login لازمه
+    // Do not delete the token here! It is required for auto-login
     return NextResponse.json({
       message: "Email verified successfully",
       loginToken: token,

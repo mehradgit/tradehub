@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getCategories, saveCategories } from "@/lib/categoriesService";
 
-// ===== GET: لیست همه دسته‌ها =====
+// ===== GET: List all categories =====
 export async function GET() {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -13,7 +13,7 @@ export async function GET() {
   return NextResponse.json({ categories });
 }
 
-// ===== POST: ایجاد دسته جدید =====
+// ===== POST: Create a new category =====
 export async function POST(request) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -33,10 +33,10 @@ export async function POST(request) {
 
     const categories = await getCategories();
 
-    // âœ… parent می‌تواند 0 (عدد) یا رشته (ID دسته اصلی) باشد
+    // parent can be 0 (number) or a string (the parent category ID)
     const parentValue = parent === 0 || parent === "0" ? 0 : parent;
 
-    // چک تکراری در همان parent
+    // Duplicate check within the same parent
     const duplicate = categories.find(
       (c) =>
         c.parent === parentValue &&
@@ -49,7 +49,7 @@ export async function POST(request) {
       );
     }
 
-    // âœ… ساخت slug یکتا از نام
+    // Build a unique slug from the name
     const baseSlug = name
       .trim()
       .toLowerCase()
@@ -63,7 +63,7 @@ export async function POST(request) {
       counter++;
     }
 
-    // تعداد items موجود در این parent برای sortOrder
+    // Number of existing items in this parent, used for sortOrder
     const siblingCount = categories.filter(
       (c) => c.parent === parentValue
     ).length;

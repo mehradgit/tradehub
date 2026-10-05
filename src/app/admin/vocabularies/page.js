@@ -13,8 +13,8 @@ export default async function AdminVocabulariesPage() {
 
   const all = await getVocabularies();
 
-  // خروجی getVocabularies فقط رشته‌های ساده دارد، اما برای اطمینان
-  // دقیقاً همان شکل قابل‌سریال‌سازی را به کلاینت می‌دهیم.
+  // getVocabularies only returns plain strings, but to be safe we
+  // pass the client exactly the same serializable shape.
   const groups = VOCABULARY_META.map(({ key, label }) => ({
     key,
     label,

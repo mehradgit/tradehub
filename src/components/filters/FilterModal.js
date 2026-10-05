@@ -6,19 +6,19 @@ import FilterField, { DynamicAttributeField } from "./FilterField";
 import CountryFlag from "@/components/ui/CountryFlag";
 
 // ============================================================
-// مدال فیلترها — دو سطح
+// Filters modal — two levels
 //
-//   سطح ۱: فهرست گروه‌ها (هر ردیف = یک فیلتر + مقدار فعلی)
-//   سطح ۲: پارامترهای همان فیلتر — **جایگزین** سطح ۱ می‌شود
+//   Level 1: list of groups (each row = one filter + its current value)
+//   Level 2: the parameters of that same filter — it **replaces** level 1
 //
-// چرا جایگزین و نه روی‌هم‌افتاده: کاربر همیشه در بافت فهرست
-// می‌ماند؛ ← / Escape / کلیک بیرون / Apply همه به فهرست برمی‌گردند.
+// Why replace rather than overlay: the user always stays in the context of
+// the list; ← / Escape / clicking outside / Apply all return to the list.
 //
-// تغییرات در draft نگه داشته می‌شوند و با «Show results» یک‌جا
-// روی URL اعمال می‌شوند — نه با هر کلیک.
+// Changes are kept in a draft and applied to the URL all at once with
+// "Show results" — not on every click.
 // ============================================================
 
-// آیکن هر فیلتر بر اساس نامش (اسکیما آیکن ندارد)
+// Each filter's icon based on its name (the schema has no icon)
 const ICONS = {
   categoryPath: "fa-sitemap",
   origin: "fa-globe",
@@ -46,7 +46,7 @@ function iconFor(field) {
 }
 
 // ============================================================
-// خلاصه‌ی مقدار یک فیلتر (برای نمایش در ردیف سطح ۱ و چیپ‌ها)
+// Value summary of one filter (for display in the level-1 row and the chips)
 // ============================================================
 export function summarizeField(field, value, options = {}, categoryIndex = null) {
   if (value === undefined || value === null || value === "") return "";
@@ -102,11 +102,11 @@ export default function FilterModal({
   resultCount = null,
 }) {
   const [draft, setDraft] = useState(values || {});
-  const [openKey, setOpenKey] = useState(null); // کلید فیلترِ باز در سطح ۲
-  const [subValue, setSubValue] = useState(undefined); // مقدار موقت سطح ۲
+  const [openKey, setOpenKey] = useState(null); // key of the filter open at level 2
+  const [subValue, setSubValue] = useState(undefined); // temporary level-2 value
   const panelRef = useRef(null);
 
-  // ===== همگام‌سازی با URL هنگام باز شدن =====
+  // ===== Syncing with the URL when it opens =====
   useEffect(() => {
     if (open) {
       setDraft(values || {});
@@ -115,7 +115,7 @@ export default function FilterModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // ===== قفل اسکرول =====
+  // ===== Scroll lock =====
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -125,7 +125,7 @@ export default function FilterModal({
     };
   }, [open]);
 
-  // ===== Escape: از سطح ۲ به سطح ۱، از سطح ۱ به بستن =====
+  // ===== Escape: from level 2 to level 1, from level 1 to closing =====
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e) => {
@@ -147,7 +147,7 @@ export default function FilterModal({
   );
   const attrMap = (attrField && draft[attrField.name]) || {};
 
-  // ===== ردیف‌های سطح ۱ =====
+  // ===== Level-1 rows =====
   const rows = useMemo(() => {
     const out = [];
     for (const f of fields) {
@@ -171,7 +171,7 @@ export default function FilterModal({
 
   if (!open || !schema) return null;
 
-  // ===== مقدار هر ردیف در سطح ۱ =====
+  // ===== Value of each row at level 1 =====
   const rowSummary = (row) => {
     if (row.kind === "field") {
       return summarizeField(row.field, draft[row.field.name], options, categoryIndex);
@@ -192,8 +192,8 @@ export default function FilterModal({
     return "";
   };
 
-  // کد کشورهای انتخاب‌شده — برای نمایش پرچم در ردیف سطح ۱
-  // (فقط وقتی گزینه‌ها کد دارند، یعنی فیلتر کشور)
+  // Codes of the selected countries — to show the flag in the level-1 row
+  // (only when the options have codes, i.e. the country filter)
   const flagCodes = (row) => {
     if (row.kind !== "field") return [];
     const list = options[row.field.name] || row.field.options || [];
@@ -219,14 +219,14 @@ export default function FilterModal({
       return next;
     });
 
-  // ===== باز کردن سطح ۲ =====
+  // ===== Opening level 2 =====
   const openSub = (row) => {
     setOpenKey(row.key);
     if (row.kind === "field") setSubValue(draft[row.field.name]);
     else setSubValue(attrMap[row.def.id]);
   };
 
-  // ===== ثبت مقدار سطح ۲ در draft =====
+  // ===== Committing the level-2 value into the draft =====
   const commitSub = () => {
     const row = rows.find((r) => r.key === openKey);
     if (!row) return;
@@ -260,7 +260,7 @@ export default function FilterModal({
       <div onClick={() => (openKey ? setOpenKey(null) : onClose?.())} style={S.overlay} />
 
       <div style={S.center}>
-        {/* ============ سطح ۲ ============ */}
+        {/* ============ Level 2 ============ */}
         {activeRow ? (
           <div ref={panelRef} role="dialog" aria-modal="true" aria-label={activeRow.label} style={{ ...S.modal, ...S.modalNarrow }}>
             <div style={S.head}>
@@ -320,7 +320,7 @@ export default function FilterModal({
             </div>
           </div>
         ) : (
-          /* ============ سطح ۱ ============ */
+          /* ============ Level 1 ============ */
           <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Filters" style={S.modal}>
             <div style={S.head}>
               <div style={S.headIcon}>
@@ -352,7 +352,7 @@ export default function FilterModal({
                     <span style={S.rowText}>
                       <b style={S.rowTitle}>{row.label}</b>
                       <small style={rowSummary(row) ? S.rowValueSet : S.rowValue}>
-                        {/* پرچم کشورهای انتخاب‌شده */}
+                        {/* Flags of the selected countries */}
                         {flagCodes(row).map((c) => (
                           <CountryFlag
                             key={c}
@@ -400,7 +400,7 @@ export default function FilterModal({
 }
 
 // ============================================================
-// استایل‌ها (inline، هم‌خوان با بقیه‌ی پروژه)
+// Styles (inline, consistent with the rest of the project)
 // ============================================================
 const S = {
   overlay: {

@@ -13,7 +13,7 @@ import {
   truncateMessage,
 } from "@/lib/email";
 
-// ====== GET: لیست تیکت‌های کاربر ======
+// ====== GET: List the user's tickets ======
 export async function GET(request) {
   try {
     const session = await auth();
@@ -56,7 +56,7 @@ export async function GET(request) {
   }
 }
 
-// ====== POST: ایجاد تیکت جدید ======
+// ====== POST: Create a new ticket ======
 export async function POST(request) {
   try {
     const session = await auth();
@@ -76,7 +76,7 @@ export async function POST(request) {
       attachments = [],
     } = body;
 
-    // ====== اعتبارسنجی ======
+    // ====== Validation ======
     if (!subject?.trim() || !category || !message?.trim()) {
       return NextResponse.json(
         { message: "Subject, category, and message are required" },
@@ -97,7 +97,7 @@ export async function POST(request) {
       ? priority
       : "medium";
 
-    // ====== حل relatedProductId (شماره → id) ======
+    // ====== Resolve relatedProductId (number → id) ======
     let resolvedProductId = null;
     if (relatedProductId?.trim()) {
       const num = parseInt(relatedProductId);
@@ -110,7 +110,7 @@ export async function POST(request) {
       }
     }
 
-    // ====== حل relatedRequestId (شماره → id) ======
+    // ====== Resolve relatedRequestId (number → id) ======
     let resolvedRequestId = null;
     if (relatedRequestId?.trim()) {
       const num = parseInt(relatedRequestId);
@@ -123,10 +123,10 @@ export async function POST(request) {
       }
     }
 
-    // ====== تولید شماره تیکت ======
+    // ====== Generate the ticket number ======
     const ticketNumber = await generateTicketNumber(prisma);
 
-    // ====== ایجاد تیکت + اولین پیام ======
+    // ====== Create the ticket + first message ======
     const ticket = await prisma.ticket.create({
       data: {
         ticketNumber,
@@ -167,7 +167,7 @@ export async function POST(request) {
       },
     });
 
-    // ====== ارسال ایمیل به ادمین‌ها (background) ======
+    // ====== Send email to admins (background) ======
     (async () => {
       try {
         const admins = await prisma.user.findMany({

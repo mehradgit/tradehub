@@ -18,7 +18,7 @@ export default async function CustomersPage({ searchParams }) {
 
   if (!user) redirect("/login");
 
-  // فقط SUPPLIER یا admin
+  // SUPPLIER or admin only
   if (user.role !== "SUPPLIER" && !user.isAdmin) {
     redirect("/dashboard");
   }
@@ -26,7 +26,7 @@ export default async function CustomersPage({ searchParams }) {
   const userId = session.user.id;
   const { search = "", sort = "recent" } = await searchParams;
 
-  // ====== دریافت همه‌ی inquiries دریافت‌شده ======
+  // ====== Fetch all received inquiries ======
   const allInquiries = await prisma.productInquiry.findMany({
     where: { supplierId: userId },
     select: {
@@ -49,7 +49,7 @@ export default async function CustomersPage({ searchParams }) {
     orderBy: { createdAt: "desc" },
   });
 
-  // ====== گروه‌بندی بر اساس کاربر ======
+  // ====== Group by user ======
   const customerMap = new Map();
 
   for (const inq of allInquiries) {
@@ -70,7 +70,7 @@ export default async function CustomersPage({ searchParams }) {
     }
   }
 
-  // ====== اضافه کردن تعداد پیام‌ها و quotes ======
+  // ====== Add the message and quote counts ======
   const customerIds = Array.from(customerMap.keys());
 
   if (customerIds.length > 0) {
@@ -106,7 +106,7 @@ export default async function CustomersPage({ searchParams }) {
 
   let customers = Array.from(customerMap.values());
 
-  // ====== جستجو ======
+  // ====== Search ======
   if (search) {
     const q = search.toLowerCase();
     customers = customers.filter((c) => {
@@ -119,7 +119,7 @@ export default async function CustomersPage({ searchParams }) {
     });
   }
 
-  // ====== مرتب‌سازی ======
+  // ====== Sorting ======
   if (sort === "inquiries") {
     customers.sort((a, b) => b.inquiryCount - a.inquiryCount);
   } else if (sort === "name") {
@@ -135,7 +135,7 @@ export default async function CustomersPage({ searchParams }) {
     );
   }
 
-  // ====== آمار کلی ======
+  // ====== Overall statistics ======
   const totalCustomers = customers.length;
   const activeCustomers = customers.filter((c) => {
     if (!c.lastContact) return false;

@@ -35,7 +35,7 @@ export default function RegisterPage() {
       return;
     }
 
-    // ✅ بررسی کپچا
+    // ✅ Check captcha
     const { answer, token } = captchaRef.current?.getPayload() || {};
     if (!answer || !token) {
       setError("Please answer the security question.");
@@ -67,7 +67,7 @@ export default function RegisterPage() {
       }, 3000);
     } catch (err) {
       setError(err.message);
-      // ✅ رفرش کپچا در صورت خطا
+      // ✅ Refresh captcha on error
       captchaRef.current?.refresh();
     } finally {
       setLoading(false);
@@ -168,7 +168,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* ✅ کپچا */}
+            {/* ✅ Captcha */}
             <Captcha ref={captchaRef} disabled={success || loading} />
 
             <button

@@ -36,7 +36,7 @@ export async function POST(request) {
       subCategory = null,
       limit = 6,
       itemIds = [],
-      position = "top",                    // ✅ جدید
+      position = "top",                    // ✅ new
     } = body;
 
     if (!title?.trim()) {

@@ -1,10 +1,10 @@
 // src/app/api/cron/tick/route.js
 // ============================================================
-// تنها endpointی که زمان‌بند سیستم باید صدا بزند (هر دقیقه).
+// The only endpoint the system scheduler should call (every minute).
 //
-// این endpoint از جدول ScheduledJob می‌خواند و هر job ی که
-// زمانش رسیده باشد اجرا می‌کند. یعنی برای تغییر زمان‌بندی یا
-// خاموش‌کردن یک job دیگر لازم نیست به سرور دست بزنی.
+// This endpoint reads from the ScheduledJob table and runs every job
+// whose time has arrived. That means changing a schedule or
+// turning a job off no longer requires touching the server.
 // ============================================================
 import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/cronAuth";

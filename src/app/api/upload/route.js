@@ -34,7 +34,7 @@ export async function POST(request) {
       );
     }
 
-    // ===== انواع مجاز =====
+    // ===== Allowed types =====
     const allowedTypes = ["profiles", "products", "requests", "tickets"];
     if (!allowedTypes.includes(type)) {
       return new Response(
@@ -43,7 +43,7 @@ export async function POST(request) {
       );
     }
 
-    // ===== اعتبارسنجی نوع فایل =====
+    // ===== File type validation =====
     if (!file.type.startsWith("image/")) {
       return new Response(
         JSON.stringify({ message: "File must be an image" }),
@@ -51,7 +51,7 @@ export async function POST(request) {
       );
     }
 
-    // ===== محدودیت حجم بر اساس نوع =====
+    // ===== Size limit based on the type =====
     const maxSize = type === "tickets" ? 5 * 1024 * 1024 : 3 * 1024 * 1024;
     if (file.size > maxSize) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
@@ -65,7 +65,7 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // ✅ بررسی محدودیت‌های پلن (فقط برای products و requests)
+    // ✅ Check plan limits (only for products and requests)
     // ============================================================
     const { plan } = await getUserActivePlan(session.user.id);
 
@@ -90,12 +90,12 @@ export async function POST(request) {
         );
       }
     }
-    // ⚠️ برای type === "profiles" هیچ چکی اینجا نمی‌کنیم.
-    //    چرا؟ چون کاربر ممکنه عکسی رو حذف کرده باشه ولی هنوز Save نکرده باشه.
-    //    چک نهایی در PUT /api/user/update-profile انجام می‌شه.
+    // ⚠️ For type === "profiles" we do not check anything here.
+    //    Why? Because the user may have deleted an image but not saved yet.
+    //    The final check happens in PUT /api/user/update-profile.
 
     // ============================================================
-    // پردازش تصویر
+    // Image processing
     // ============================================================
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);

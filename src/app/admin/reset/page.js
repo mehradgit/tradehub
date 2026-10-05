@@ -77,7 +77,7 @@ export default function AdminResetPage() {
         subtitle="Danger Zone — Permanently delete all site data"
       />
 
-      {/* ====== هشدار اصلی ====== */}
+      {/* ====== Main warning ====== */}
       <div
         style={{
           background: "linear-gradient(135deg, #fef2f2, #fee2e2)",
@@ -132,7 +132,7 @@ export default function AdminResetPage() {
         </div>
       </div>
 
-      {/* ====== چه چیزی حفظ میشه ====== */}
+      {/* ====== What will be kept ====== */}
       <div
         style={{
           background: "#f0fdf4",
@@ -189,7 +189,7 @@ export default function AdminResetPage() {
         </div>
       </div>
 
-      {/* ====== آمار ====== */}
+      {/* ====== Stats ====== */}
       {loading ? (
         <div
           className="admin-card"
@@ -343,7 +343,7 @@ export default function AdminResetPage() {
             </div>
           </div>
 
-          {/* ====== نتیجه آخرین ریست ====== */}
+          {/* ====== Last reset result ====== */}
           {result && (
             <div
               className="admin-card"
@@ -411,7 +411,7 @@ export default function AdminResetPage() {
             </div>
           )}
 
-          {/* ====== تأیید و اجرا ====== */}
+          {/* ====== Confirmation and execution ====== */}
           <div
             className="admin-card"
             style={{
@@ -586,7 +586,7 @@ export default function AdminResetPage() {
   );
 }
 
-// ====== کارت آمار ======
+// ====== Stat card ======
 function StatCard({ icon, label, value, color }) {
   return (
     <div

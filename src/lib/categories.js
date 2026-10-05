@@ -2,37 +2,35 @@
 import categoriesData from "./categories.json";
 
 // ============================================================
-// ساختار flat برای سازگاری با کدهای فعلی
+// Flat structure for compatibility with the current code
 // ============================================================
 function flattenCategories() {
   const flat = [];
 
   (categoriesData.categories || []).forEach((cat) => {
-    // غ±. دسته اصلی
+    // 1. Main category
     flat.push({
       id: cat.id,
       name: cat.name_en,
-      nameFa: cat.name_fa || null,
       slug: cat.slug || cat.id,
       icon: cat.icon || null,
       description: cat.description || null,
       sortOrder: cat.sortOrder ?? 0,
-      parent: 0,                      // عدد صفر برای دسته اصلی
+      parent: 0,                      // zero means a main category
       productTypes: [],
       isActive: true,
     });
 
-    // غ². زیردسته‌ها
+    // 2. Subcategories
     (cat.subcategories || []).forEach((sub) => {
       flat.push({
         id: sub.id,
         name: sub.name_en,
-        nameFa: sub.name_fa || null,
         slug: sub.slug || sub.id,
         icon: sub.icon || null,
         description: sub.description || null,
         sortOrder: sub.sortOrder ?? 0,
-        parent: cat.id,               // رشته: id دسته اصلی
+        parent: cat.id,               // string: id of the main category
         productTypes: Array.isArray(sub.productTypes) ? sub.productTypes : [],
         isActive: true,
       });
@@ -46,7 +44,7 @@ export const categories = flattenCategories();
 export const rawCategories = categoriesData.categories || [];
 
 // ============================================================
-// توابع کمکی
+// Helper functions
 // ============================================================
 export function getCategoryById(id) {
   return categories.find((c) => c.id === id)?.name || "";

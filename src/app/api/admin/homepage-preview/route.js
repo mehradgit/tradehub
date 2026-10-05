@@ -43,7 +43,7 @@ export async function POST(request) {
   }
 }
 
-// ===== Fetch items per section (مثل منطق HomePage) =====
+// ===== Fetch items per section (same logic as HomePage) =====
 async function fetchSectionItems(section) {
   const limit = section.limit || 6;
 

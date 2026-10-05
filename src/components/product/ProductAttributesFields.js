@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 import { emptyAttributeValue } from "@/lib/attributeValues";
 
 // ============================================================
-// فیلدهای مشخصات محصول — کاملاً داینامیک
+// Product specification fields — fully dynamic
 //
-// با تغییر دسته‌بندی، اتریبیوت‌های همان دسته از سرور خوانده
-// و رندر می‌شوند. افزودن اتریبیوت جدید در پنل ادمین = صفر تغییر
-// در این فایل.
+// When the category changes, the attributes of that category are loaded
+// from the server and rendered. Adding a new attribute in the admin panel = zero changes
+// in this file.
 //
 // values: { [attributeId]: value }
 // ============================================================
@@ -22,7 +22,7 @@ export default function ProductAttributesFields({
   const [attributes, setAttributes] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ===== دریافت اتریبیوت‌های مرتبط با دسته =====
+  // ===== Fetch the attributes related to the category =====
   useEffect(() => {
     if (!categoryPath) {
       setAttributes([]);
@@ -51,7 +51,7 @@ export default function ProductAttributesFields({
 
   const setValue = (id, value) => onChange?.({ ...values, [id]: value });
 
-  // ===== حالت‌های خاص =====
+  // ===== Special states =====
   if (!categoryPath) {
     return (
       <p className="text-muted small mb-0">
@@ -78,7 +78,7 @@ export default function ProductAttributesFields({
   }
 
   // ============================================================
-  // رندر هر اتریبیوت بر اساس نوع داده
+  // Render each attribute based on its data type
   // ============================================================
   return (
     <div className="row g-3">
@@ -96,7 +96,7 @@ export default function ProductAttributesFields({
           </label>
         );
 
-        // ---------- بله / خیر ----------
+        // ---------- Yes / No ----------
         if (attr.dataType === "boolean") {
           return (
             <div className="col-md-4" key={attr.id}>
@@ -121,7 +121,7 @@ export default function ProductAttributesFields({
           );
         }
 
-        // ---------- چند انتخابی ----------
+        // ---------- Multi-select ----------
         if (attr.dataType === "multiSelect") {
           const list = Array.isArray(value) ? value : [];
           const options = Array.isArray(attr.options) ? attr.options : [];
@@ -172,7 +172,7 @@ export default function ProductAttributesFields({
           );
         }
 
-        // ---------- انتخابی تک‌مقداری ----------
+        // ---------- Single-value select ----------
         if (attr.dataType === "select") {
           const options = Array.isArray(attr.options) ? attr.options : [];
           return (
@@ -200,7 +200,7 @@ export default function ProductAttributesFields({
           );
         }
 
-        // ---------- عدد ----------
+        // ---------- Number ----------
         if (attr.dataType === "number") {
           return (
             <div className="col-md-4" key={attr.id}>
@@ -218,7 +218,7 @@ export default function ProductAttributesFields({
           );
         }
 
-        // ---------- متن ----------
+        // ---------- Text ----------
         return (
           <div className="col-md-4" key={attr.id}>
             {label}

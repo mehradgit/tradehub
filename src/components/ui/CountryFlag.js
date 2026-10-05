@@ -4,7 +4,7 @@ export default function CountryFlag({ countryCode, size = "20px", className = ""
     return <span className="text-muted small">—</span>;
   }
 
-  // ✅ تبدیل به حروف کوچک (flag-icons از کدهای کوچک استفاده می‌کند)
+  // Convert to lowercase letters (flag-icons uses lowercase codes)
   const code = countryCode.toLowerCase();
 
   return (

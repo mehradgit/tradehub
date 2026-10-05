@@ -10,7 +10,7 @@ import Pagination from "@/components/requests/Pagination";
 const BASE_URL = "https://foodtradelink.com";
 
 // ============================================================
-// generateMetadata — پویا بر اساس role و category
+// generateMetadata — dynamic based on role and category
 // ============================================================
 export async function generateMetadata({ searchParams }) {
   const {
@@ -23,7 +23,7 @@ export async function generateMetadata({ searchParams }) {
 
   const pageNum = parseInt(page) || 1;
 
-  // ===== عنوان پویا بر اساس نقش =====
+  // ===== Dynamic title based on role =====
   let roleLabel = "";
   if (role === "supplier") roleLabel = "Suppliers";
   else if (role === "buyer") roleLabel = "Buyers";
@@ -102,13 +102,13 @@ export async function generateMetadata({ searchParams }) {
 }
 
 // ============================================================
-// صفحه (بدون تغییر)
+// Page (unchanged)
 // ============================================================
 export default async function ProfilesPage({ searchParams }) {
   const resolvedParams = await searchParams;
 
   // ============================================================
-  // موتور فیلتر مشترک
+  // Shared filter engine
   // ============================================================
   const filters = await getFilterContext("profiles", resolvedParams);
   const { orderBy, page, limit, skip } = filters.plan;
@@ -116,24 +116,24 @@ export default async function ProfilesPage({ searchParams }) {
   const params = filters.effectiveParams;
   const search = params.search || "";
   const rawRole = String(params.role || "").toLowerCase();
-  // برای استفاده در JSON-LD و متن صفحه
+  // For use in JSON-LD and page copy
   const role = rawRole || "all";
   const category = params.category || "";
   const subCategory = params.subCategory || "";
 
   const where = { ...filters.plan.where };
 
-  // نقش: لینک‌های قدیمی ?role=supplier (کوچک) را هم بپذیر
+  // Role: also accept legacy lowercase links such as ?role=supplier
   if (rawRole === "supplier") where.role = "SUPPLIER";
   else if (rawRole === "buyer") where.role = "BUYER";
   else if (params.role) where.role = String(params.role).toUpperCase();
 
   // ============================================================
-  // فیلتر دسته‌بندی شرکت‌ها
+  // Company category filter
   //
-  // روی User ستونی برای دسته وجود ندارد، پس از طریق محصولات یا
-  // درخواست‌های همان شرکت اعمال می‌شود. با categoryPath (slug)
-  // به‌صورت prefix، یعنی هر سه سطح پوشش داده می‌شود.
+  // There is no category column on User, so the filter is applied through
+  // the products or buying requests of that company. Using categoryPath
+  // (slug) as a prefix covers all three levels.
   // ============================================================
   if (filters.categoryPath) {
     const pathFilter = {
@@ -188,7 +188,7 @@ export default async function ProfilesPage({ searchParams }) {
   const totalPages = Math.ceil(totalCount / limit);
 
   // ============================================================
-  // JSON-LD — ItemList پروفایل‌ها
+  // JSON-LD — ItemList of profiles
   // ============================================================
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -245,7 +245,7 @@ export default async function ProfilesPage({ searchParams }) {
           </p>
         </div>
 
-        {/* ✅ نوار فیلتر یکپارچه — از اسکیمای مشترک ساخته می‌شود */}
+        {/* ✅ Unified filter bar — built from the shared schema */}
         <SharedFilterBar {...filters.barProps} resultCount={totalCount} />
 
         {profiles.length > 0 ? (

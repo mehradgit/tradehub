@@ -16,7 +16,7 @@ export const DEFAULT_SECTIONS = [
     itemIds: [],
     limit: 6,
     order: 0,
-    position: "top",           // ✅ جدید
+    position: "top",           // New
     isActive: true,
   },
   {
@@ -31,7 +31,7 @@ export const DEFAULT_SECTIONS = [
     itemIds: [],
     limit: 6,
     order: 1,
-    position: "top",           // ✅ جدید
+    position: "top",           // New
     isActive: true,
   },
 ];
@@ -50,7 +50,7 @@ export async function getHomepageSections() {
     return DEFAULT_SECTIONS;
   }
 
-  // ✅ اطمینان از وجود position برای بخش‌های قدیمی
+  // Ensure position exists for legacy sections
   const normalized = setting.value.map((s) => ({
     ...s,
     position: s.position || "top",

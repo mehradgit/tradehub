@@ -24,7 +24,7 @@ export async function PUT(request, { params }) {
     isActive,
   } = body;
 
-  // تبدیل مقادیر رشته‌ای به عدد (در صورت وجود)
+  // Convert string values to numbers (when present)
   const toInt = (value) => {
     if (value === null || value === undefined || value === "") return undefined;
     const num = parseInt(value, 10);

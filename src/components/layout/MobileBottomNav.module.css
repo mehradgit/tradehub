@@ -2,11 +2,11 @@
 
 /* ============================================================
    Mobile Bottom Navigation — Snapp-style
-   فقط در موبایل نمایش داده می‌شود
+   Shown on mobile only
 ============================================================ */
 
 .bottomNav {
-  display: none; /* پیش‌فرض مخفی */
+  display: none; /* Hidden by default */
 
   position: fixed;
   left: 0;
@@ -23,15 +23,15 @@
 
   box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
 
-  /* iOS safe area برای iPhone با ناچ */
+  /* iOS safe area for iPhones with a notch */
   padding-bottom: env(safe-area-inset-bottom, 0px);
 
-  /* انیمیشن نرم برای hide/show (اگه خواستی فعال کنی) */
+  /* Smooth hide/show animation (enable it if you want) */
   transition: transform 0.25s ease;
 }
 
 /* ============================================================
-   فقط در موبایل فعال شود
+   Enabled on mobile only
 ============================================================ */
 @media (max-width: 768px) {
   .bottomNav {
@@ -50,7 +50,7 @@
   margin: 0;
   padding: 0;
 
-  /* ارتفاع استاندارد bottom nav */
+  /* Standard bottom nav height */
   min-height: 64px;
 }
 
@@ -84,7 +84,7 @@
 
   position: relative;
 
-  /* برای tap highlight بهتر */
+  /* For a better tap highlight */
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -117,7 +117,7 @@
   transform: translateY(-1px);
 }
 
-/* نقطه سبز کوچک زیر آیکون برای active */
+/* Small green dot under the icon for the active item */
 .activeDot {
   position: absolute;
   bottom: -4px;
@@ -181,7 +181,7 @@
 }
 
 /* ============================================================
-   Hidden state (اختیاری - برای hide on scroll)
+   Hidden state (optional - for hide on scroll)
 ============================================================ */
 .bottomNav.hidden {
   transform: translateY(100%);

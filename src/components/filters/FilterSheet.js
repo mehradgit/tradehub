@@ -5,15 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import FilterField from "./FilterField";
 
 // ============================================================
-// پنل کشویی فیلترها
+// Sliding filter panel
 //
-// چرا sheet و نه modal:
-//   • روی موبایل تمام‌صفحه می‌شود
-//   • Escape، قفل اسکرول و aria دارد (مودال‌های قدیمی پروژه ندارند)
-//   • می‌شود همزمان نتیجه را دید
+// Why a sheet and not a modal:
+//   • It goes full screen on mobile
+//   • It has Escape, scroll lock and aria (the project's old modals do not)
+//   • The results stay visible at the same time
 //
-// تغییرات در state محلی نگه داشته می‌شوند و با «Apply» یک‌جا
-// روی URL اعمال می‌شوند (نه با هر کلیک).
+// Changes are kept in local state and applied to the URL all at
+// once with "Apply" (not on every click).
 // ============================================================
 export default function FilterSheet({
   open,
@@ -32,13 +32,13 @@ export default function FilterSheet({
   const [draft, setDraft] = useState(values || {});
   const panelRef = useRef(null);
 
-  // ===== همگام‌سازی با URL هنگام باز شدن =====
+  // ===== Syncing with the URL when it opens =====
   useEffect(() => {
     if (open) setDraft(values || {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // ===== قفل اسکرول (با بازگرداندن مقدار قبلی) =====
+  // ===== Scroll lock (restoring the previous value) =====
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
@@ -48,7 +48,7 @@ export default function FilterSheet({
     };
   }, [open]);
 
-  // ===== بستن با Escape + انتقال فوکوس =====
+  // ===== Close with Escape + move focus =====
   useEffect(() => {
     if (!open) return;
 
@@ -71,13 +71,13 @@ export default function FilterSheet({
   const setValue = (name, value) =>
     setDraft((d) => ({ ...d, [name]: value }));
 
-  // این فیلدها برچسب خودشان را رندر می‌کنند
+  // These fields render their own label
   const selfLabeled = (type) =>
     type === "boolean" || type === "dynamicAttributes";
 
   return (
     <>
-      {/* پس‌زمینه */}
+      {/* Backdrop */}
       <div
         onClick={onClose}
         style={{
@@ -88,7 +88,7 @@ export default function FilterSheet({
         }}
       />
 
-      {/* پنل */}
+      {/* Panel */}
       <aside
         ref={panelRef}
         tabIndex={-1}
@@ -109,7 +109,7 @@ export default function FilterSheet({
           outline: "none",
         }}
       >
-        {/* سربرگ */}
+        {/* Header */}
         <div
           style={{
             display: "flex",
@@ -147,7 +147,7 @@ export default function FilterSheet({
           </button>
         </div>
 
-        {/* بدنه */}
+        {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "18px" }}>
           <div style={{ display: "grid", gap: "18px" }}>
             {fields.map((field) => (
@@ -183,7 +183,7 @@ export default function FilterSheet({
           </div>
         </div>
 
-        {/* پایین */}
+        {/* Footer */}
         <div
           style={{
             display: "flex",

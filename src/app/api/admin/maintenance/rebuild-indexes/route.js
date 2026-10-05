@@ -1,26 +1,26 @@
 // src/app/api/admin/maintenance/rebuild-indexes/route.js
 // ============================================================
-// بازسازی ایندکس‌های جست‌وجو برای ردیف‌های موجود
+// Rebuild the search indexes for existing rows
 //
-//   categoryPath  → مسیر slug سه‌سطحی دسته‌بندی
+//   categoryPath  → three-level category slug path
 //                   ("grains-cereals/rice/basmati")
-//   searchText    → متن یکجای جست‌وجو (نام + توضیح + دسته +
-//                   اتریبیوت‌ها) برای ایندکس FULLTEXT
+//   searchText    → concatenated search text (name + description +
+//                   category + attributes) for the FULLTEXT index
 //
-// این اندپوینت idempotent است: هر بار اجرا شود همان نتیجه را
-// می‌سازد. بعد از تغییر دسته‌بندی‌ها یا اضافه‌شدن اتریبیوت‌های
-// جدید، یک‌بار اجرا کنید.
+// This endpoint is idempotent: running it again produces the same
+// result. After changing categories or adding new attributes,
+// run it once.
 //
-// ورودی (اختیاری، JSON):
-//   { only: "both" | "categoryPath" | "searchText" }   پیش‌فرض both
+// Input (optional, JSON):
+//   { only: "both" | "categoryPath" | "searchText" }   default both
 //
-// خروجی:
+// Output:
 //   { message, products: {total, updated, failed},
 //     requests: {total, updated, failed}, durationMs }
 //
-// نکته‌ی کارایی: نوشتن ردیف‌به‌ردیف عمداً است — می‌خواهیم یک
-// ردیف خراب کل اجرا را متوقف نکند. به همین دلیل برای هر ردیف
-// update جداگانه با try/catch زده می‌شود.
+// Performance note: writing row by row is intentional — we do not
+// want one broken row to stop the whole run. That is why each row
+// gets its own update inside a try/catch.
 // ============================================================
 export const maxDuration = 300;
 
@@ -36,11 +36,11 @@ import {
   flattenAttributeValues,
 } from "@/lib/searchText";
 
-// اندازه‌ی هر batch — برای اینکه حافظه و event loop آزاد بماند
+// Size of each batch — so memory and the event loop stay free
 const BATCH_SIZE = 200;
 
 // ============================================================
-// پارس کردن ورودی
+// Parse the input
 // ============================================================
 function parseOnly(rawBody) {
   const raw = rawBody && typeof rawBody === "object" ? rawBody.only : undefined;
@@ -54,24 +54,24 @@ function parseOnly(rawBody) {
 }
 
 // ============================================================
-// POST — اجرای بازسازی
+// POST — run the rebuild
 // ============================================================
 export async function POST(request) {
   const startedAt = Date.now();
 
   try {
-    // ====== دسترسی ادمین ======
+    // ====== Admin access ======
     const session = await auth();
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // ====== ورودی (بدنه اختیاری است) ======
+    // ====== Input (the body is optional) ======
     let body = null;
     try {
       body = await request.json();
     } catch {
-      // بدنه‌ی خالی یا نامعتبر → پیش‌فرض
+      // Empty or invalid body → use defaults
       body = null;
     }
 
@@ -79,14 +79,14 @@ export async function POST(request) {
     const rebuildCategoryPath = only === "both" || only === "categoryPath";
     const rebuildSearchText = only === "both" || only === "searchText";
 
-    // ====== درخت دسته‌بندی فقط یک‌بار خوانده می‌شود ======
+    // ====== The category tree is read only once ======
     const tree = buildCategoryTree(await getCategories());
 
     const products = { total: 0, updated: 0, failed: 0 };
     const requests = { total: 0, updated: 0, failed: 0 };
 
     // ============================================================
-    // محصولات
+    // Products
     // ============================================================
     let productSkip = 0;
 
@@ -125,7 +125,7 @@ export async function POST(request) {
       for (const product of batch) {
         products.total += 1;
 
-        // فقط داخل try/catch تا یک ردیف خراب کل batch را نکشد
+        // Only inside try/catch so one broken row does not kill the batch
         try {
           const data = {};
 
@@ -145,7 +145,7 @@ export async function POST(request) {
             try {
               attributes = await getProductAttributes(product.id);
             } catch (attrErr) {
-              // اتریبیوت‌ها حیاتی نیستند؛ بقیه‌ی فیلدها بازسازی می‌شوند
+              // Attributes are not critical; the other fields are still rebuilt
               console.error(
                 `[rebuild-indexes] product attributes failed (${product.id}):`,
                 attrErr?.message || attrErr
@@ -176,7 +176,7 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // درخواست‌های خرید
+    // Buying requests
     // ============================================================
     let requestSkip = 0;
 
@@ -229,8 +229,9 @@ export async function POST(request) {
           }
 
           if (rebuildSearchText) {
-            // درخواست خرید در اسکیما اتریبیوت EAV ندارد، پس آرایه‌ی
-            // خالی داده می‌شود. اگر روزی اضافه شد، فقط این خط عوض شود.
+            // Buying requests have no EAV attributes in the schema, so an
+            // empty array is passed. If that ever changes, only this line
+            // needs updating.
             data.searchText = buildRequestSearchText({
               request: req,
               attributeValues: [],
@@ -254,7 +255,7 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // نتیجه
+    // Result
     // ============================================================
     return NextResponse.json({
       message: `Rebuild finished (only: ${only}).`,
@@ -263,7 +264,7 @@ export async function POST(request) {
       durationMs: Date.now() - startedAt,
     });
   } catch (error) {
-    // پیام داخلی در پاسخ لو نمی‌رود
+    // Internal details are not leaked in the response
     console.error("Rebuild indexes error:", error);
     return NextResponse.json(
       { message: "Rebuild failed. Check server logs for details." },

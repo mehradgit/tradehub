@@ -23,7 +23,7 @@ export default function ManualPaymentForm({ plans }) {
     description: "",
   });
 
-  // ====== جستجوی کاربر ======
+  // ====== User search ======
   const searchUsers = async () => {
     if (!userSearch.trim() || userSearch.length < 2) return;
     setSearching(true);

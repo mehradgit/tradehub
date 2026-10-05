@@ -10,13 +10,13 @@
 
 //   const tabs = ["All Products", "Best Sellers", "New Arrivals", "Discounted", "Special Offers"];
 
-//   // ✅ فیلتر کردن آیتم‌های undefined از آرایه‌ها
+//   // Filter out undefined items from the arrays
 //   const validProducts = products?.filter(Boolean) || [];
 //   const validRequests = requests?.filter(Boolean) || [];
 
 //   return (
 //     <div className="mb-5">
-//       {/* ====== بخش محصولات ====== */}
+//       {/* ====== Products section ====== */}
 //       <div className="d-flex justify-content-between align-items-center mb-3">
 //         <h3 className="fw-bold">
 //           <i className="fas fa-star me-2" style={{ color: "var(--color-primary, #e85d3a)" }}></i>
@@ -55,7 +55,7 @@
 //         </div>
 //       )}
 
-//       {/* ====== بخش درخواست‌های خرید ====== */}
+//       {/* ====== Buying requests section ====== */}
 //       <div className="mt-5 pt-3">
 //         <div className="d-flex justify-content-between align-items-center mb-3">
 //           <h3 className="fw-bold">
@@ -96,19 +96,19 @@
 
 //   const tabs = ["All", "Newest", "Organic", "Best Sellers"];
 
-//   // فیلتر محصولات (در صورت نیاز)
+//   // Filter products (if needed)
 //   const filteredProducts = products || [];
 
 //   return (
 //     <div className="featured-products-modern">
-//       {/* عنوان */}
+//       {/* Title */}
 //       <div className="featured-products-modern-header">
 //         <h2>
 //           Discover nature's <span>newest products</span>
 //         </h2>
 //       </div>
 
-//       {/* تب‌ها */}
+//       {/* Tabs */}
 //       <div className="featured-products-modern-tabs">
 //         {tabs.map((tab) => (
 //           <button
@@ -121,7 +121,7 @@
 //         ))}
 //       </div>
 
-//       {/* گرید محصولات */}
+//       {/* Products grid */}
 //       <div className="featured-products-modern-grid">
 //         {filteredProducts.slice(0, 8).map((product) => (
 //           <ProductCard key={product.id} product={product} />
@@ -147,7 +147,7 @@ export default function FeaturedProducts({ products }) {
 
   return (
     <div className="featured-products-section">
-      {/* ====== هدر با عنوان، زیرنویس و لینک ====== */}
+      {/* ====== Header with title, subtitle and link ====== */}
       <div className="section-header">
         <div>
           <h2 className="section-title">
@@ -162,7 +162,7 @@ export default function FeaturedProducts({ products }) {
         </Link>
       </div>
 
-      {/* گرید محصولات */}
+      {/* Products grid */}
       <div className="compact-products-grid">
         {filteredProducts.slice(0, 6).map((product) => (
           <ProductCard key={product.id} product={product} />

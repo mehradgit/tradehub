@@ -2,13 +2,13 @@
 import { prisma } from "@/lib/prisma";
 
 // ============================================================
-// Cache ساده در حافظه (per-process)
+// Simple in-memory cache (per-process)
 // ============================================================
 const templateCache = new Map();
-const CACHE_TTL = 60 * 1000; // 60 ثانیه
+const CACHE_TTL = 60 * 1000; // 60 seconds
 
 // ============================================================
-// جایگزینی متغیرها در متن
+// Replace the variables in the text
 // {{userName}} → "Ali"
 // ============================================================
 function renderTemplate(text, variables = {}) {
@@ -21,7 +21,7 @@ function renderTemplate(text, variables = {}) {
 }
 
 // ============================================================
-// Layout عمومی (شبیه email.js فعلی)
+// Shared layout (similar to the current email.js)
 // ============================================================
 export function emailLayout(content) {
   return `
@@ -41,7 +41,7 @@ export function emailLayout(content) {
 }
 
 // ============================================================
-// دریافت یک قالب با cache
+// Get a single template with cache
 // ============================================================
 export async function getTemplate(key) {
   const cached = templateCache.get(key);
@@ -64,7 +64,7 @@ export async function getTemplate(key) {
 }
 
 // ============================================================
-// رندر قالب: subject + html + text
+// Render the template: subject + html + text
 // ============================================================
 export async function renderEmail(key, variables = {}) {
   const template = await getTemplate(key);
@@ -81,7 +81,7 @@ export async function renderEmail(key, variables = {}) {
 
   const subject = renderTemplate(template.subject, variables);
 
-  // اگر htmlBody فقط fragment باشد، آن را داخل layout می‌گذاریم
+  // If htmlBody is only a fragment, we wrap it in the layout
   const isFullHtml = template.htmlBody
     .toLowerCase()
     .includes("<!doctype") || template.htmlBody.toLowerCase().includes("<html");
@@ -96,7 +96,7 @@ export async function renderEmail(key, variables = {}) {
 }
 
 // ============================================================
-// helper: حذف تگ‌های HTML برای plain text
+// helper: strip HTML tags for plain text
 // ============================================================
 function stripHtml(html) {
   return String(html)
@@ -113,7 +113,7 @@ function stripHtml(html) {
 }
 
 // ============================================================
-// پاک کردن cache (بعد از ویرایش در پنل ادمین)
+// Clear the cache (after an edit in the admin panel)
 // ============================================================
 export function clearTemplateCache(key = null) {
   if (key) templateCache.delete(key);

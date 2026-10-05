@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { getUserActivePlan, getUsageCount } from "@/lib/planService"; // فرض بر وجود این تابع در planService
+import { getUserActivePlan, getUsageCount } from "@/lib/planService"; // assuming this function exists in planService
 
 export async function GET() {
   try {
@@ -12,7 +12,7 @@ export async function GET() {
     const userId = session.user.id;
     const { plan, subscription } = await getUserActivePlan(userId);
 
-    // شمارنده‌های سهمیه ماهانه
+    // Monthly quota counters
     const usage = {};
     if (subscription) {
       const monthIndex = Math.floor(
@@ -29,7 +29,7 @@ export async function GET() {
       usage.inquiries = { used: inquiries, limit: plan.maxInquiriesPerMonth };
       usage.quotes = { used: quotes, limit: plan.maxQuotesPerMonth };
     } else {
-      // بدون اشتراک فعال – از آمار کلی ماه میلادی استفاده می‌کنیم
+      // No active subscription - fall back to the overall calendar-month stats
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       const [reqCount, inqCount, quoteCount] = await Promise.all([
@@ -42,7 +42,7 @@ export async function GET() {
       usage.quotes = { used: quoteCount, limit: plan.maxQuotesPerMonth };
     }
 
-    // تعداد محصولات و عکس‌های پروفایل
+    // Product count and profile image count
     const [productCount, profileImagesCount] = await Promise.all([
       prisma.product.count({ where: { userId } }),
       prisma.user.findUnique({
@@ -51,7 +51,7 @@ export async function GET() {
       }).then((user) => (Array.isArray(user?.galleryImages) ? user.galleryImages.length : 0)),
     ]);
 
-    // اشتراک رزرو شده
+    // Reserved subscription
     const reservedSubscription = await prisma.userSubscription.findFirst({
       where: { userId, status: "reserved" },
       include: { plan: true },

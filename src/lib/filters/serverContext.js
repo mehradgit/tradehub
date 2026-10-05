@@ -1,9 +1,9 @@
 // src/lib/filters/serverContext.js
 // ============================================================
-// بسته‌ی کامل فیلتر برای Server Components
+// Complete filter bundle for Server Components
 //
-// صفحات فقط این را صدا می‌زنند و همه‌چیز (درخت دسته، گزینه‌ها،
-// اتریبیوت‌های مرتبط، شرط Prisma و facet) آماده تحویل می‌شود.
+// Pages simply call this and everything (category tree, options,
+// related attributes, Prisma condition and facets) comes back ready.
 //
 //   const ctx = await getFilterContext("products", await searchParams);
 //   prisma.product.findMany({ where: ctx.plan.where, ... })
@@ -42,18 +42,18 @@ export async function getFilterContext(schemaKey, searchParams, options = {}) {
   };
 
   try {
-    // ===== درخت دسته‌بندی =====
+    // ===== Category tree =====
     const flat = await getCategories();
     const tree = buildCategoryTree(flat).filter((n) => n.isActive !== false);
     const index = buildCategoryIndex(tree);
 
-    // ===== گزینه‌های فیلترها (واژگان + کشورها) =====
+    // ===== Filter options (vocabularies + countries) =====
     const filterOptions = await resolveFilterOptions(schemaKey);
 
-    // ===== نرمال‌سازی پارامترها =====
-    // لینک‌های قدیمی از ?category=نام&subCategory=نام استفاده می‌کردند.
-    // آن‌ها را به categoryPath (slug) تبدیل می‌کنیم تا هم لینک‌های
-    // قدیمی نشکنند و هم فیلتر جدید کار کند.
+    // ===== Parameter normalization =====
+    // Legacy links used ?category=name&subCategory=name.
+    // We convert them to categoryPath (slug) so that the old
+    // links keep working and the new filter also works.
     const rawParams = Object.fromEntries(entriesOf(searchParams));
     const effectiveParams = { ...rawParams };
     let categoryPath = String(rawParams.categoryPath || "");
@@ -73,17 +73,17 @@ export async function getFilterContext(schemaKey, searchParams, options = {}) {
       }
     }
 
-    // ===== اتریبیوت‌های مرتبط با این دسته =====
+    // ===== Attributes related to this category =====
     const attributeDefs = await resolveAttributesForPath(categoryPath, {
       filterableOnly: attributeFilterableOnly,
     });
 
-    // ===== شرط Prisma =====
+    // ===== Prisma condition =====
     const plan = buildListQuery(schemaKey, effectiveParams, { attributeDefs });
 
     // ===== facet count =====
-    // برای شمارش گزینه‌ها، فیلتر خودِ اتریبیوت‌ها را نادیده می‌گیریم
-    // تا کاربر بتواند گزینه‌های دیگر را هم ببیند.
+    // For option counting we ignore the attributes' own filter
+    // so the user can see the other options as well.
     let attributeFacets = {};
     if (withFacets && attributeDefs.length > 0) {
       const facetWhere = buildWhereFromValues(schemaKey, plan.values, {
@@ -102,7 +102,7 @@ export async function getFilterContext(schemaKey, searchParams, options = {}) {
       categoryPath,
       plan,
       effectiveParams,
-      // پروپ‌های آماده برای <FilterBar />
+      // Ready-made props for <FilterBar />
       barProps: {
         schemaKey,
         categoryTree: tree,
@@ -119,7 +119,7 @@ export async function getFilterContext(schemaKey, searchParams, options = {}) {
 }
 
 // ============================================================
-// نسخه‌ی سبک — فقط درخت دسته (برای هدر و انتخابگرها)
+// Lightweight version — category tree only (for the header and pickers)
 // ============================================================
 export async function getCategoryTreeOnly() {
   try {

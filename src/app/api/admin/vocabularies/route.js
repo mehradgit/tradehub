@@ -1,15 +1,15 @@
 // src/app/api/admin/vocabularies/route.js
 // ============================================================
-// واژگان کنترل‌شده — API پنل ادمین
+// Controlled vocabularies — admin panel API
 //
-// GET  : لیست گروه‌ها + متادیتای ترتیب نمایش
-// PUT  : ذخیره‌ی یک یا چند گروه (فقط مقادیر)
+// GET  : list of groups + display-order metadata
+// PUT  : save one or more groups (values only)
 //
-// نکته‌ی مهم: saveVocabularies کل مقدار Setting را بازنویسی می‌کند و
-// فقط کلیدهای ارسالی را داخل آن می‌گذارد. پس اگر «ذخیره‌ی یک کارت»
-// فقط همان یک کلید را بفرستد، بقیه‌ی گروه‌های سفارشی‌شده به
-// پیش‌فرض برمی‌گردند. برای همین این‌جا مقادیر فعلی خوانده و با
-// ورودی ادمین ادغام می‌شوند.
+// Important: saveVocabularies rewrites the whole Setting value and
+// only puts the submitted keys inside it. So if "save a single card"
+// sends just that one key, the other customized groups fall back to
+// the defaults. That is why the current values are read here and
+// merged with the admin input.
 // ============================================================
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
@@ -24,7 +24,7 @@ const MAX_ITEMS = 200;
 const MAX_ITEM_LENGTH = 120;
 
 // ============================================================
-// ساخت شکل خروجی: [{ key, label, items: [{value,label}] }]
+// Build the output shape: [{ key, label, items: [{value,label}] }]
 // ============================================================
 function toGroups(all) {
   return VOCABULARY_META.map(({ key, label }) => ({
@@ -40,8 +40,8 @@ async function readGroups() {
 }
 
 // ============================================================
-// پاک‌سازی یک لیست: trim، حذف خالی‌ها، سقف طول و تعداد، حذف تکراری
-// خروجی null یعنی ورودی آرایه نبود.
+// Clean a list: trim, drop empties, cap length and count, remove duplicates
+// A null return means the input was not an array.
 // ============================================================
 function cleanList(raw) {
   if (!Array.isArray(raw)) return null;
@@ -72,7 +72,7 @@ function cleanList(raw) {
 }
 
 // ============================================================
-// GET: خواندن واژگان
+// GET: read vocabularies
 // ============================================================
 export async function GET() {
   try {
@@ -94,7 +94,7 @@ export async function GET() {
 }
 
 // ============================================================
-// PUT: ذخیره‌ی گروه(ها)
+// PUT: save group(s)
 // body = { incoterms: ["FOB", ...], units: ["kg"], ... }
 // ============================================================
 export async function PUT(request) {
@@ -151,8 +151,9 @@ export async function PUT(request) {
         );
       }
 
-      // لیست خالی در saveVocabularies به «پیش‌فرض‌ها» برمی‌گردد، پس
-      // به‌جای بازگردانی بی‌صدا، خطای واضح می‌دهیم.
+      // An empty list falls back to the built-in defaults in
+      // saveVocabularies, so instead of silently restoring them we
+      // return a clear error.
       if (list.length === 0) {
         return NextResponse.json(
           {
@@ -165,7 +166,7 @@ export async function PUT(request) {
       submitted[key] = list;
     }
 
-    // ادغام با مقادیر فعلی تا ذخیره‌ی یک کارت، بقیه‌ی گروه‌ها را پاک نکند
+    // Merge with the current values so saving one card does not wipe the other groups
     const current = await getVocabularies();
     const merged = {};
     for (const { key } of VOCABULARY_META) {

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// ====== GET: لیست نوتیفیکیشن‌ها با صفحه‌بندی ======
+// ====== GET: list notifications with pagination ======
 export async function GET(request) {
   try {
     const session = await auth();
@@ -52,7 +52,7 @@ export async function GET(request) {
   }
 }
 
-// ====== DELETE: پاک کردن همه‌ی نوتیفیکیشن‌ها ======
+// ====== DELETE: clear all notifications ======
 export async function DELETE() {
   try {
     const session = await auth();

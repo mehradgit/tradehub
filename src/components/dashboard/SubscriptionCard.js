@@ -80,7 +80,7 @@ export default function SubscriptionCard() {
   const products = data.products || { count: 0, limit: 0 };
   const profileImages = data.profileImages || { count: 0, limit: 0 };
 
-  // Helper: درصد + رنگ
+  // Helper: percentage + colour
   const getProgress = (used, limit) => {
     if (limit === -1) return { percent: 100, isUnlimited: true };
     if (!limit) return { percent: 0, isUnlimited: false };

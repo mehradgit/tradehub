@@ -8,7 +8,7 @@
   padding-top: 85px;
 }
 /* =========================================================
-   Section Header (scoped - بدون وابستگی به globals.css)
+   Section Header (scoped - no dependency on globals.css)
 ========================================================= */
 .adHeader {
   display: flex;
@@ -122,7 +122,7 @@
   );
 }
 
-/* Image wrapper — Next.js Image با fill اینجا قرار می‌گیره */
+/* Image wrapper — this is where the Next.js Image with fill goes */
 .adMainImageWrap {
   position: absolute;
   inset: 0;
@@ -268,7 +268,7 @@
   box-shadow: 0 20px 45px rgba(19, 58, 46, 0.14);
 }
 
-/* Image container — Next.js Image با fill */
+/* Image container — Next.js Image with fill */
 .companyAdCardImage {
   position: relative;
   height: 145px;

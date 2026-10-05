@@ -4,7 +4,7 @@
 import { useEffect, useRef } from "react";
 
 export default function ViewTracker({ type, id }) {
-  // جلوگیری از شمارش چندباره در حالت Strict Mode
+  // Prevent double counting in Strict Mode
   const trackedRef = useRef(false);
 
   useEffect(() => {
@@ -19,13 +19,13 @@ export default function ViewTracker({ type, id }) {
         });
         trackedRef.current = true;
       } catch (error) {
-        // خطاها را نادیده می‌گیریم تا تجربه کاربری خراب نشود
+        // Ignore errors so the user experience is not broken
         console.error("View tracking failed:", error);
       }
-    }, 1500); // تأخیر ۱.۵ ثانیه‌ای برای اطمینان از لود کامل صفحه
+    }, 1500); // 1.5s delay to make sure the page has fully loaded
 
     return () => clearTimeout(timeout);
   }, [type, id]);
 
-  return null; // چیزی رندر نمی‌کند
+  return null; // Renders nothing
 }

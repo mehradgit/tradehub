@@ -1,18 +1,18 @@
 // src/components/admin/MaintenanceTools.js
 "use client";
 // ============================================================
-// ابزارهای تعمیر و نگهداری (پنل ادمین)
+// Maintenance tools (admin panel)
 //
-//   ۱) Rebuild search indexes
-//      بازسازی categoryPath و searchText برای محصولات و درخواست‌ها.
+//   1) Rebuild search indexes
+//      Rebuilds categoryPath and searchText for products and requests.
 //
-//   ۲) Normalise legacy vocabulary values
-//      فرم‌های قدیمی رشته‌ی نمایشی ذخیره می‌کردند
-//      ("FOB (Free On Board)" یا "T/T") و فیلترهای فروشگاه با contains
-//      کار می‌کنند، پس بعضی ردیف‌های قدیمی پیدا نمی‌شوند.
-//      پیش‌نمایش (dry run) پیش‌فرض است و هیچ چیزی نمی‌نویسد؛ دکمه‌ی
-//      Apply فقط بعد از یک پیش‌نمایش فعال می‌شود و قبل از اجرا
-//      تأیید می‌گیرد. مقادیر تطبیق‌نشده هرگز حذف نمی‌شوند.
+//   2) Normalise legacy vocabulary values
+//      Older forms stored display strings
+//      ("FOB (Free On Board)" or "T/T") while the storefront filters use
+//      contains, so some legacy rows are never found.
+//      The preview (dry run) is the default and writes nothing; the Apply
+//      button only becomes available after a preview and asks for
+//      confirmation before running. Unmatched values are never deleted.
 // ============================================================
 
 import { useState } from "react";
@@ -66,7 +66,7 @@ const cardHintStyle = {
 };
 
 // ============================================================
-// نمایش شمارنده‌ها با admin-pill
+// Display counters with admin-pill
 // ============================================================
 function CountPill({ label, value, tone = "basic" }) {
   return (
@@ -77,7 +77,7 @@ function CountPill({ label, value, tone = "basic" }) {
 }
 
 // ============================================================
-// گزارش یک مدل: شمارنده‌ها + جدول نمونه‌ها
+// Report for one model: counters + a table of samples
 // ============================================================
 function ModelReport({ title, data }) {
   if (!data) return null;
@@ -189,12 +189,12 @@ export default function MaintenanceTools() {
 
   const [busy, setBusy] = useState(null); // "rebuild" | "preview" | "apply"
   const [indexResult, setIndexResult] = useState(null);
-  const [report, setReport] = useState(null); // پاسخ نرمال‌سازی
-  const [applied, setApplied] = useState(false); // آخرین اجرا واقعی بوده؟
+  const [report, setReport] = useState(null); // normalisation response
+  const [applied, setApplied] = useState(false); // was the last run a real apply?
 
   const anyBusy = busy !== null;
 
-  // ===== فراخوانی مشترک POST =====
+  // ===== Shared POST helper =====
   const post = async (url, payload) => {
     const res = await fetch(url, {
       method: "POST",
@@ -208,7 +208,7 @@ export default function MaintenanceTools() {
     return data;
   };
 
-  // ===== ۱) بازسازی ایندکس‌ها =====
+  // ===== 1) Rebuild indexes =====
   const rebuildIndexes = async () => {
     setBusy("rebuild");
     try {
@@ -223,7 +223,7 @@ export default function MaintenanceTools() {
     }
   };
 
-  // ===== ۲) پیش‌نمایش (dry run) =====
+  // ===== 2) Preview (dry run) =====
   const runPreview = async () => {
     setBusy("preview");
     try {
@@ -238,7 +238,7 @@ export default function MaintenanceTools() {
     }
   };
 
-  // ===== ۲) اجرای واقعی =====
+  // ===== 2) Real apply =====
   const applyChanges = async () => {
     if (!report || applied) {
       toast.warning("Run the dry-run preview first");
@@ -280,7 +280,7 @@ export default function MaintenanceTools() {
   return (
     <>
       {/* ============================================================
-          کارت ۱: بازسازی ایندکس‌های جست‌وجو
+          Card 1: rebuild search indexes
           ============================================================ */}
       <div className="admin-card" style={{ marginBottom: "14px" }}>
         <div
@@ -391,7 +391,7 @@ export default function MaintenanceTools() {
       </div>
 
       {/* ============================================================
-          کارت ۲: نرمال‌سازی مقادیر قدیمی واژگان
+          Card 2: normalise legacy vocabulary values
           ============================================================ */}
       <div className="admin-card">
         <div
@@ -476,7 +476,7 @@ export default function MaintenanceTools() {
               paddingTop: "12px",
             }}
           >
-            {/* ===== وضعیت: پیش‌نمایش یا اجراشده ===== */}
+            {/* ===== Status: preview or applied ===== */}
             <div
               style={{
                 display: "flex",
@@ -508,7 +508,7 @@ export default function MaintenanceTools() {
               </div>
             )}
 
-            {/* ===== تعداد گزینه‌های هر واژگان ===== */}
+            {/* ===== Number of options per vocabulary ===== */}
             {report.vocabularies && (
               <div
                 style={{
@@ -538,11 +538,11 @@ export default function MaintenanceTools() {
               </div>
             )}
 
-            {/* ===== گزارش هر مدل ===== */}
+            {/* ===== Report for each model ===== */}
             <ModelReport title="Buying requests" data={report.requests} />
             <ModelReport title="Products" data={report.products} />
 
-            {/* ===== راهنما وقتی مقدار ناشناخته داریم ===== */}
+            {/* ===== Hint when there are unknown values ===== */}
             {(Number(report.requests?.unmatched || 0) > 0 ||
               Number(report.products?.unmatched || 0) > 0) && (
               <div

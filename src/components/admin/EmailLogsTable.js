@@ -7,7 +7,7 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 
 // ============================================================
-// نگاشت وضعیت به کلاس و برچسب
+// Maps status to a CSS class and label
 // ============================================================
 const STATUS_META = {
   queued: { cls: "pending", label: "Queued" },

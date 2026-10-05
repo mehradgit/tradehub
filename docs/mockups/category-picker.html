@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Category Picker with Search — Prototype</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<style>
+:root{
+  --primary:#13795b; --primary-dark:#0b5b43; --primary-light:#eaf7f1;
+  --green2:#15966f; --dark:#13251f; --muted:#71807b;
+  --line:#e4ebe7; --bg:#f6f9f8;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;padding:26px 18px 70px;background:var(--bg);color:var(--dark);
+  font-family:"Segoe UI",Inter,system-ui,sans-serif;font-size:14px;line-height:1.65;
+}
+.wrap{max-width:760px;margin:0 auto}
+h1{font-size:20px;margin:0 0 4px;font-weight:800;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:12.5px;margin:0 0 20px}
+
+/* ===== کارت فرم (شبیه فرم واقعی) ===== */
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 4px 16px rgba(11,50,40,.05)}
+.form-group{margin-bottom:16px}
+.form-group > label{display:block;font-size:12px;font-weight:700;color:var(--dark);margin-bottom:7px}
+.help-text{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* ===== کادر جست‌وجو ===== */
+.searchbox{position:relative}
+.searchbox i.si{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9aa8a3;font-size:13px;pointer-events:none}
+.searchbox input{
+  width:100%;padding:13px 40px 13px 40px;border:1.5px solid var(--line);border-radius:11px;
+  font-size:14px;font-family:inherit;color:var(--dark);outline:0;background:#fff;transition:.16s;
+}
+.searchbox input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(19,121,91,.11)}
+.searchbox input::placeholder{color:#a9b5b0}
+.clear-x{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);cursor:pointer;padding:4px 7px;font-size:13px}
+
+/* ===== چیپ‌های محبوب ===== */
+.popular{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.popular .lbl{font-size:11.5px;color:var(--muted);font-weight:600;margin-right:2px}
+.popular button{
+  border:1px solid var(--line);background:#fff;color:var(--dark);border-radius:999px;
+  padding:6px 13px;font-size:12px;font-family:inherit;font-weight:600;cursor:pointer;transition:.14s;
+}
+.popular button:hover{border-color:#bfe3d3;background:var(--primary-light);color:var(--primary)}
+
+/* ===== نتایج ===== */
+.results{margin-top:10px;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#fff}
+.results-head{
+  padding:8px 14px;background:#fafcfb;border-bottom:1px solid var(--line);
+  font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.results-head span{text-transform:none;letter-spacing:0;font-weight:600}
+.rlist{max-height:330px;overflow-y:auto}
+.r{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:#fff;
+  padding:11px 14px;font-family:inherit;cursor:pointer;transition:.1s;border-bottom:1px solid #f4f8f6;
+}
+.r:last-child{border-bottom:0}
+.r:hover,.r.active{background:var(--primary-light)}
+.r .ic{
+  width:34px;height:34px;border-radius:9px;background:#f1f5f3;color:var(--primary);
+  display:grid;place-items:center;font-size:13px;flex:0 0 auto;
+}
+.r.active .ic{background:#fff}
+.r .tx{flex:1;min-width:0}
+.r .nm{font-size:13.5px;font-weight:700;color:var(--dark)}
+.r .nm em{font-style:normal;background:#fff3c4;border-radius:3px;padding:0 2px}
+.r .pt{
+  font-size:11px;color:var(--muted);margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.r .pt b{color:#5c6b66;font-weight:600}
+.r .lv{
+  font-size:9.5px;font-weight:800;border-radius:5px;padding:3px 7px;flex:0 0 auto;
+  text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;
+}
+.lv.l1{background:#e8f0fb;color:#2c5fa8}
+.lv.l2{background:#eaf7f1;color:var(--primary)}
+.lv.l3{background:#fdf0e3;color:#a8621a}
+.nores{padding:20px 14px;text-align:center;color:var(--muted);font-size:12.5px}
+.nores b{color:var(--dark)}
+.nores button{
+  margin-top:9px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 13px;
+  font-size:12px;font-family:inherit;cursor:pointer;color:var(--primary);font-weight:700;
+}
+
+/* ===== حالت انتخاب‌شده ===== */
+.picked{
+  display:flex;align-items:flex-start;gap:12px;background:var(--primary-light);
+  border:1.5px solid #bfe3d3;border-radius:11px;padding:13px 15px;
+}
+.picked .ic{
+  width:36px;height:36px;border-radius:10px;background:#fff;color:var(--primary);
+  display:grid;place-items:center;font-size:14px;flex:0 0 auto;
+}
+.picked .tx{flex:1;min-width:0}
+.picked .nm{font-size:14px;font-weight:800;color:var(--primary)}
+.picked .pt{font-size:11.5px;color:#3f6b5c;margin-top:2px}
+.picked .chg{
+  border:1px solid #bfe3d3;background:#fff;color:var(--primary);border-radius:8px;
+  padding:6px 11px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;flex:0 0 auto;
+}
+
+/* ===== انتخابگر دستی (همگام) ===== */
+.manual{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px}
+.manual-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:11.5px;color:var(--muted);margin-bottom:10px;
+}
+.manual-head button{
+  border:0;background:transparent;color:var(--primary);font-size:11.5px;font-weight:700;
+  font-family:inherit;cursor:pointer;text-decoration:underline;padding:0;
+}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+select{
+  width:100%;padding:10px 11px;border:1.5px solid var(--line);border-radius:10px;
+  font-size:12.5px;font-family:inherit;color:var(--dark);background:#fff;outline:0;cursor:pointer;
+}
+select:focus{border-color:var(--primary)}
+select:disabled{background:#f7faf9;color:#a9b5b0;cursor:not-allowed}
+.mini{font-size:10px;color:var(--muted);margin-top:4px;display:block}
+.hidden{display:none}
+
+/* ===== راهنما ===== */
+.note{
+  background:#fff;border:1px dashed #c9dbd3;border-left:4px solid var(--green2);
+  border-radius:12px;padding:14px 16px;margin:0 0 20px;font-size:12.5px;color:#3c4f49;
+}
+.note b{color:var(--dark)}
+.note ol{margin:8px 0 0;padding-left:19px}
+.note li{margin-bottom:5px}
+.note code{background:#eef4f1;border-radius:4px;padding:1px 5px;font-size:11.5px}
+.kbd{
+  display:inline-block;background:#eef4f1;border:1px solid var(--line);border-bottom-width:2px;
+  border-radius:5px;padding:0 5px;font-size:10.5px;font-weight:700;font-family:inherit;
+}
+.stat{font-size:11px;color:var(--muted);text-align:right;margin-top:14px}
+@media(max-width:640px){ .row3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>انتخاب دسته‌بندی با جست‌وجو</h1>
+  <p class="sub">نمونه‌ی اولیه — همان بخش «Category» در فرم ثبت محصول</p>
+
+  <div class="note">
+    <b>امتحان کن:</b>
+    <ol>
+      <li>تایپ کن <code>honey</code> — هم زیردسته را می‌آورد هم نوع محصول‌ها را</li>
+      <li>تایپ کن <code>عسل</code> — <b>جست‌وجوی فارسی</b> روی نام دسته‌ها</li>
+      <li>تایپ کن <code>basmati</code> یا <code>stevia</code> — پیدا کردن از سطح ۳</li>
+      <li>تایپ کن <code>grains cereals</code> (بدون &amp;) — باز هم پیدا می‌کند</li>
+      <li>با <span class="kbd">↑</span> <span class="kbd">↓</span> حرکت کن و <span class="kbd">Enter</span> بزن</li>
+      <li>روی یک نتیجه کلیک کن → سه select پایین <b>خودکار پر می‌شوند</b></li>
+    </ol>
+    <span style="color:#71807b">هدف: کاربر مبتدی لازم نیست سه سطح را بفهمد — فقط می‌نویسد «عسل» و تمام.</span>
+  </div>
+
+  <div class="card">
+    <!-- ============ حالت جست‌وجو ============ -->
+    <div id="searchMode">
+      <div class="form-group">
+        <label for="cq">What are you selling?</label>
+        <div class="searchbox">
+          <i class="fa-solid fa-magnifying-glass si"></i>
+          <input id="cq" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Try &quot;honey&quot;, &quot;rice&quot;, &quot;عسل&quot;, &quot;basmati&quot;…" />
+          <button class="clear-x hidden" id="clearX" type="button" aria-label="Clear">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="help-text">Search by product, category, or type in English or Persian.</div>
+      </div>
+
+      <div class="popular" id="popular">
+        <span class="lbl">Popular:</span>
+      </div>
+
+      <div class="results hidden" id="results">
+        <div class="results-head">
+          <span id="rhint">Results</span>
+          <span id="rcount"></span>
+        </div>
+        <div class="rlist" id="rlist"></div>
+      </div>
+    </div>
+
+    <!-- ============ حالت انتخاب‌شده ============ -->
+    <div id="pickedMode" class="hidden">
+      <div class="picked">
+        <span class="ic"><i class="fa-solid fa-check"></i></span>
+        <span class="tx">
+          <span class="nm" id="pName"></span>
+          <span class="pt" id="pPath"></span>
+        </span>
+        <button class="chg" id="pChange" type="button">
+          <i class="fa-solid fa-pen"></i> Change
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ انتخابگر دستی (همیشه همگام) ============ -->
+    <div class="manual" id="manual">
+      <div class="manual-head">
+        <span><i class="fa-solid fa-sitemap"></i> Or browse the tree manually</span>
+        <button type="button" id="toggleManual">Hide</button>
+      </div>
+      <div id="manualBody">
+        <div class="row3">
+          <div>
+            <label class="mini" for="s1">Category</label>
+            <select id="s1"></select>
+          </div>
+          <div>
+            <label class="mini" for="s2">Sub-category</label>
+            <select id="s2" disabled></select>
+          </div>
+          <div>
+            <label class="mini" for="s3">Product type <span style="font-weight:500">(optional)</span></label>
+            <select id="s3" disabled></select>
+          </div>
+        </div>
+        <div class="help-text" id="manualHint">
+          Choosing a sub-category is usually enough — the product type is optional.
+        </div>
+      </div>
+    </div>
+
+    <div class="stat" id="stat"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   داده‌ی واقعی از categories.json پروژه
+   (۲۴ دسته‌ی سطح ۱ — همه با نام فارسی)
+   سطح ۲ و ۳: زیرمجموعه‌ای که نامش را داریم
+   ============================================================ */
+const TREE = [
+  { slug:"grains-cereals", en:"Grains & Cereals", fa:"غلات و حبوبات اصلی", icon:"wheat", subs:[
+    { slug:"rice", en:"Rice", fa:"برنج", icon:"wheat", types:["Basmati","Jasmine","Long Grain","Short Grain","Parboiled","Brown Rice","White Rice","Broken Rice"] },
+    { slug:"wheat", en:"Wheat", fa:"گندم", icon:"wheat", types:["Durum Wheat","Soft Wheat","Hard Wheat"] },
+    { slug:"corn-maize", en:"Corn / Maize", fa:"ذرت", icon:"wheat", types:["Yellow Corn","White Corn","Sweet Corn","Popcorn","Cornmeal"] },
+    { slug:"barley", en:"Barley", fa:"جو", icon:"wheat", types:[] },
+    { slug:"oats", en:"Oats", fa:"جو دوسر", icon:"wheat", types:[] },
+    { slug:"flours-milling-products", en:"Flours & Milling Products", fa:"آرد و محصولات آسیابانی", icon:"wheat", types:[] }
+  ]},
+  { slug:"pulses-legumes", en:"Pulses & Legumes", fa:"حبوبات و بقولات", icon:"seedling", subs:[
+    { slug:"beans", en:"Beans", fa:"لوبیا", icon:"seedling", types:[] },
+    { slug:"lentils", en:"Lentils", fa:"عدس", icon:"seedling", types:[] },
+    { slug:"chickpeas", en:"Chickpeas", fa:"نخود", icon:"seedling", types:[] }
+  ]},
+  { slug:"nuts-seeds-dried-fruits", en:"Nuts, Seeds & Dried Fruits", fa:"خشکبار، مغزها و میوه‌های خشک", icon:"nut", subs:[
+    { slug:"tree-nuts", en:"Tree Nuts", fa:"مغزها", icon:"nut", types:["Almond","Walnut","Pistachio","Cashew","Hazelnut","Pecan"] },
+    { slug:"dried-fruits", en:"Dried Fruits", fa:"میوه‌های خشک", icon:"nut", types:["Raisins","Dates","Dried Figs","Dried Apricots"] }
+  ]},
+  { slug:"fruits-vegetables", en:"Fruits & Vegetables", fa:"میوه و سبزیجات", icon:"apple-whole", subs:[
+    { slug:"fresh-fruits", en:"Fresh Fruits", fa:"میوه‌ی تازه", icon:"apple-whole", types:[] },
+    { slug:"fresh-vegetables", en:"Fresh Vegetables", fa:"سبزیجات تازه", icon:"carrot", types:[] }
+  ]},
+  { slug:"spices-herbs-seasonings", en:"Spices, Herbs & Seasonings", fa:"ادویه، گیاهان و چاشنی‌ها", icon:"mortar-pestle", subs:[
+    { slug:"whole-spices", en:"Whole Spices", fa:"ادویه‌ی کامل", icon:"mortar-pestle", types:["Black Pepper","Cinnamon","Cumin","Turmeric","Cardamom","Saffron"] },
+    { slug:"ground-spices", en:"Ground Spices", fa:"ادویه‌ی آسیاب‌شده", icon:"mortar-pestle", types:[] }
+  ]},
+  { slug:"oils-fats-shortenings", en:"Oils, Fats & Shortenings", fa:"روغن، چربی و شورتنینگ", icon:"bottle-droplet", subs:[
+    { slug:"vegetable-oils", en:"Vegetable Oils", fa:"روغن‌های گیاهی", icon:"bottle-droplet", types:["Sunflower Oil","Canola Oil","Soybean Oil","Palm Oil"] },
+    { slug:"specialty-oils", en:"Specialty Oils", fa:"روغن‌های خاص", icon:"bottle-droplet", types:["Olive Oil","Argan Oil","Sesame Oil","Coconut Oil"] }
+  ]},
+  { slug:"sweeteners-sugar-honey", en:"Sweeteners, Sugar & Honey", fa:"شیرین‌کننده‌ها، شکر و عسل", icon:"candy", subs:[
+    { slug:"sugar", en:"Sugar", fa:"شکر", icon:"candy", types:["White Sugar","Brown Sugar","Raw Sugar","Cane Sugar","Beet Sugar","Powdered Sugar","Demerara Sugar","Rock Candy","Rock Candy (Nabat)"] },
+    { slug:"syrups", en:"Syrups", fa:"شربت‌ها و سیروپ‌ها", icon:"droplet", types:["Maple Syrup","Corn Syrup","Glucose Syrup","Fructose Syrup","Agave Syrup","Date Syrup","Molasses"] },
+    { slug:"honey-bee-products", en:"Honey & Bee Products", fa:"عسل و محصولات زنبور", icon:"hexagon", types:["Natural Honey","Monofloral Honey","Multifloral Honey","Royal Jelly","Propolis","Bee Pollen"] },
+    { slug:"natural-sweeteners", en:"Natural Sweeteners", fa:"شیرین‌کننده‌های طبیعی", icon:"leaf", types:["Stevia","Monk Fruit","Erythritol","Xylitol"] },
+    { slug:"jaggery-panela", en:"Jaggery & Panela", fa:"جاگری و پانلا", icon:"candy", types:[] }
+  ]},
+  { slug:"coffee-tea-cocoa", en:"Coffee, Tea & Cocoa", fa:"قهوه، چای و کاکائو", icon:"mug-hot", subs:[
+    { slug:"coffee", en:"Coffee", fa:"قهوه", icon:"mug-hot", types:["Arabica","Robusta","Green Coffee","Instant Coffee"] },
+    { slug:"tea", en:"Tea", fa:"چای", icon:"leaf", types:["Black Tea","Green Tea","White Tea","Herbal Tea"] },
+    { slug:"cocoa", en:"Cocoa", fa:"کاکائو", icon:"mug-hot", types:["Cocoa Powder","Cocoa Butter","Cocoa Liquor"] }
+  ]},
+  { slug:"dairy-eggs", en:"Dairy & Eggs", fa:"لبنیات و تخم‌مرغ", icon:"cow", subs:[
+    { slug:"milk", en:"Milk", fa:"شیر", icon:"cow", types:[] },
+    { slug:"cheese", en:"Cheese", fa:"پنیر", icon:"cheese", types:[] },
+    { slug:"butter-cream-ghee", en:"Butter, Cream & Ghee", fa:"کره، خامه و روغن حیوانی", icon:"cow", types:[] },
+    { slug:"eggs", en:"Eggs", fa:"تخم‌مرغ", icon:"egg", types:[] }
+  ]},
+  { slug:"meat-poultry-game", en:"Meat, Poultry & Game", fa:"گوشت، طیور و شکار", icon:"drumstick-bite", subs:[
+    { slug:"beef", en:"Beef", fa:"گوشت گاو", icon:"drumstick-bite", types:[] },
+    { slug:"poultry", en:"Poultry", fa:"طیور", icon:"drumstick-bite", types:[] },
+    { slug:"lamb-mutton", en:"Lamb & Mutton", fa:"گوشت بره و گوسفند", icon:"drumstick-bite", types:[] }
+  ]},
+  { slug:"seafood-aquaculture", en:"Seafood & Aquaculture", fa:"غذاهای دریایی و آبزی‌پروری", icon:"fish", subs:[
+    { slug:"fish", en:"Fish", fa:"ماهی", icon:"fish", types:[] },
+    { slug:"shellfish", en:"Shellfish", fa:"صدف و سخت‌پوستان", icon:"shrimp", types:[] }
+  ]},
+  { slug:"bakery-confectionery-snacks", en:"Bakery, Confectionery & Snacks", fa:"نانوایی، شیرینی و تنقلات", icon:"bread-slice", subs:[
+    { slug:"bakery", en:"Bakery", fa:"نان و محصولات نانوایی", icon:"bread-slice", types:[] },
+    { slug:"confectionery", en:"Confectionery", fa:"شیرینی و شکلات", icon:"candy", types:[] },
+    { slug:"snacks", en:"Snacks", fa:"تنقلات", icon:"cookie-bite", types:[] }
+  ]},
+  { slug:"processed-convenience-foods", en:"Processed & Convenience Foods", fa:"غذاهای فرآوری‌شده و آماده", icon:"utensils", subs:[
+    { slug:"canned-preserved-foods", en:"Canned & Preserved Foods", fa:"کنسرو و غذاهای نگهداری‌شده", icon:"utensils", types:[] },
+    { slug:"pasta-noodles", en:"Pasta & Noodles", fa:"ماکارونی و نودل", icon:"utensils", types:[] }
+  ]},
+  { slug:"food-ingredients-additives", en:"Food Ingredients & Additives", fa:"مواد اولیه و افزودنی‌های غذایی", icon:"flask", subs:[
+    { slug:"starches", en:"Starches", fa:"نشاسته‌ها", icon:"flask", types:[] },
+    { slug:"protein-isolates-concentrates", en:"Protein Isolates & Concentrates", fa:"ایزوله و کنسانتره‌ی پروتئین", icon:"flask", types:[] }
+  ]},
+  { slug:"plant-based-alternative-foods", en:"Plant-Based & Alternative Foods", fa:"غذاهای گیاهی و جایگزین", icon:"leaf", subs:[
+    { slug:"plant-based-meat", en:"Plant-Based Meat", fa:"گوشت گیاهی", icon:"leaf", types:[] },
+    { slug:"plant-based-dairy", en:"Plant-Based Dairy", fa:"لبنیات گیاهی", icon:"leaf", types:[] }
+  ]},
+  { slug:"organic-specialty-foods", en:"Organic & Specialty Foods", fa:"محصولات ارگانیک و ویژه", icon:"seedling", subs:[
+    { slug:"superfoods", en:"Superfoods", fa:"سوپرفودها", icon:"seedling", types:["Chia Seeds","Quinoa","Spirulina","Moringa","Matcha"] },
+    { slug:"specialty-foods", en:"Specialty Foods", fa:"غذاهای ویژه", icon:"seedling", types:[] }
+  ]},
+  { slug:"beverages", en:"Beverages", fa:"نوشیدنی‌ها", icon:"bottle-water", subs:[
+    { slug:"water", en:"Water", fa:"آب", icon:"bottle-water", types:["Mineral Water","Sparkling Water","Spring Water"] },
+    { slug:"juices-nectars", en:"Juices & Nectars", fa:"آبمیوه و نکتار", icon:"bottle-water", types:["Orange Juice","Apple Juice","Mango Juice","Concentrate"] },
+    { slug:"soft-drinks", en:"Soft Drinks", fa:"نوشابه", icon:"bottle-water", types:[] }
+  ]},
+  { slug:"pet-food", en:"Pet Food", fa:"غذای حیوانات خانگی", icon:"paw", subs:[
+    { slug:"dog-food", en:"Dog Food", fa:"غذای سگ", icon:"dog", types:[] },
+    { slug:"cat-food", en:"Cat Food", fa:"غذای گربه", icon:"cat", types:[] }
+  ]},
+  { slug:"animal-feed", en:"Animal Feed", fa:"خوراک دام و طیور", icon:"wheat-awn", subs:[
+    { slug:"poultry-feed", en:"Poultry Feed", fa:"خوراک طیور", icon:"wheat-awn", types:[] },
+    { slug:"cattle-feed", en:"Cattle Feed", fa:"خوراک دام", icon:"wheat-awn", types:[] },
+    { slug:"aquaculture-feed", en:"Aquaculture Feed", fa:"خوراک آبزیان", icon:"wheat-awn", types:[] }
+  ]},
+  { slug:"food-packaging-equipment", en:"Food Packaging & Equipment", fa:"بسته‌بندی و تجهیزات صنایع غذایی", icon:"box", subs:[
+    { slug:"food-packaging", en:"Food Packaging", fa:"بسته‌بندی مواد غذایی", icon:"box", types:[] }
+  ]},
+  { slug:"logistics-shipping", en:"Logistics & Shipping", fa:"لجستیک و حمل‌ونقل", icon:"truck", subs:[] },
+  { slug:"certification-compliance", en:"Certification & Compliance", fa:"گواهی و انطباق", icon:"certificate", subs:[] },
+  { slug:"trade-finance", en:"Trade Finance", fa:"تأمین مالی تجارت", icon:"coins", subs:[] },
+  { slug:"quality-inspection", en:"Quality Inspection", fa:"بازرسی کیفیت", icon:"magnifying-glass-chart", subs:[] }
+];
+
+/* ============================================================
+   ساخت ایندکس جست‌وجو از هر سه سطح
+   ============================================================ */
+const INDEX = [];
+for (const c of TREE) {
+  INDEX.push({ level:1, name:c.en, fa:c.fa, icon:c.icon,
+               path:`${c.en}`, pathFa:c.fa, s1:c.slug, s2:"", s3:"" });
+
+  for (const s of c.subs || []) {
+    INDEX.push({ level:2, name:s.en, fa:s.fa, icon:s.icon || c.icon,
+                 path:`${c.en} › ${s.en}`, pathFa:`${c.fa} › ${s.fa}`,
+                 s1:c.slug, s2:s.slug, s3:"" });
+
+    for (const t of s.types || []) {
+      INDEX.push({ level:3, name:t, fa:"", icon:s.icon || c.icon,
+                   path:`${c.en} › ${s.en} › ${t}`, pathFa:`${c.fa} › ${s.fa} › ${t}`,
+                   s1:c.slug, s2:s.slug, s3:t });
+    }
+  }
+}
+
+/* ============================================================
+   نرمال‌سازی متن — قلب جست‌وجوی خوب
+   ============================================================ */
+function norm(s){
+  return String(s || "")
+    .replace(/[\u200c\u200e\u200f\u202a-\u202e]/g, " ")  // نیم‌فاصله و کنترلی‌ها
+    .replace(/[يىئ]/g, "ی")                              // ي عربی → ی فارسی
+    .replace(/ك/g, "ک")                                  // ك عربی → ک فارسی
+    .replace(/[أإآا]/g, "ا")                             // همزه/الف
+    .replace(/[ؤو]/g, "و")
+    .replace(/[ةه]/g, "ه")
+    .replace(/[&,.\/\\()\-_+:'"]+/g, " ")                // نشانه‌ها → فاصله
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/* هر مدخل را یک‌بار نرمال کن (سرعت) */
+for (const it of INDEX) {
+  it._n  = norm(it.name);
+  it._nf = norm(it.fa);
+  it._np = norm(it.path);
+}
+
+/* ============================================================
+   امتیازدهی
+   ============================================================ */
+function search(q){
+  const nq = norm(q);
+  if (!nq) return [];
+
+  const words = nq.split(" ").filter(Boolean);
+  const out = [];
+
+  for (const it of INDEX) {
+    let score = 0;
+
+    // تطبیق کامل نام (انگلیسی یا فارسی)
+    if (it._n === nq || it._nf === nq) score += 1000;
+    // نام با عبارت شروع می‌شود
+    else if (it._n.startsWith(nq) || it._nf.startsWith(nq)) score += 600;
+    // نام شامل عبارت
+    else if (it._n.includes(nq) || it._nf.includes(nq)) score += 350;
+    // مسیر شامل عبارت
+    else if (it._np.includes(nq)) score += 150;
+
+    // اگر هیچ‌کدام، همه‌ی کلمات باید جایی در نام/مسیر باشند
+    if (score === 0) {
+      const hay = it._n + " " + it._nf + " " + it._np;
+      if (words.every((w) => hay.includes(w))) score += 90;
+    }
+
+    if (score === 0) continue;
+
+    // سطح کم‌عمق‌تر اولویت دارد (کاربر مبتدی را زودتر به نتیجه می‌رساند)
+    score += (4 - it.level) * 12;
+
+    out.push({ it, score });
+  }
+
+  out.sort((a, b) => b.score - a.score || a.it.name.localeCompare(b.it.name));
+
+  // حذف نتایج تکراری (مثلاً وقتی نوع محصول با مسیرش هر دو می‌آیند)
+  const seen = new Set();
+  return out
+    .filter(({ it }) => {
+      const k = `${it.level}|${it.s1}|${it.s2}|${it.s3}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    })
+    .slice(0, 30)
+    .map(({ it }) => it);
+}
+
+/* ============================================================
+   هایلایت بخش منطبق
+   ============================================================ */
+function esc(s){
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+}
+function hl(text, q){
+  const nq = norm(q);
+  if (!nq || !text) return esc(text);
+  const nText = norm(text);
+  const i = nText.indexOf(nq);
+  if (i === -1) return esc(text);
+  // چون نرمال‌سازی طول را عوض می‌کند، فقط وقتی هایلایت می‌کنیم که طول‌ها یکی باشند
+  if (nText.length !== text.length) return esc(text);
+  return esc(text.slice(0, i)) + "<em>" + esc(text.slice(i, i + nq.length)) + "</em>" + esc(text.slice(i + nq.length));
+}
+
+/* ============================================================
+   وضعیت
+   ============================================================ */
+const $ = (s) => document.querySelector(s);
+let results = [];
+let cursor = -1;
+let picked = null;
+
+const POPULAR = [
+  { label:"🍯 Honey", q:"honey" },
+  { label:"🌾 Rice", q:"rice" },
+  { label:"🫒 Olive Oil", q:"olive oil" },
+  { label:"☕ Coffee", q:"coffee" },
+  { label:"🧂 Spices", q:"spices" },
+  { label:"🥜 Nuts", q:"nuts" }
+];
+
+/* ============================================================
+   رندر
+   ============================================================ */
+const LV = { 1:{ cls:"l1", txt:"Category" }, 2:{ cls:"l2", txt:"Sub-category" }, 3:{ cls:"l3", txt:"Product type" } };
+
+function renderResults(q){
+  const box = $("#results");
+  const list = $("#rlist");
+
+  if (!q.trim()) {
+    box.classList.add("hidden");
+    results = []; cursor = -1;
+    return;
+  }
+
+  results = search(q);
+  cursor = results.length ? 0 : -1;
+
+  box.classList.remove("hidden");
+  $("#rhint").textContent = `Results for “${q}”`;
+  $("#rcount").textContent = results.length
+    ? `${results.length} match${results.length > 1 ? "es" : ""}`
+    : "";
+
+  if (results.length === 0) {
+    list.innerHTML = `
+      <div class="nores">
+        Nothing found for <b>“${esc(q)}”</b>.<br/>
+        Try a simpler word, or browse the tree below.
+        <br/><button type="button" id="browseBtn">Browse all categories</button>
+      </div>`;
+    const b = document.getElementById("browseBtn");
+    if (b) b.onclick = showManual;
+    return;
+  }
+
+  list.innerHTML = results.map((it, i) => {
+    const lv = LV[it.level];
+    // نام فارسی فقط وقتی عبارت فارسی است نشان داده می‌شود، وگرنه شلوغ می‌شود
+    const isFa = /[\u0600-\u06FF]/.test(q);
+    const secondary = isFa ? it.pathFa : it.path;
+    return `
+      <button type="button" class="r ${i === cursor ? "active" : ""}" data-i="${i}">
+        <span class="ic"><i class="fa-solid fa-${it.icon || "tag"}"></i></span>
+        <span class="tx">
+          <span class="nm">${hl(it.name, q)}${it.fa && !isFa ? ` <span style="color:#98a6a1;font-weight:500;font-size:11.5px">${esc(it.fa)}</span>` : ""}</span>
+          <span class="pt">${esc(secondary)}</span>
+        </span>
+        <span class="lv ${lv.cls}">${lv.txt}</span>
+      </button>`;
+  }).join("");
+
+  list.querySelectorAll(".r").forEach((el) => {
+    el.onclick = () => choose(results[Number(el.dataset.i)]);
+  });
+}
+
+function moveCursor(d){
+  if (!results.length) return;
+  cursor = (cursor + d + results.length) % results.length;
+  const list = $("#rlist");
+  list.querySelectorAll(".r").forEach((el, i) => el.classList.toggle("active", i === cursor));
+  const el = list.querySelectorAll(".r")[cursor];
+  if (el) el.scrollIntoView({ block:"nearest" });
+}
+
+/* ============================================================
+   انتخاب
+   ============================================================ */
+function choose(it){
+  picked = it;
+  syncSelects(it.s1, it.s2, it.s3);
+  $("#pName").textContent = it.name;
+  $("#pPath").textContent = it.path;
+  $("#searchMode").classList.add("hidden");
+  $("#pickedMode").classList.remove("hidden");
+  $("#stat").textContent = `Selected: level ${it.level} · categoryPath = ${[it.s1, it.s2, it.s3].filter(Boolean).join("/")}`;
+}
+
+function backToSearch(){
+  picked = null;
+  $("#pickedMode").classList.add("hidden");
+  $("#searchMode").classList.remove("hidden");
+  $("#cq").value = "";
+  $("#clearX").classList.add("hidden");
+  $("#results").classList.add("hidden");
+  $("#stat").textContent = "";
+  $("#cq").focus();
+}
+
+function showManual(){
+  $("#manualBody").classList.remove("hidden");
+  $("#toggleManual").textContent = "Hide";
+  $("#manual").scrollIntoView({ behavior:"smooth", block:"nearest" });
+}
+
+/* ============================================================
+   سه select — دوطرفه با جست‌وجو همگام
+   ============================================================ */
+function fill(sel, items, placeholder, selected){
+  sel.innerHTML = `<option value="">${placeholder}</option>` +
+    items.map((o) => `<option value="${o.v}" ${o.v === selected ? "selected" : ""}>${esc(o.l)}</option>`).join("");
+}
+
+function syncSelects(s1, s2, s3){
+  fill($("#s1"), TREE.map((c) => ({ v:c.slug, l:c.en })), "Select category…", s1);
+
+  const c = TREE.find((x) => x.slug === s1);
+  const subs = (c && c.subs) || [];
+  $("#s2").disabled = !c;
+  fill($("#s2"), subs.map((x) => ({ v:x.slug, l:x.en })), c ? "Select sub-category…" : "—", s2);
+
+  const sub = subs.find((x) => x.slug === s2);
+  const types = (sub && sub.types) || [];
+  $("#s3").disabled = !sub;
+  fill($("#s3"), types.map((t) => ({ v:t, l:t })), sub ? "Select product type…" : "—", s3);
+}
+
+/* انتخاب دستی → همگام‌سازی با جست‌وجو */
+$("#s1").onchange = (e) => {
+  syncSelects(e.target.value, "", "");
+  markManual(e.target.value, "", "");
+};
+$("#s2").onchange = (e) => {
+  markManual($("#s1").value, e.target.value, "");
+};
+$("#s3").onchange = (e) => {
+  markManual($("#s1").value, $("#s2").value, e.target.value);
+};
+
+function markManual(s1, s2, s3){
+  if (!s1) { $("#stat").textContent = ""; return; }
+  // اگر انتخاب دستی با نتیجه‌ی جست‌وجو یکی است، همان را نگه دار
+  const key = `${s1}|${s2}|${s3}`;
+  const it = INDEX.find((x) => `${x.s1}|${x.s2}|${x.s3}` === key);
+
+  $("#pickedMode").classList.add("hidden");
+  $("#searchMode").classList.remove("hidden");
+
+  if (it) {
+    $("#stat").textContent = `Selected: ${it.path}  ·  categoryPath = ${[s1, s2, s3].filter(Boolean).join("/")}`;
+  } else {
+    $("#stat").textContent = `categoryPath = ${[s1, s2, s3].filter(Boolean).join("/")}`;
+  }
+}
+
+/* ============================================================
+   رویدادها
+   ============================================================ */
+$("#cq").addEventListener("input", (e) => {
+  $("#clearX").classList.toggle("hidden", !e.target.value);
+  renderResults(e.target.value);
+});
+
+$("#cq").addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown") { e.preventDefault(); moveCursor(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); moveCursor(-1); }
+  else if (e.key === "Enter") {
+    e.preventDefault();
+    if (cursor >= 0 && results[cursor]) choose(results[cursor]);
+  } else if (e.key === "Escape") {
+    $("#cq").value = "";
+    $("#clearX").classList.add("hidden");
+    $("#results").classList.add("hidden");
+  }
+});
+
+$("#clearX").onclick = () => {
+  $("#cq").value = "";
+  $("#clearX").classList.add("hidden");
+  $("#results").classList.add("hidden");
+  results = []; cursor = -1;
+  $("#cq").focus();
+};
+
+$("#pChange").onclick = backToSearch;
+
+$("#toggleManual").onclick = () => {
+  const b = $("#manualBody");
+  const hidden = b.classList.toggle("hidden");
+  $("#toggleManual").textContent = hidden ? "Show" : "Hide";
+};
+
+/* چیپ‌های محبوب */
+$("#popular").insertAdjacentHTML("beforeend",
+  POPULAR.map((p) => `<button type="button" data-q="${p.q}">${p.label}</button>`).join("")
+);
+$("#popular").querySelectorAll("button").forEach((b) => {
+  b.onclick = () => {
+    backToSearch();
+    $("#cq").value = b.dataset.q;
+    $("#clearX").classList.remove("hidden");
+    renderResults(b.dataset.q);
+  };
+});
+
+/* ============================================================
+   راه‌اندازی
+   ============================================================ */
+syncSelects("", "", "");
+$("#stat").textContent =
+  `${INDEX.length} searchable entries (${TREE.length} categories, ` +
+  `${INDEX.filter((x) => x.level === 2).length} sub-categories, ` +
+  `${INDEX.filter((x) => x.level === 3).length} product types)`;
+</script>
+</body>
+</html>

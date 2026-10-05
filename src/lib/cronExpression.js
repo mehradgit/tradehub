@@ -1,19 +1,19 @@
 // src/lib/cronExpression.js
 // ============================================================
-// پارسر/مچر مینیمال برای cron پنج‌فیلدی استاندارد
+// Minimal parser/matcher for standard five-field cron
 //
-//   ┌ دقیقه      (0-59)
-//   │ ┌ ساعت     (0-23)
-//   │ │ ┌ روز ماه (1-31)
-//   │ │ │ ┌ ماه   (1-12)
-//   │ │ │ │ ┌ روز هفته (0-6 ، 0 = یکشنبه)
+//   ┌ minute      (0-59)
+//   │ ┌ hour      (0-23)
+//   │ │ ┌ day of month (1-31)
+//   │ │ │ ┌ month   (1-12)
+//   │ │ │ │ ┌ day of week (0-6, 0 = Sunday)
 //   * * * * *
 //
-// پشتیبانی از:  *   a   a,b,c   a-b   */n   a-b/n   و نام ماه/روز (jan, mon)
-// بدون هیچ dependency خارجی.
+// Supports:  *   a   a,b,c   a-b   */n   a-b/n   and month/day names (jan, mon)
+// With no external dependencies.
 //
-// توجه: مثل cron استاندارد، اگر هم «روز ماه» و هم «روز هفته» محدود
-// شده باشند، رابطه «یا» است نه «و».
+// Note: like standard cron, if both "day of month" and "day of week" are
+// restricted, the relation is "or", not "and".
 // ============================================================
 
 const FIELD_RANGES = [
@@ -38,7 +38,7 @@ const DOW_ALIASES = {
 const FIELD_ALIASES = [null, null, null, MONTH_ALIASES, DOW_ALIASES];
 
 // ============================================================
-// تبدیل یک مقدار به عدد (با پشتیبانی از نام‌ها)
+// Convert a value to a number (with name support)
 // ============================================================
 function toNumber(token, fieldIndex) {
   const t = String(token).trim().toLowerCase();
@@ -55,7 +55,7 @@ function toNumber(token, fieldIndex) {
 }
 
 // ============================================================
-// باز کردن یک فیلد به مجموعه‌ی مقادیر
+// Expand a field into a set of values
 // ============================================================
 function expandField(raw, fieldIndex) {
   const [min, max] = FIELD_RANGES[fieldIndex];
@@ -66,7 +66,7 @@ function expandField(raw, fieldIndex) {
     const part = rawPart.trim();
     if (!part) throw new Error(`empty value in "${name}" field`);
 
-    // جدا کردن گام:  */5  یا  1-10/2
+    // Splitting off the step:  */5  or  1-10/2
     const slashIndex = part.indexOf("/");
     const rangePart = slashIndex === -1 ? part : part.slice(0, slashIndex);
     const stepPart = slashIndex === -1 ? null : part.slice(slashIndex + 1);
@@ -100,7 +100,7 @@ function expandField(raw, fieldIndex) {
       }
     }
 
-    // 7 به‌عنوان یکشنبه هم پذیرفته می‌شود
+    // 7 is also accepted as Sunday
     if (fieldIndex === 4 && start === 7) start = 0;
     if (fieldIndex === 4 && end === 7) end = 0;
 
@@ -154,7 +154,7 @@ export function parseCron(expression) {
 }
 
 // ============================================================
-// آیا این تاریخ با عبارت مطابقت دارد؟ (دقت: دقیقه)
+// Does this date match the expression? (minute precision)
 // ============================================================
 export function matchesCron(expression, date = new Date()) {
   const parsed =
@@ -175,7 +175,7 @@ export function matchesCron(expression, date = new Date()) {
   const domOk = sets.dayOfMonth.has(date.getDate());
   const dowOk = sets.dayOfWeek.has(date.getDay());
 
-  // قانون استاندارد cron: اگر هر دو محدود باشند، «یا»
+  // Standard cron rule: if both are restricted, use "or"
   if (domRestricted && dowRestricted) return domOk || dowOk;
   if (domRestricted) return domOk;
   if (dowRestricted) return dowOk;
@@ -183,10 +183,10 @@ export function matchesCron(expression, date = new Date()) {
 }
 
 // ============================================================
-// محاسبه‌ی زمان اجرای بعدی
+// Compute the next run time
 //
-// برای کارایی، روز‌به‌روز جلو می‌رود (حداکثر 400 روز) و بعد
-// داخل همان روز ساعت/دقیقه را پیدا می‌کند — نه دقیقه‌به‌دقیقه.
+// For efficiency it advances day by day (at most 400 days) and then
+// finds the hour/minute inside that day — not minute by minute.
 // ============================================================
 export function getNextRunAt(expression, from = new Date()) {
   const parsed = parseCron(expression);
@@ -233,7 +233,7 @@ export function getNextRunAt(expression, from = new Date()) {
 }
 
 // ============================================================
-// توصیف انسانی (برای نمایش در پنل ادمین)
+// Human-readable description (for display in the admin panel)
 // ============================================================
 const DOW_LABELS = [
   "Sunday",
@@ -272,7 +272,7 @@ export function describeCron(expression) {
     return `Monthly on day ${dom} at ${pad(h)}:${pad(m)}`;
   }
 
-  // حالت عمومی
+  // Generic case
   const bits = [];
   if (sets.dayOfWeek.size < 7) {
     bits.push(`on ${[...sets.dayOfWeek].map((d) => DOW_LABELS[d]).join(", ")}`);
@@ -288,7 +288,7 @@ function pad(n) {
 }
 
 // ============================================================
-// گزینه‌های آماده برای پنل ادمین
+// Ready-made presets for the admin panel
 // ============================================================
 export const CRON_PRESETS = [
   { value: "* * * * *", label: "Every minute" },

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// ====== GET: جزئیات تیکت + پیام‌ها ======
+// ====== GET: Ticket details + messages ======
 export async function GET(request, { params }) {
   try {
     const session = await auth();
@@ -31,7 +31,7 @@ export async function GET(request, { params }) {
         },
         messages: {
           where: {
-            // کاربر عادی پیام‌های internal را نمی‌بیند
+            // A regular user does not see internal messages
             OR: [{ isInternal: false }],
           },
           orderBy: { createdAt: "asc" },
@@ -58,7 +58,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    // بررسی دسترسی: فقط صاحب تیکت یا ادمین
+    // Access check: only the ticket owner or an admin
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
       select: { isAdmin: true },
@@ -68,7 +68,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // اگر کاربر عادی دید، unreadByUser = false
+    // If a regular user views it, set unreadByUser = false
     if (ticket.userId === userId && ticket.unreadByUser) {
       await prisma.ticket.update({
         where: { id },
@@ -76,7 +76,7 @@ export async function GET(request, { params }) {
       });
     }
 
-    // اطلاعات مربوط به product/request
+    // Related product/request data
     let relatedProduct = null;
     let relatedRequest = null;
     if (ticket.relatedProductId) {
@@ -106,7 +106,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// ====== PATCH: تغییر وضعیت (بستن/بازکردن توسط کاربر) ======
+// ====== PATCH: Change status (close/reopen by the user) ======
 export async function PATCH(request, { params }) {
   try {
     const session = await auth();
@@ -131,12 +131,12 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // فقط صاحب تیکت می‌تواند ببندد/باز کند
+    // Only the ticket owner can close/reopen it
     if (ticket.userId !== userId) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // کاربر فقط می‌تواند به closed یا open برگرداند
+    // The user can only switch it back to closed or open
     if (!["closed", "open"].includes(status)) {
       return NextResponse.json(
         { message: "Invalid status for user action" },

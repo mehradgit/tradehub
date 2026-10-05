@@ -2,7 +2,7 @@
 "use client";
 
 // ============================================================
-// نمایش فیلترهای فعال با امکان حذف تکی
+// Showing active filters with the option to remove them one by one
 // ============================================================
 export default function ActiveFilterChips({
   schema,
@@ -37,7 +37,7 @@ export default function ActiveFilterChips({
     const value = values[field.name];
     if (value === undefined || value === null || value === "") continue;
 
-    // ===== اتریبیوت‌های پویا =====
+    // ===== Dynamic attributes =====
     if (field.type === "dynamicAttributes") {
       if (typeof value !== "object" || Array.isArray(value)) continue;
 
@@ -72,7 +72,7 @@ export default function ActiveFilterChips({
       continue;
     }
 
-    // ===== بازه‌ی عددی =====
+    // ===== Number range =====
     if (field.type === "numberRange") {
       const min = value?.min !== undefined && value.min !== "" ? value.min : null;
       const max = value?.max !== undefined && value.max !== "" ? value.max : null;
@@ -87,7 +87,7 @@ export default function ActiveFilterChips({
       continue;
     }
 
-    // ===== دسته‌بندی =====
+    // ===== Category =====
     if (field.type === "categoryCascader") {
       chips.push({
         key: field.name,
@@ -97,14 +97,14 @@ export default function ActiveFilterChips({
       continue;
     }
 
-    // ===== بولی =====
+    // ===== Boolean =====
     if (field.type === "boolean") {
       if (value !== true) continue;
       chips.push({ key: field.name, fieldName: field.name, text: field.label });
       continue;
     }
 
-    // ===== لیست‌ها =====
+    // ===== Lists =====
     if (Array.isArray(value)) {
       if (value.length === 0) continue;
       chips.push({
@@ -115,7 +115,7 @@ export default function ActiveFilterChips({
       continue;
     }
 
-    // ===== متن و select =====
+    // ===== Text and select =====
     if (field.type === "sort") continue;
     chips.push({
       key: field.name,

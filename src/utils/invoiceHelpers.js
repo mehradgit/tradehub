@@ -1,7 +1,7 @@
 // src/utils/invoiceHelpers.js
 
-// ====== تولید شماره فاکتور یکتا ======
-// فرمت: INV-YYYY-NNNNN
+// ====== Generate a unique invoice number ======
+// Format: INV-YYYY-NNNNN
 export async function generateInvoiceNumber(prisma) {
   const year = new Date().getFullYear();
 
@@ -22,14 +22,14 @@ export async function generateInvoiceNumber(prisma) {
   return `INV-${year}-${String(nextNumber).padStart(5, "0")}`;
 }
 
-// ====== تولید شماره پیگیری ======
+// ====== Generate a reference number ======
 export function generateReferenceNumber() {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `REF-${timestamp}-${random}`;
 }
 
-// ====== فرمت ارز ======
+// ====== Currency formatting ======
 export function formatCurrency(amount, currency = "USD") {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   return new Intl.NumberFormat("en-US", {
@@ -39,7 +39,7 @@ export function formatCurrency(amount, currency = "USD") {
   }).format(num || 0);
 }
 
-// ====== فرمت تاریخ ======
+// ====== Date formatting ======
 export function formatDate(date, options = {}) {
   if (!date) return "—";
   return new Date(date).toLocaleDateString("en-US", {
@@ -61,7 +61,7 @@ export function formatDateTime(date) {
   });
 }
 
-// ====== رنگ وضعیت ======
+// ====== Status color ======
 export function getPaymentStatusBadge(status) {
   const map = {
     paid: { label: "Paid", bg: "#e6faf1", color: "#0a7d55", icon: "fa-check-circle" },
@@ -73,7 +73,7 @@ export function getPaymentStatusBadge(status) {
   return map[status] || map.pending;
 }
 
-// ====== رنگ متد ======
+// ====== Method color ======
 export function getPaymentMethodLabel(method) {
   const map = {
     simulated: "Simulated",

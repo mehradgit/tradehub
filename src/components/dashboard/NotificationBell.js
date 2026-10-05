@@ -8,7 +8,7 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // ====== دریافت تعداد خوانده‌نشده ======
+  // ====== Fetch unread count ======
   const fetchUnreadCount = useCallback(async () => {
     try {
       const res = await fetch("/api/user/notifications/unread-count");
@@ -21,7 +21,7 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // ====== Polling هر 30 ثانیه ======
+  // ====== Poll every 30 seconds ======
   useEffect(() => {
     fetchUnreadCount();
 
@@ -29,7 +29,7 @@ export default function NotificationBell() {
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
 
-  // ====== گوش دادن به رویداد برای به‌روزرسانی فوری ======
+  // ====== Listen for the event to refresh immediately ======
   useEffect(() => {
     const handleRefresh = () => fetchUnreadCount();
     window.addEventListener("notifications-updated", handleRefresh);

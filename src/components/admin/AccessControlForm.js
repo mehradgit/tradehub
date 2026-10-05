@@ -86,7 +86,7 @@ export default function AccessControlForm() {
           showQuotaFields={true}
         />
 
-        {/* Contact Info (بدون سهمیه) */}
+        {/* Contact Info (no quota) */}
         <AccessBlock
           label="Contact Info (Email, Phone, Profile Link)"
           description="Detailed contact info, free after buyer info is revealed"
@@ -104,7 +104,7 @@ export default function AccessControlForm() {
         title="Product Page"
         subtitle="Control supplier info and send request form on product pages"
       >
-        {/* ✅ Supplier Info (شامل Reveal + Send Request) */}
+        {/* ✅ Supplier Info (includes Reveal + Send Request) */}
         <AccessBlock
           label="Supplier Info & Send Request"
           description="Revealing supplier info also unlocks the send request form. Consumes one inquiry quota per product."
@@ -248,7 +248,7 @@ function AccessBlock({
   section,
   plans,
   onChange,
-  showQuotaFields = false, // ✅ پیش‌فرض false
+  showQuotaFields = false, // ✅ Defaults to false
 }) {
   return (
     <div
@@ -327,7 +327,7 @@ function AccessBlock({
         </FieldRow>
       )}
 
-      {/* ✅ فیلدهای Quota فقط اگر showQuotaFields = true باشد */}
+      {/* ✅ Quota fields only when showQuotaFields = true */}
       {showQuotaFields && (
         <>
           <ToggleRow
@@ -343,9 +343,9 @@ function AccessBlock({
                 onChange={(e) => onChange("quotaType", e.target.value)}
                 style={selectStyle}
               >
-                <option value="inquiry">Inquiry (استعلام)</option>
-                <option value="quote">Quote (پیشنهاد)</option>
-                <option value="request">Request (درخواست)</option>
+                <option value="inquiry">Inquiry</option>
+                <option value="quote">Quote</option>
+                <option value="request">Request</option>
               </select>
             </FieldRow>
           )}

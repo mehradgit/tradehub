@@ -33,7 +33,7 @@ export async function POST(request) {
       );
     }
 
-    // بررسی که کاربر قبلاً استفاده نکرده
+    // Check that the user has not used it before
     const alreadyUsed = await hasUserUsedCoupon(
       session.user.id,
       result.coupon.id

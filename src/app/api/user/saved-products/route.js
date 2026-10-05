@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// ====== GET: دریافت وضعیت ذخیره‌سازی یا لیست محصولات ======
+// ====== GET: Get save status or the list of saved products ======
 export async function GET(request) {
   try {
     const session = await auth();
@@ -57,7 +57,7 @@ export async function GET(request) {
   }
 }
 
-// ====== POST: Toggle ذخیره/حذف محصول (بدون خطای تکراری) ======
+// ====== POST: Toggle saving/removing a product (without duplicate errors) ======
 export async function POST(request) {
   try {
     const session = await auth();
@@ -74,7 +74,7 @@ export async function POST(request) {
       );
     }
 
-    // بررسی وجود محصول
+    // Check that the product exists
     const product = await prisma.product.findUnique({
       where: { id: productId },
       select: { id: true },
@@ -87,7 +87,7 @@ export async function POST(request) {
       );
     }
 
-    // بررسی وجود رکورد ذخیره‌شده
+    // Check for an existing saved record
     const existing = await prisma.savedProduct.findUnique({
       where: {
         userId_productId: {
@@ -101,7 +101,7 @@ export async function POST(request) {
     let message;
 
     if (existing) {
-      // ✅ اگر قبلاً ذخیره شده، حذف کن (unsave)
+      // ✅ If it is already saved, remove it (unsave)
       await prisma.savedProduct.delete({
         where: {
           userId_productId: {
@@ -113,7 +113,7 @@ export async function POST(request) {
       action = "unsaved";
       message = "Product removed from saved";
     } else {
-      // ✅ اگر ذخیره نشده، ایجاد کن (save)
+      // ✅ If it is not saved, create it (save)
       await prisma.savedProduct.create({
         data: {
           userId: session.user.id,

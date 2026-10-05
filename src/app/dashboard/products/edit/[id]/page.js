@@ -31,12 +31,12 @@ export default async function EditProductPage({ params }) {
   }
 
   // ============================================================
-  // اتریبیوت‌های پویا (EAV) سمت سرور خوانده می‌شوند
+  // Dynamic (EAV) attributes are read on the server.
   //
-  // چرا: prisma.product.findUnique ستون‌های اسکالر را برمی‌گرداند و
-  // رابطه‌ی attributes را شامل نمی‌شود. اگر فرم ویرایش آن را
-  // کلاینت‌ساید می‌گرفت، در فاصله‌ی تغییر دسته یک race ایجاد می‌شد
-  // که ممکن است مقادیر دسته‌ی قبلی ذخیره شوند.
+  // Why: prisma.product.findUnique returns the scalar columns and
+  // does not include the attributes relation. If the edit form
+  // fetched them on the client, changing the category would create
+  // a race that could save values from the previous category.
   // ============================================================
   let attributes = [];
   try {

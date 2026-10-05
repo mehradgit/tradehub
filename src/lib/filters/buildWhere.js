@@ -1,9 +1,9 @@
 // src/lib/filters/buildWhere.js
 // ============================================================
-// تبدیل فیلترها به شرط Prisma
+// Turning filters into a Prisma condition
 //
-// یک جا برای همه‌ی صفحات. صفحات فقط این را صدا می‌زنند و
-// دیگر لازم نیست هر صفحه منطق فیلتر خودش را بنویسد.
+// One place for all pages. Pages simply call this and no longer
+// need to write their own filter logic.
 // ============================================================
 import { FILTER_SCHEMAS, getOrderBy } from "./schemas";
 import { readFilterValues, makeGetter } from "./params";
@@ -13,7 +13,7 @@ export const DEFAULT_PAGE_SIZE = 24;
 const MAX_PAGE_SIZE = 60;
 
 // ============================================================
-// ساخت شرط از مقادیر فیلتر
+// Building the condition from filter values
 // ============================================================
 export function buildWhereFromValues(
   schemaKey,
@@ -26,10 +26,10 @@ export function buildWhereFromValues(
   const and = [];
 
   for (const field of schema.fields) {
-    // فیلدهایی که شرطشان را خودِ صفحه اعمال می‌کند (مثل فیلتر رابطه‌ای)
+    // Fields whose condition the page applies itself (such as a relation filter)
     if (field.manualOnly) continue;
 
-    // برای facet count باید بتوانیم نوعی از فیلتر را نادیده بگیریم
+    // For facet counts we must be able to ignore one kind of filter
     if (skipTypes.includes(field.type)) continue;
 
     const value = values[field.name];
@@ -56,7 +56,7 @@ export function buildWhereFromValues(
         if (!path) break;
 
         const dbField = field.dbField || "categoryPath";
-        // خود مسیر یا هر چیزی زیر آن (prefix روی ایندکس)
+        // The path itself or anything beneath it (prefix on the index)
         and.push({
           OR: [
             { [dbField]: path },
@@ -74,13 +74,13 @@ export function buildWhereFromValues(
           .map((v) => String(v).trim());
         if (clean.length === 0) break;
 
-        // فیلتر روی یک رابطه (مثلاً user.businessType)
+        // Filter on a relation (for example user.businessType)
         if (field.relation) {
           and.push({ [field.relation]: { [field.dbField]: { in: clean } } });
           break;
         }
 
-        // ستون متنی CSV → هر مقدار یک contains
+        // CSV text column → one contains per value
         if (field.matchMode === "contains") {
           and.push({
             OR: clean.map((v) => ({ [field.dbField]: { contains: v } })),
@@ -158,7 +158,7 @@ export function buildWhereFromValues(
         break;
       }
 
-      // sort در where نقشی ندارد
+      // sort plays no role in where
       default:
         break;
     }
@@ -170,7 +170,7 @@ export function buildWhereFromValues(
 }
 
 // ============================================================
-// از searchParams خام → where
+// From raw searchParams → where
 // ============================================================
 export function buildWhere(schemaKey, searchParams, options = {}) {
   const schema = FILTER_SCHEMAS[schemaKey];
@@ -181,7 +181,7 @@ export function buildWhere(schemaKey, searchParams, options = {}) {
 }
 
 // ============================================================
-// صفحه‌بندی
+// Pagination
 // ============================================================
 export function readPagination(searchParams, {
   defaultLimit = DEFAULT_PAGE_SIZE,
@@ -202,7 +202,7 @@ export function readPagination(searchParams, {
 }
 
 // ============================================================
-// بسته‌ی کامل کوئری لیست — همان چیزی که صفحات لازم دارند
+// Complete list-query bundle — exactly what the pages need
 //
 //   const plan = buildListQuery("products", await searchParams, { attributeDefs });
 //   prisma.product.findMany({ where: plan.where, orderBy: plan.orderBy, skip, take })

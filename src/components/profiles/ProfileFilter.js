@@ -14,7 +14,7 @@ export default function ProfileFilter({
   const { categories } = useCategories();
   const [searchInput, setSearchInput] = useState(currentSearch || "");
 
-  // ✅ ساخت لیست سلسله‌مراتبی از دسته‌ها
+  // Build a hierarchical list of categories
   const categoryOptions = useMemo(() => {
     const options = [{ value: "", label: "All Categories", isParent: false }];
     const parents = categories.filter((c) => c.parent === 0);
@@ -60,11 +60,11 @@ export default function ProfileFilter({
       // All Categories
       updateUrl({ category: "", subCategory: "" });
     } else if (selected.includes("|")) {
-      // زیردسته
+      // Subcategory
       const [cat, sub] = selected.split("|");
       updateUrl({ category: cat, subCategory: sub });
     } else {
-      // دسته اصلی
+      // Parent category
       updateUrl({ category: selected, subCategory: "" });
     }
   };
@@ -74,7 +74,7 @@ export default function ProfileFilter({
     updateUrl({ search: searchInput });
   };
 
-  // ✅ تعیین مقدار انتخاب‌شده بر اساس URL
+  // Determine the selected value based on the URL
   const selectedCategoryValue = useMemo(() => {
     const url = typeof window !== "undefined" ? new URL(window.location.href) : null;
     const subCat = url?.searchParams.get("subCategory") || "";

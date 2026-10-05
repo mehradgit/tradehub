@@ -6,8 +6,8 @@ import { countries, getCountryByCode } from "@/lib/countries";
 import CountryFlag from "./CountryFlag";
 
 export default function CountrySelect({
-  value = "", // کد کشور (مثلاً "US")
-  onChange, // تابعی که کد کشور را برمی‌گرداند
+  value = "", // country code (e.g. "US")
+  onChange, // callback that returns the country code
   placeholder = "Select country",
   className = "",
   required = false,
@@ -16,7 +16,7 @@ export default function CountrySelect({
   const [searchTerm, setSearchTerm] = useState("");
   const wrapperRef = useRef(null);
 
-  // بستن دراپ‌داون هنگام کلیک بیرون از آن
+  // Close the dropdown when clicking outside of it
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -29,12 +29,12 @@ export default function CountrySelect({
     };
   }, []);
 
-  // فیلتر کردن کشورها بر اساس جستجو
+  // Filter countries by the search term
   const filteredCountries = countries.filter((country) =>
     country.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // کشور انتخاب شده
+  // Selected country
   const selectedCountry = getCountryByCode(value);
 
   const handleSelect = (code) => {
@@ -45,7 +45,7 @@ export default function CountrySelect({
 
   return (
     <div className="position-relative" ref={wrapperRef}>
-      {/* دکمه نمایش انتخاب */}
+      {/* Selected value button */}
       <div
         className={`form-control d-flex align-items-center justify-content-between cursor-pointer ${className}`}
         style={{ cursor: "pointer", minHeight: "45px" }}
@@ -64,7 +64,7 @@ export default function CountrySelect({
         <i className={`fas fa-chevron-${isOpen ? "up" : "down"} text-muted`}></i>
       </div>
 
-      {/* لیست کشویی با جستجو */}
+      {/* Dropdown list with search */}
       {isOpen && (
         <div
           className="position-absolute w-100 shadow bg-white rounded-3 overflow-hidden"
@@ -78,7 +78,7 @@ export default function CountrySelect({
             flexDirection: "column",
           }}
         >
-          {/* فیلد جستجو */}
+          {/* Search field */}
           <div className="p-2 border-bottom">
             <div className="input-group input-group-sm">
               <span className="input-group-text bg-transparent border-end-0">
@@ -95,7 +95,7 @@ export default function CountrySelect({
             </div>
           </div>
 
-          {/* لیست کشورها */}
+          {/* Country list */}
           <div className="overflow-auto" style={{ maxHeight: "250px" }}>
             {filteredCountries.length > 0 ? (
               filteredCountries.map((country) => (

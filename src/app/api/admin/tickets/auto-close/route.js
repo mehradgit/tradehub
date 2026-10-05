@@ -11,7 +11,7 @@ export async function POST() {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // منطق مشترک با job زمان‌بندی‌شده — یک منبع حقیقت، نه دو نسخه
+    // Shared logic with the scheduled job - a single source of truth, not two copies
     const { closed, tickets } = await closeStaleTickets(7);
 
     if (tickets.length === 0) {
@@ -21,7 +21,7 @@ export async function POST() {
       });
     }
 
-    // ✅ اطلاع به صاحبان تیکت‌ها از مسیر مرکزی رویداد
+    // ✅ Notify ticket owners through the central event pipeline
     after(async () => {
       for (const t of tickets) {
         const res = await dispatchEvent("ticket.auto_closed", {

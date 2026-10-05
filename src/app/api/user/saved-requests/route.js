@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// ====== GET: بررسی وضعیت ذخیره یا لیست درخواست‌های ذخیره‌شده ======
+// ====== GET: Get save status or the list of saved requests ======
 export async function GET(request) {
   try {
     const session = await auth();
@@ -14,7 +14,7 @@ export async function GET(request) {
     const requestId = searchParams.get("requestId");
 
     if (requestId) {
-      // بررسی وضعیت ذخیره برای یک درخواست خاص
+      // Check the save status for one specific request
       const saved = await prisma.savedRequest.findUnique({
         where: {
           userId_requestId: {
@@ -26,7 +26,7 @@ export async function GET(request) {
       return NextResponse.json({ isSaved: !!saved });
     }
 
-    // دریافت تمام درخواست‌های ذخیره‌شده کاربر
+    // Fetch all requests saved by the user
     const savedRequests = await prisma.savedRequest.findMany({
       where: { userId: session.user.id },
       include: {
@@ -54,7 +54,7 @@ export async function GET(request) {
   }
 }
 
-// ====== POST: Toggle ذخیره/حذف درخواست ======
+// ====== POST: Toggle saving/removing a request ======
 export async function POST(request) {
   try {
     const session = await auth();
@@ -71,7 +71,7 @@ export async function POST(request) {
       );
     }
 
-    // بررسی وجود درخواست
+    // Check that the request exists
     const req = await prisma.buyingRequest.findUnique({
       where: { id: requestId },
       select: { id: true },
@@ -84,7 +84,7 @@ export async function POST(request) {
       );
     }
 
-    // بررسی وجود رکورد ذخیره‌شده
+    // Check for an existing saved record
     const existing = await prisma.savedRequest.findUnique({
       where: {
         userId_requestId: {
@@ -97,7 +97,7 @@ export async function POST(request) {
     let action, message;
 
     if (existing) {
-      // حذف از ذخیره‌شده‌ها
+      // Remove from saved items
       await prisma.savedRequest.delete({
         where: {
           userId_requestId: {
@@ -109,7 +109,7 @@ export async function POST(request) {
       action = "unsaved";
       message = "Request removed from saved";
     } else {
-      // ذخیره درخواست
+      // Save the request
       await prisma.savedRequest.create({
         data: {
           userId: session.user.id,

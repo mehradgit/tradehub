@@ -24,11 +24,11 @@ function getBaseUrl() {
 }
 
 // ============================================================
-// POST: خرید اشتراک
+// POST: Purchase subscription
 // ============================================================
 export async function POST(request) {
   try {
-    // ====== احراز هویت ======
+    // ====== Authentication ======
     const session = await auth();
     if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -46,7 +46,7 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // دریافت پلن و قیمت
+    // Fetch plan and price
     // ============================================================
     const [plan, price] = await Promise.all([
       prisma.plan.findUnique({ where: { id: planId } }),
@@ -70,7 +70,7 @@ export async function POST(request) {
     let couponId = null;
 
     // ============================================================
-    // بررسی کد تخفیف
+    // Validate the coupon code
     // ============================================================
     if (couponCode) {
       const result = await calculateCouponDiscount(
@@ -102,7 +102,7 @@ export async function POST(request) {
     const description = `${plan.name} Plan · ${duration} days`;
 
     // ============================================================
-    // حالت ۱: پلن رایگان یا کوپن ۱۰۰٪ تخفیف
+    // Case 1: Free plan or 100% discount coupon
     // ============================================================
     if (finalAmount === 0) {
       const payment = await createPayment({
@@ -137,7 +137,7 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // حالت ۲: بدون YekPay (fallback شبیه‌سازی)
+    // Case 2: Without YekPay (simulated fallback)
     // ============================================================
     const merchantId = process.env.YEKPAY_MERCHANT_ID;
     if (!merchantId) {
@@ -172,10 +172,10 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // حالت ۳: با YekPay
+    // Case 3: With YekPay
     // ============================================================
 
-    // ====== Pre-flight Check: بررسی اطلاعات پروفایل ======
+    // ====== Pre-flight Check: validate profile data ======
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -198,7 +198,7 @@ export async function POST(request) {
       );
     }
 
-    // فیلدهای اجباری برای YekPay
+    // Required fields for YekPay
     const requiredFields = [
       {
         key: "name",
@@ -212,7 +212,7 @@ export async function POST(request) {
       { key: "country", label: "Country", value: user.country },
     ];
 
-    // پیدا کردن فیلدهای ناقص
+    // Find the missing fields
     const missingFields = requiredFields
       .filter((f) => !f.value || String(f.value).trim().length < 2)
       .map((f) => ({ key: f.key, label: f.label }));
@@ -229,7 +229,7 @@ export async function POST(request) {
       );
     }
 
-    // ====== ساخت Payment (pending) ======
+    // ====== Create Payment (pending) ======
     const payment = await createPayment({
       userId,
       planId,
@@ -244,7 +244,7 @@ export async function POST(request) {
       description,
     });
 
-    // ====== آماده‌سازی نام ======
+    // ====== Prepare the name ======
     const fullName = (user.name || user.companyName || "Customer").trim();
     const nameParts = fullName.split(" ");
     const firstName = nameParts[0] || "Customer";
@@ -253,7 +253,7 @@ export async function POST(request) {
     const callbackUrl = `${getBaseUrl()}/api/payment/yekpay/verify`;
     const orderNumber = payment.invoiceNumber.replace(/[^0-9]/g, "");
 
-    // ====== درخواست از YekPay ======
+    // ====== Request to YekPay ======
     let yekpayResult;
     try {
       yekpayResult = await requestYekPayPayment({
@@ -275,7 +275,7 @@ export async function POST(request) {
     } catch (yekpayError) {
       console.error("YekPay request failed:", yekpayError.message);
 
-      // علامت‌گذاری payment به عنوان failed
+      // Mark the payment as failed
       await prisma.payment.update({
         where: { id: payment.id },
         data: {
@@ -298,7 +298,7 @@ export async function POST(request) {
       );
     }
 
-    // ====== ذخیره authority در payment ======
+    // ====== Store the authority on the payment ======
     await prisma.payment.update({
       where: { id: payment.id },
       data: {
@@ -313,7 +313,7 @@ export async function POST(request) {
       },
     });
 
-    // ====== بازگشت به فرانت ======
+    // ====== Return to the frontend ======
     return NextResponse.json({
       message: "Redirecting to payment gateway...",
       paymentUrl: yekpayResult.paymentUrl,

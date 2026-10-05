@@ -10,7 +10,7 @@ import localFont from "next/font/local";
 import BootstrapClient from "@/components/ui/BootstrapClient";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
-// ===== فونت‌ها =====
+// ===== Fonts =====
 const inter = localFont({
   src: "../../public/fonts/Inter-VariableFont_opsz,wght.ttf",
   variable: "--font-inter",
@@ -120,8 +120,8 @@ export const metadata = {
     telephone: false,
   },
 
-  // ⚠️ این بخش رو حذف کن چون Next.js خودش از فایل‌های
-  // favicon.ico و icon.png و apple-icon.png استفاده می‌کنه
+  // ⚠️ Remove this section, because Next.js uses the
+  // favicon.ico, icon.png and apple-icon.png files automatically
   // icons: { ... },
 
   manifest: "/manifest.json",
@@ -177,8 +177,8 @@ export default function RootLayout({ children }) {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        // صفحه‌ی /search حذف شد؛ مگا سرچ هدر به صفحه‌ی فیلتردار
-        // محصولات می‌رود، پس هدف sitelinks searchbox هم همان است.
+        // The /search page was removed; the header mega search goes to the
+        // filtered products page, so the sitelinks searchbox target is the same.
         urlTemplate: "https://foodtradelink.com/products?search={search_term_string}",
       },
       "query-input": "required name=search_term_string",

@@ -102,7 +102,7 @@ export default function ScheduledJobsManager({
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
-  // ===== اجرای فوری =====
+  // ===== Run now =====
   const runNow = async (job) => {
     setBusy(`${job.id}:run`);
     try {
@@ -123,7 +123,7 @@ export default function ScheduledJobsManager({
     }
   };
 
-  // ===== روشن/خاموش =====
+  // ===== Enable/disable =====
   const toggleActive = async (job) => {
     setBusy(`${job.id}:toggle`);
     try {
@@ -143,7 +143,7 @@ export default function ScheduledJobsManager({
     }
   };
 
-  // ===== ذخیره =====
+  // ===== Save =====
   const save = async () => {
     if (!editingId) return;
     setBusy(`${editingId}:save`);
@@ -529,7 +529,7 @@ export default function ScheduledJobsManager({
         </div>
       </div>
 
-      {/* ===== handler های موجود در کد ===== */}
+      {/* ===== handler keys available in the code ===== */}
       <div
         className="admin-card"
         style={{ padding: "16px 18px", marginTop: "16px" }}

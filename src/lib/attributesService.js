@@ -1,15 +1,15 @@
 // src/lib/attributesService.js
 // ============================================================
-// اتریبیوت‌های پویا (EAV)
+// Dynamic product attributes (EAV)
 //
-// ایده: ادمین یک اتریبیوت را برای «یک سطح از دسته‌بندی» تعریف
-// می‌کند (یا global). پنل فیلتر با resolveAttributesForPath
-// می‌فهمد کدام اتریبیوت‌ها برای دسته‌ی انتخاب‌شده معتبرند و
-// خودکار آن‌ها را رندر می‌کند. یعنی اتریبیوت جدید = صفر تغییر کد.
+// Idea: an admin defines an attribute for one level of the category
+// tree (or global). The filter panel uses resolveAttributesForPath
+// to work out which attributes are valid for the selected category
+// and renders them automatically. A new attribute = zero code changes.
 // ============================================================
 import { prisma } from "@/lib/prisma";
 
-// خاص‌ترین scope برنده است
+// The most specific scope wins
 const SCOPE_PRIORITY = {
   productType: 4,
   subCategory: 3,
@@ -36,7 +36,7 @@ const VALID_TYPES = ATTRIBUTE_DATA_TYPES.map((t) => t.value);
 const VALID_SCOPES = ATTRIBUTE_SCOPES.map((s) => s.value);
 
 // ============================================================
-// خواندن تعاریف
+// Reading definitions
 // ============================================================
 export async function listAttributeDefinitions({
   includeInactive = false,
@@ -53,13 +53,13 @@ export async function listAttributeDefinitions({
 }
 
 // ============================================================
-// کدام اتریبیوت‌ها برای این مسیر دسته‌بندی معتبرند؟
+// Which attributes are valid for this category path?
 //
 //   "grains-cereals/rice/basmati"
 //      → global + category(grains-cereals)
 //        + subCategory(rice) + productType(basmati)
 //
-// با ارث‌بری: اگر یک key در چند scope باشد، خاص‌ترین برنده است.
+// With inheritance: if a key appears in several scopes, the most specific one wins.
 // ============================================================
 export async function resolveAttributesForPath(
   categoryPath,
@@ -84,7 +84,7 @@ export async function resolveAttributesForPath(
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
   });
 
-  // حذف تکراری بر اساس key — خاص‌ترین scope برنده
+  // Deduplicate by key — the most specific scope wins
   const byKey = new Map();
   for (const d of defs) {
     const prev = byKey.get(d.key);
@@ -104,7 +104,7 @@ export async function resolveAttributesForPath(
 }
 
 // ============================================================
-// اعتبارسنجی ورودی ادمین
+// Admin input validation
 // ============================================================
 export function validateAttributeInput(body, { partial = false } = {}) {
   const errors = [];
@@ -131,7 +131,6 @@ export function validateAttributeInput(body, { partial = false } = {}) {
     else data.label = label;
   }
 
-  if (has("labelFa")) data.labelFa = String(body.labelFa || "").trim() || null;
   if (has("unit")) data.unit = String(body.unit || "").trim() || null;
 
   if (!partial || has("dataType")) {
@@ -256,15 +255,15 @@ export async function deleteAttributeDefinition(id) {
   });
   if (!existing) return { ok: false, notFound: true };
 
-  // مقادیر وابسته با onDelete: Cascade پاک می‌شوند
+  // Dependent values are removed through onDelete: Cascade
   await prisma.attributeDefinition.delete({ where: { id } });
   return { ok: true };
 }
 
 // ============================================================
-// تبدیل مقدار ورودی به ردیف‌های ProductAttribute
+// Convert an input value into ProductAttribute rows
 //
-// multiSelect → به ازای هر گزینه یک ردیف (تا فیلتر ایندکس‌پذیر بماند)
+// multiSelect → one row per option (so filtering stays indexable)
 // ============================================================
 export function coerceAttributeRows(def, raw) {
   const isEmpty =
@@ -297,10 +296,10 @@ export function coerceAttributeRows(def, raw) {
 }
 
 // ============================================================
-// ذخیره‌ی مقادیر یک محصول
+// Save the values of one product
 //
 // items: [{ attributeId, value }]
-// روش: حذف کامل مقادیر قبلی و درج مجدد (idempotent و ساده)
+// Method: delete all previous values and insert them again (idempotent and simple)
 // ============================================================
 export async function setProductAttributes(productId, items = []) {
   const ids = [
@@ -334,7 +333,7 @@ export async function setProductAttributes(productId, items = []) {
 }
 
 // ============================================================
-// خواندن مقادیر یک محصول (گروه‌بندی‌شده)
+// Read the values of one product (grouped)
 // ============================================================
 export async function getProductAttributes(productId) {
   const rows = await prisma.productAttribute.findMany({
@@ -351,7 +350,6 @@ export async function getProductAttributes(productId) {
         attributeId: row.attributeId,
         key: row.attribute?.key,
         label: row.attribute?.label,
-        labelFa: row.attribute?.labelFa,
         dataType: row.attribute?.dataType,
         unit: row.attribute?.unit,
         options: row.attribute?.options || null,
@@ -381,10 +379,10 @@ export async function getProductAttributes(productId) {
 }
 
 // ============================================================
-// ساخت شرط Prisma برای فیلتر اتریبیوت‌ها
+// Build Prisma conditions for attribute filters
 //
 // filters: { [attributeId]: value | [values] | { min, max } | true|false }
-// خروجی: آرایه‌ای از شرط‌ها — هر کدام داخل attributes.some می‌رود
+// Output: an array of conditions — each one goes inside attributes.some
 // ============================================================
 export function buildAttributeConditions(filters, defs = []) {
   const defById = new Map((defs || []).map((d) => [d.id, d]));
@@ -424,7 +422,7 @@ export function buildAttributeConditions(filters, defs = []) {
       continue;
     }
 
-    // متن | انتخابی | چندانتخابی
+    // text | select | multiSelect
     const list = Array.isArray(raw) ? raw : [raw];
     const clean = list
       .filter((v) => v !== null && v !== undefined && String(v).trim() !== "")
@@ -433,16 +431,17 @@ export function buildAttributeConditions(filters, defs = []) {
     if (clean.length === 0) continue;
 
     // ------------------------------------------------------
-    // اتریبیوت متنی: کاربر در یک input آزاد تایپ می‌کند، پس
-    // انتظار تطبیق زیررشته دارد نه تطبیق کامل. بدون این، تایپ
-    // «nest» هیچ نتیجه‌ای نمی‌داد و باید مقدار کامل نوشته می‌شد.
-    // (کولیشن MySQL به‌صورت پیش‌فرض به بزرگی/کوچکی حساس نیست)
+    // Text attribute: the user types into a free input, so a
+    // substring match is expected instead of an exact match. Without
+    // this, typing "nest" returned nothing and the full value had to
+    // be written out.
+    // (the MySQL collation is not case-sensitive by default)
     // ------------------------------------------------------
     if (def.dataType === "text") {
       if (clean.length === 1) {
         conditions.push({ attributeId, valueString: { contains: clean[0] } });
       } else {
-        // چند مقدار → OR
+        // Multiple values → OR
         conditions.push({
           attributeId,
           OR: clean.map((v) => ({ valueString: { contains: v } })),
@@ -452,9 +451,9 @@ export function buildAttributeConditions(filters, defs = []) {
     }
 
     // ------------------------------------------------------
-    // select | multiSelect: از دراپ‌داون می‌آید، پس تطبیق کامل
-    // مقدار درست است. چند مقدار روی یک ردیف = OR که برای
-    // multiSelect (یک ردیف به‌ازای هر گزینه) رفتار مطلوب است.
+    // select | multiSelect: the value comes from a dropdown, so an exact
+    // match is correct. Multiple values on one row = OR, which is the
+    // desired behaviour for multiSelect (one row per option).
     // ------------------------------------------------------
     conditions.push({ attributeId, valueString: { in: clean } });
   }
@@ -463,7 +462,7 @@ export function buildAttributeConditions(filters, defs = []) {
 }
 
 // ============================================================
-// Facet count — «چند محصول با این گزینه»
+// Facet count — "how many products have this option"
 // ============================================================
 export async function getAttributeFacets(defs = [], baseWhere = {}) {
   const out = {};
@@ -471,9 +470,9 @@ export async function getAttributeFacets(defs = [], baseWhere = {}) {
   for (const def of defs) {
     try {
       if (def.dataType === "select" || def.dataType === "multiSelect") {
-        // شمارش با groupBy انجام می‌شود، نه با خواندن همه‌ی ردیف‌ها در
-        // حافظه. برای یک دسته با هزاران محصول، findMany یعنی انتقال
-        // هزاران ردیف فقط برای شمردن.
+        // Counting is done with groupBy, not by loading every row into
+        // memory. For a category with thousands of products, findMany
+        // means transferring thousands of rows just to count them.
         const rows = await prisma.productAttribute.groupBy({
           by: ["valueString"],
           where: {

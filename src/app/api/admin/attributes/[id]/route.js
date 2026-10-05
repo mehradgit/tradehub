@@ -1,10 +1,10 @@
 // src/app/api/admin/attributes/[id]/route.js
 // ============================================================
-// ویرایش / حذف یک اتریبیوت محصول
+// Edit / delete a product attribute
 //
-// PATCH  : به‌روزرسانی تعریف
-// DELETE : حذف تعریف — مقادیر وابسته روی محصولات با
-//          onDelete: Cascade پاک می‌شوند.
+// PATCH  : update a definition
+// DELETE : delete a definition — dependent values on products are
+//          removed through onDelete: Cascade.
 // ============================================================
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
@@ -14,7 +14,7 @@ import {
 } from "@/lib/attributesService";
 
 // ============================================================
-// سریال‌سازی: Date → ISO string
+// Serialization: Date → ISO string
 // ============================================================
 function serializeAttribute(attr) {
   if (!attr) return null;
@@ -22,7 +22,6 @@ function serializeAttribute(attr) {
     id: attr.id,
     key: attr.key,
     label: attr.label,
-    labelFa: attr.labelFa ?? null,
     dataType: attr.dataType,
     unit: attr.unit ?? null,
     options: Array.isArray(attr.options) ? attr.options : null,
@@ -39,7 +38,7 @@ function serializeAttribute(attr) {
 }
 
 // ============================================================
-// PATCH: ویرایش اتریبیوت
+// PATCH: edit an attribute
 // ============================================================
 export async function PATCH(request, { params }) {
   try {
@@ -93,7 +92,7 @@ export async function PATCH(request, { params }) {
 }
 
 // ============================================================
-// DELETE: حذف اتریبیوت
+// DELETE: delete an attribute
 // ============================================================
 export async function DELETE(request, { params }) {
   try {

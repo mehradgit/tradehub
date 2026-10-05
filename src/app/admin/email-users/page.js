@@ -9,16 +9,16 @@ export default function EmailUsersPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
-  // فرم ساخت کاربر
+  // Create-user form
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // مودال تغییر رمز
+  // Change-password modal
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
-  // ===== دریافت لیست =====
+  // ===== Fetch list =====
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -37,7 +37,7 @@ export default function EmailUsersPage() {
     fetchUsers();
   }, []);
 
-  // ===== ساخت کاربر =====
+  // ===== Create user =====
   const handleCreate = async (e) => {
     e.preventDefault();
     setCreating(true);
@@ -65,7 +65,7 @@ export default function EmailUsersPage() {
     }
   };
 
-  // ===== تغییر رمز =====
+  // ===== Change password =====
   const openPasswordModal = (userEmail) => {
     setSelectedEmail(userEmail);
     setNewPassword("");
@@ -101,7 +101,7 @@ export default function EmailUsersPage() {
     }
   };
 
-  // ===== فعال/غیرفعال =====
+  // ===== Enable/disable =====
   const toggleActive = async (userEmail, currentActive) => {
     try {
       const res = await fetch("/api/admin/email-users", {
@@ -126,9 +126,9 @@ export default function EmailUsersPage() {
     }
   };
 
-  // ===== حذف کاربر =====
+  // ===== Delete user =====
   const handleDelete = async (userEmail) => {
-    if (!confirm(`Delete ${userEmail}?\n\nاین کار ایمیل‌ها را هم پاک می‌کند.`)) return;
+    if (!confirm(`Delete ${userEmail}?\n\nThis also deletes its emails.`)) return;
 
     try {
       const res = await fetch(
@@ -150,15 +150,15 @@ export default function EmailUsersPage() {
 
   return (
     <div className="container-fluid py-4">
-      {/* هدر */}
+      {/* Header */}
       <div className="mb-4">
         <h1 className="fw-bold mb-1">📧 Email Users</h1>
         <p className="text-muted mb-0">
-          مدیریت کاربران ایمیل دامنهٔ bulkfoodtrade.ir
+          Manage email users on the bulkfoodtrade.ir domain
         </p>
       </div>
 
-      {/* فرم ساخت کاربر */}
+      {/* Create-user form */}
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body">
           <h5 className="fw-bold mb-3">➕ Create New Email</h5>
@@ -199,7 +199,7 @@ export default function EmailUsersPage() {
         </div>
       </div>
 
-      {/* جدول کاربران */}
+      {/* Users table */}
       <div className="card border-0 shadow-sm">
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center mb-3">
@@ -223,7 +223,7 @@ export default function EmailUsersPage() {
             </div>
           ) : users.length === 0 ? (
             <div className="text-center py-5 text-muted">
-              هنوز کاربری ساخته نشده
+              No users created yet
             </div>
           ) : (
             <div className="table-responsive">
@@ -293,7 +293,7 @@ export default function EmailUsersPage() {
         </div>
       </div>
 
-      {/* مودال تغییر رمز */}
+      {/* Change-password modal */}
       {showPasswordModal && (
         <>
           <div
@@ -318,7 +318,7 @@ export default function EmailUsersPage() {
                 </div>
                 <div className="modal-body">
                   <p className="text-muted">
-                    تغییر رمز برای:{" "}
+                    Change password for:{" "}
                     <code>{selectedEmail}</code>
                   </p>
                   <input

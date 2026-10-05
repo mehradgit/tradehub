@@ -1,34 +1,34 @@
 // src/lib/filters/schemas.js
 // ============================================================
-// اسکیمای اعلانی فیلترها
+// Declarative filter schema
 //
-// تنها منبع حقیقت برای فیلترها. از همین یک فایل ساخته می‌شود:
-//   • نوار فیلتر باریک  (فیلدهای primary)
-//   • پنل «فیلترهای بیشتر» (همه‌ی فیلدها)
-//   • شرط Prisma (buildWhere)
+// The single source of truth for filters. Everything is built from this one file:
+//   • The narrow filter bar (primary fields)
+//   • The "More filters" panel (all fields)
+//   • The Prisma condition (buildWhere)
 //
-// افزودن فیلتر جدید = یک شیء اینجا. هیچ UI یا کوئری جدیدی لازم نیست.
+// Adding a new filter = one object here. No new UI or query is needed.
 //
-// این فایل PURE است (بدون prisma) تا کلاینت هم بتواند بخواند.
-// گزینه‌های وابسته به دیتابیس با optionsFrom مشخص می‌شوند و
-// سمت سرور resolve می‌شوند (resolveFilterOptions).
+// This file is PURE (no prisma) so the client can read it too.
+// Database-backed options are declared with optionsFrom and are
+// resolved on the server (resolveFilterOptions).
 // ============================================================
 
-// نوع فیلدها:
-//   text            → جست‌وجوی متنی روی searchableFields
-//   categoryCascader→ انتخاب دسته سه‌سطحی (categoryPath)
-//   multiSelect     → چند انتخابی
-//   select          → تک انتخابی
-//   boolean         → بله/خیر
-//   numberRange     → بازه‌ی عددی (دو پارامتر)
-//   number          → یک عدد با عملگر
-//   date            → تاریخ (lte/gte)
-//   dynamicAttributes → اتریبیوت‌های پویا (attr_<id>)
-//   sort            → مرتب‌سازی
+// Field types:
+//   text            → text search over searchableFields
+//   categoryCascader→ three-level category selection (categoryPath)
+//   multiSelect     → multiple choice
+//   select          → single choice
+//   boolean         → yes/no
+//   numberRange     → numeric range (two parameters)
+//   number          → a single number with an operator
+//   date            → date (lte/gte)
+//   dynamicAttributes → dynamic attributes (attr_<id>)
+//   sort            → sorting
 
 export const FILTER_SCHEMAS = {
   // ==========================================================
-  // محصولات
+  // Products
   // ==========================================================
   products: {
     key: "products",
@@ -175,7 +175,7 @@ export const FILTER_SCHEMAS = {
   },
 
   // ==========================================================
-  // درخواست‌های خرید
+  // Buying requests
   // ==========================================================
   requests: {
     key: "requests",
@@ -297,7 +297,7 @@ export const FILTER_SCHEMAS = {
   },
 
   // ==========================================================
-  // پروفایل شرکت‌ها
+  // Company profiles
   // ==========================================================
   profiles: {
     key: "profiles",
@@ -343,9 +343,9 @@ export const FILTER_SCHEMAS = {
         type: "categoryCascader",
         label: "Category",
         primary: true,
-        // روی User ستونی به نام categoryPath وجود ندارد؛ شرط این فیلتر
-        // به‌صورت رابطه‌ای (products / buyingRequests) در خودِ صفحه
-        // اعمال می‌شود، پس موتور آن را نادیده می‌گیرد.
+        // The User model has no column named categoryPath; this filter's
+        // condition is applied relationally (products / buyingRequests) on
+        // the page itself, so the engine ignores it.
         manualOnly: true,
       },
       {
@@ -400,7 +400,7 @@ export const FILTER_SCHEMAS = {
 };
 
 // ============================================================
-// مرتب‌سازی → orderBy پریزما
+// Sorting → Prisma orderBy
 // ============================================================
 export function getOrderBy(schemaKey, sortValue) {
   const map = {
@@ -434,7 +434,7 @@ export function getOrderBy(schemaKey, sortValue) {
 }
 
 // ==========================================================
-// فیلدهای یک نوع
+// Fields of one type
 // ==========================================================
 export function getPrimaryFields(schemaKey) {
   return (FILTER_SCHEMAS[schemaKey]?.fields || []).filter((f) => f.primary);
@@ -445,7 +445,7 @@ export function getSecondaryFields(schemaKey) {
 }
 
 // ==========================================================
-// نگاشت مسیر صفحه → کلید اسکیما
+// Page path → schema key mapping
 // ==========================================================
 export function schemaKeyFromPathname(pathname = "") {
   if (pathname.startsWith("/products")) return "products";

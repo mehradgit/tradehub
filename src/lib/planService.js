@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 
 
-// تابع کمکی برای محاسبه شماره ماه
+// Helper to compute the month index
 function getMonthIndex(startDate) {
   const now = Date.now();
   const start = new Date(startDate).getTime();
@@ -10,7 +10,7 @@ function getMonthIndex(startDate) {
   return Math.floor(diffDays / 30);
 }
 
-// دریافت پلن فعال کاربر
+// Get the user's active plan
 export async function getUserActivePlan(userId) {
   const subscription = await prisma.userSubscription.findFirst({
     where: { userId, status: "active", endDate: { gt: new Date() } },
@@ -22,7 +22,7 @@ export async function getUserActivePlan(userId) {
     return { plan: subscription.plan, subscription };
   }
 
-  // اگر اشتراک فعال ندارد، پلن Basic را برمیگرداند
+  // If there is no active subscription, fall back to the Basic plan
   const basicPlan = await prisma.plan.findUnique({ where: { name: "Basic" } });
   if (!basicPlan) {
     throw new Error("Basic plan not found. Please run seed.");
@@ -31,10 +31,10 @@ export async function getUserActivePlan(userId) {
   return { plan: basicPlan, subscription: null };
 }
 
-// بررسی محدودیت محصولات
+// Check the product limit
 export async function canAddProduct(userId, plan) {
   if (plan?.maxProducts === -1) return true;
-  const limit = plan?.maxProducts ?? 5; // fallback اگر undefined بود
+  const limit = plan?.maxProducts ?? 5; // fallback if it was undefined
 
   const productCount = await prisma.product.count({
     where: { userId, isVisible: true },
@@ -42,7 +42,7 @@ export async function canAddProduct(userId, plan) {
 
   return productCount < limit;
 }
-// ====== بررسی محدودیت عکس‌های یک محصول ======
+// ====== Check the image limit of a product ======
 export async function canAddProductImage(productId, plan) {
   if (plan.maxImagesPerProduct === -1) return true;
   const product = await prisma.product.findUnique({
@@ -53,7 +53,7 @@ export async function canAddProductImage(productId, plan) {
   return imageCount < plan.maxImagesPerProduct;
 }
 
-// ====== بررسی محدودیت عکس‌های یک درخواست خرید ======
+// ====== Check the image limit of a buying request ======
 export async function canAddRequestImage(requestId, plan) {
   if (plan.maxImagesPerRequest === -1) return true;
   const request = await prisma.buyingRequest.findUnique({
@@ -66,7 +66,7 @@ export async function canAddRequestImage(requestId, plan) {
   return imageCount < plan.maxImagesPerRequest;
 }
 
-// ====== بررسی محدودیت عکس‌های پروفایل ======
+// ====== Check the profile image limit ======
 export async function canAddProfileImage(userId, plan) {
   if (plan.maxProfileImages === -1) return true;
   const user = await prisma.user.findUnique({
@@ -79,7 +79,7 @@ export async function canAddProfileImage(userId, plan) {
   return galleryCount < plan.maxProfileImages;
 }
 
-// ====== تابع کمکی برای دریافت شمارنده استفاده ماهانه ======
+// ====== Helper to get the monthly usage counter ======
 export async function getUsageCount(userId, type, monthIndex) {
   const usage = await prisma.usageCounter.findUnique({
     where: { userId_type_month: { userId, type, month: monthIndex } },
@@ -87,7 +87,7 @@ export async function getUsageCount(userId, type, monthIndex) {
   return usage?.used || 0;
 }
 
-// ====== بررسی محدودیت درخواست‌های خرید (ماهانه) ======
+// ====== Check the buying request limit (monthly) ======
 export async function canAddRequest(userId, plan, subscription) {
   if (plan.maxRequestsPerMonth === -1) return true;
   if (subscription) {
@@ -103,7 +103,7 @@ export async function canAddRequest(userId, plan, subscription) {
   return requestCount < plan.maxRequestsPerMonth;
 }
 
-// ====== بررسی محدودیت استعلام (Inquiry) ======
+// ====== Check the inquiry limit (Inquiry) ======
 export async function canAddInquiry(userId, plan, subscription) {
   if (plan.maxInquiriesPerMonth === -1) return true;
   if (subscription) {
@@ -119,7 +119,7 @@ export async function canAddInquiry(userId, plan, subscription) {
   return inquiryCount < plan.maxInquiriesPerMonth;
 }
 
-// ====== بررسی محدودیت پیشنهاد (Quote) ======
+// ====== Check the quote limit (Quote) ======
 export async function canAddQuote(userId, plan, subscription) {
   if (plan.maxQuotesPerMonth === -1) return true;
   if (subscription) {
@@ -135,7 +135,7 @@ export async function canAddQuote(userId, plan, subscription) {
   return quoteCount < plan.maxQuotesPerMonth;
 }
 
-// ====== افزایش شمارنده استفاده ======
+// ====== Increment the usage counter ======
 export async function incrementUsage(userId, type, subscription) {
   if (!subscription) return;
   const monthIndex = getMonthIndex(subscription.startDate);
@@ -146,19 +146,19 @@ export async function incrementUsage(userId, type, subscription) {
   });
 }
 
-// ====== بررسی مجوز دیدن جزئیات یک درخواست خرید ======
+// ====== Check permission to view the details of a buying request ======
 // export async function canViewRequestDetails(userId, request) {
-//   // 1. مهمان مجاز نیست
+//   // 1. Guests are not allowed
 //   if (!userId) {
 //     return { allowed: false, reason: "login_required" };
 //   }
 
-//   // 2. صاحب درخواست همیشه مجاز است
+//   // 2. The request owner is always allowed
 //   if (request.userId === userId) {
 //     return { allowed: true };
 //   }
 
-//   // 3. ادمین همیشه مجاز است
+//   // 3. Admins are always allowed
 //   const user = await prisma.user.findUnique({
 //     where: { id: userId },
 //     select: { isAdmin: true },
@@ -167,20 +167,20 @@ export async function incrementUsage(userId, type, subscription) {
 //     return { allowed: true };
 //   }
 
-//   // 4. دریافت پلن فعال
+//   // 4. Get the active plan
 //   const { plan, subscription } = await getUserActivePlan(userId);
 
-//   // 5. پلن Basic/Free اجازه دیدن جزئیات را ندارد
+//   // 5. The Basic/Free plan is not allowed to view the details
 //   if (!plan || plan.name === "Basic" || plan.name === "Free") {
 //     return { allowed: false, reason: "upgrade_required", currentPlan: plan?.name };
 //   }
 
-//   // 6. اگر سهمیه استعلام ماهانه صفر است (پلن نامناسب)
+//   // 6. If the monthly inquiry quota is zero (unsuitable plan)
 //   if (plan.maxInquiriesPerMonth === 0) {
 //     return { allowed: false, reason: "upgrade_required", currentPlan: plan.name };
 //   }
 
-//   // 7. بررسی سهمیه باقی‌مانده
+//   // 7. Check the remaining quota
 //   if (subscription) {
 //     const monthIndex = Math.floor(
 //       (Date.now() - new Date(subscription.startDate).getTime()) /

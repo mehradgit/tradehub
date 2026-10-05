@@ -29,7 +29,7 @@ export default function ProductDetail({
   const formRef = useRef(null);
   const [sending, setSending] = useState(false);
 
-  // ✅ وضعیت Reveal - از سرور می‌آید ولی بعد از Reveal توسط کامپوننت پسر به‌روز می‌شود
+  // Reveal status - comes from the server but is updated by the child component after Reveal
   const [isSupplierRevealed, setIsSupplierRevealed] = useState(
     alreadyRevealed || shouldAutoReveal,
   );
@@ -55,7 +55,7 @@ export default function ProductDetail({
     checkSavedStatus();
   }, [product?.id, session]);
 
-  // ====== ارسال درخواست ======
+  // ====== Send request ======
   const handleSendRequest = async (e) => {
     e.preventDefault();
 
@@ -64,7 +64,7 @@ export default function ProductDetail({
       return;
     }
 
-    // ✅ اگر Reveal نشده → هشدار
+    // If it has not been revealed → warn
     if (!isSupplierRevealed) {
       toast.warning("Please reveal supplier info first");
       return;
@@ -173,12 +173,12 @@ export default function ProductDetail({
           </ol>
         </nav>
 
-        {/* ====== ردیف ۳ ستونی: گالری | اطلاعات | کارت تأمین‌کننده ====== */}
+        {/* ====== 3-column row: gallery | info | supplier card ====== */}
         <div className="product-detail-row">
-          {/* --- ستون ۱: گالری --- */}
+          {/* --- Column 1: gallery --- */}
           <ImageGallery images={productImages} productName={data.name} />
 
-          {/* --- ستون ۲: اطلاعات محصول --- */}
+          {/* --- Column 2: product info --- */}
           <div className="product-info-wrapper">
             <div className="product-info-header">
               <h1 className="product-title">{data.name}</h1>
@@ -223,7 +223,7 @@ export default function ProductDetail({
               </div>
             </div>
 
-            {/* مشخصات — دو ستونی داخل همین ستون */}
+            {/* Specifications — two columns inside this column */}
             <div className="product-specs-grid">
               <div className="product-specs-column">
                 <div className="product-spec-item">
@@ -275,7 +275,7 @@ export default function ProductDetail({
             </div>
           </div>
 
-          {/* --- ستون ۳: کارت تأمین‌کننده --- */}
+          {/* --- Column 3: supplier card --- */}
           <SupplierInfoSection
             productId={data.id}
             supplier={supplierData}
@@ -286,7 +286,7 @@ export default function ProductDetail({
           />
         </div>
 
-        {/* ====== توضیحات کوتاه ====== */}
+        {/* ====== Short description ====== */}
         <div className="product-description-short">
           <h3>About This Product</h3>
           <div className="product-description-short-content">
@@ -315,10 +315,10 @@ export default function ProductDetail({
           </div>
         </div>
 
-        {/* ====== Tabs + فرم ====== */}
+        {/* ====== Tabs + form ====== */}
         <div className="product-detail-bottom">
-          {/* مشخصات پویا (EAV) فقط یک‌جا رندر می‌شوند: داخل تب Specifications
-              در ProductTabs (تا در دو بخش صفحه تکرار نشوند). */}
+          {/* Dynamic attributes (EAV) are rendered in one place only: inside the Specifications
+              tab in ProductTabs (so they are not repeated in two sections of the page). */}
           <ProductTabs product={data} attributes={data.attributes || []} />
 
           {isSupplierRevealed ? (
@@ -522,7 +522,7 @@ export default function ProductDetail({
         }
 
         /* ============================================================
-           ✅ ردیف ۳ ستونی: گالری | اطلاعات | کارت تأمین‌کننده
+           3-column row: gallery | info | supplier card
            ============================================================ */
         .product-detail-row {
           display: grid;
@@ -537,7 +537,7 @@ export default function ProductDetail({
           min-width: 0;
         }
 
-        /* کارت تأمین‌کننده - چسبیده به راست */
+        /* Supplier card - pinned to the right */
         .product-detail-row :global(.supplier-card-wrapper) {
           width: 100%;
           max-width: 300px;
@@ -546,7 +546,7 @@ export default function ProductDetail({
         }
 
         /* ============================================================
-           ✅ اطلاعات محصول (ستون میانی)
+           Product info (middle column)
            ============================================================ */
         .product-info-wrapper {
           width: 100%;
@@ -630,7 +630,7 @@ export default function ProductDetail({
         }
 
         /* ============================================================
-           ✅ مشخصات — دو ستونی داخل ستون میانی
+           Specifications — two columns inside the middle column
            ============================================================ */
         .product-specs-grid {
           display: grid;
@@ -879,7 +879,7 @@ export default function ProductDetail({
            Responsive
            ============================================================ */
 
-        /* تبلت بزرگ */
+        /* Large tablet */
         @media (max-width: 1200px) {
           .product-detail-row {
             grid-template-columns: 280px minmax(0, 1fr) 280px;
@@ -895,7 +895,7 @@ export default function ProductDetail({
           }
         }
 
-        /* تبلت: کارت می‌ره زیر */
+        /* Tablet: the card moves below */
         @media (max-width: 1000px) {
           .product-detail-row {
             grid-template-columns: 300px minmax(0, 1fr);
@@ -908,7 +908,7 @@ export default function ProductDetail({
           }
         }
 
-        /* موبایل: تک‌ستونه */
+        /* Mobile: single column */
         @media (max-width: 768px) {
           .product-detail-row {
             grid-template-columns: 1fr;

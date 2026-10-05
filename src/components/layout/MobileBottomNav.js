@@ -43,8 +43,8 @@ export default function MobileBottomNav() {
     useEffect(() => {
         const handleScroll = () => {
             const current = window.scrollY;
-            // اگه به پایین اسکرول کرد → مخفی
-            // اگه به بالا اسکرول کرد → نمایش
+            // Scrolling down → hide
+            // Scrolling up → show
             if (current > lastScroll && current > 100) {
                 setHidden(true);
             } else {
@@ -56,7 +56,7 @@ export default function MobileBottomNav() {
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, [lastScroll]);
-    // آیا مسیر فعلی با آیتم مطابقت داره؟
+    // Does the current path match the item?
     const isActive = (item) => {
         if (!pathname) return false;
         if (item.matchExact) return pathname === item.href;
@@ -64,7 +64,7 @@ export default function MobileBottomNav() {
         return false;
     };
 
-    // آیتم پنجم: بر اساس وضعیت لاگین
+    // Fifth item: based on the login status
     const accountItem =
         status === "authenticated"
             ? {

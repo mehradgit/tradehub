@@ -34,7 +34,7 @@ export default function ItemPickerModal({
 
         setResults(data.items || []);
 
-        // cache کن
+        // cache it
         const newCache = { ...itemCache };
         for (const item of data.items || []) {
           newCache[item.id] = item;

@@ -15,7 +15,7 @@ export default function SupportClient({ tickets = [], counts }) {
 
     // Tab filter
     if (activeTab === "open") {
-      // "Open" یعنی همه فعال‌ها
+      // "Open" means all active tickets
       list = list.filter((t) =>
         ["open", "in_progress", "waiting_user"].includes(t.status)
       );

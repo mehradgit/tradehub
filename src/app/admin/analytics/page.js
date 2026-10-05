@@ -11,7 +11,7 @@ export default async function AdminAnalyticsPage() {
   const session = await auth();
   if (!session?.user?.isAdmin) redirect("/dashboard");
 
-  // محاسبه آمار کلیدی
+  // Compute the key statistics
   const [
     userCount,
     supplierCount,

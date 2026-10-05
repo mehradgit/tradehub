@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 
 // ============================================================
-// دسته‌بندی‌های پیش‌فرض
+// Default categories
 // ============================================================
 export const NOTIFICATION_CATEGORIES = [
   {
@@ -65,7 +65,7 @@ export const NOTIFICATION_CATEGORIES = [
 ];
 
 // ============================================================
-// دریافت تنظیمات کاربر (با ایجاد پیش‌فرض در صورت نبود)
+// Get user preferences (creating defaults if none exist)
 // ============================================================
 export async function getOrCreatePreferences(userId, category) {
   const existing = await prisma.notificationPreference.findUnique({
@@ -92,9 +92,9 @@ export async function getOrCreatePreferences(userId, category) {
       },
     });
   } catch (err) {
-    // ✅ مسابقه‌ی همزمانی: بین findUnique و create، رکورد توسط
-    //    درخواست دیگری ساخته شده. اگر این خطا را مدیریت نکنیم،
-    //    کل action در eventService سرکوب می‌شود و نوتیفیکیشن گم می‌شود.
+    // ✅ Concurrency race: between findUnique and create the record was
+    //    created by another request. If we do not handle this error, the
+    //    whole action in eventService is suppressed and the notification is lost.
     if (err.code === "P2002") {
       return prisma.notificationPreference.findUnique({
         where: { userId_category: { userId, category } },
@@ -105,7 +105,7 @@ export async function getOrCreatePreferences(userId, category) {
 }
 
 // ============================================================
-// دریافت همه تنظیمات کاربر
+// Get all user preferences
 // ============================================================
 export async function getAllPreferences(userId) {
   const existing = await prisma.notificationPreference.findMany({
@@ -136,7 +136,7 @@ export async function getAllPreferences(userId) {
 }
 
 // ============================================================
-// به‌روزرسانی یک دسته
+// Update a single category
 // ============================================================
 export async function updatePreference(userId, category, updates) {
   return prisma.notificationPreference.upsert({

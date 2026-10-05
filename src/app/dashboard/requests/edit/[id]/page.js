@@ -26,7 +26,7 @@ export default async function EditRequestPage({ params }) {
     notFound();
   }
 
-  // فقط مالک می‌تواند ویرایش کند
+  // Only the owner can edit
   if (request.userId !== session.user.id) {
     redirect("/dashboard/requests");
   }

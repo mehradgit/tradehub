@@ -15,7 +15,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // جلوگیری از اسکرول پس‌زمینه هنگام باز بودن مودال
+  // Prevent background scrolling while the modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -29,7 +29,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
 
   if (!isOpen) return null;
 
-  // ====== لاگین با ایمیل و رمز عبور ======
+  // ====== Sign in with email and password ======
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -46,10 +46,10 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
       setLoading(false);
     } else {
       toast.success("Logged in successfully!");
-      await update(); // به‌روزرسانی session
+      await update(); // refresh the session
       onClose();
       setLoading(false);
-      // بازگشت به صفحه قبلی
+      // Return to the previous page
       if (redirectUrl) {
         window.location.href = redirectUrl;
       } else {
@@ -58,14 +58,14 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
     }
   };
 
-  // ====== لاگین با Google ======
+  // ====== Sign in with Google ======
   const handleGoogleLogin = async () => {
-    // ✅ برای گوگل، callbackUrl را به redirectUrl یا صفحه قبلی تنظیم کنید
+    // ✅ For Google, set callbackUrl to redirectUrl or the previous page
     const callbackUrl = redirectUrl || window.location.pathname;
     await signIn("google", { callbackUrl });
   };
 
-  // ====== بستن با کلیک روی پس‌زمینه ======
+  // ====== Close on backdrop click ======
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -107,7 +107,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
           position: "relative",
         }}
       >
-        {/* دکمه بستن */}
+        {/* Close button */}
         <button
           onClick={onClose}
           style={{
@@ -135,7 +135,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
           <i className="fas fa-times"></i>
         </button>
 
-        {/* هدر */}
+        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <h3
             style={{
@@ -153,7 +153,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
           </p>
         </div>
 
-        {/* فرم ورود */}
+        {/* Login form */}
         <form
           onSubmit={handleLogin}
           style={{ display: "flex", flexDirection: "column", gap: "14px" }}
@@ -268,7 +268,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
           </button>
         </form>
 
-        {/* جداکننده */}
+        {/* Divider */}
         <div
           style={{
             display: "flex",
@@ -285,7 +285,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
           <div style={{ flex: 1, height: "1px", background: "#e8e2da" }}></div>
         </div>
 
-        {/* دکمه Google */}
+        {/* Google button */}
         <button
           onClick={handleGoogleLogin}
           style={{
@@ -321,7 +321,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
           Continue with Google
         </button>
 
-        {/* لینک ثبت‌نام */}
+        {/* Register link */}
         <div
           style={{
             textAlign: "center",
@@ -351,7 +351,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
         </div>
       </div>
 
-      {/* انیمیشن‌ها */}
+      {/* Animations */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -373,7 +373,7 @@ export default function LoginModal({ isOpen, onClose, redirectUrl }) {
         .login-modal-overlay {
           animation: fadeIn 0.3s ease;
         }
-        /* اسکرول‌بار برای محتوای طولانی */
+        /* Scrollbar for long content */
         .login-modal::-webkit-scrollbar {
           width: 4px;
         }

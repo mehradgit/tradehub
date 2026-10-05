@@ -1,7 +1,7 @@
 // src/app/api/requests/[id]/approve/route.js
-// ⚠️ توجه: این روت با /api/admin/requests/[id]/approve تکراری است.
-//    پنل ادمین نسخه‌ی admin را صدا می‌زند. این فایل فقط برای
-//    سازگاری عقب‌رو نگه داشته شده و رفتارش یکسان شده است.
+// ⚠️ Note: this route duplicates /api/admin/requests/[id]/approve.
+//    The admin panel calls the admin version. This file is kept only
+//    for backward compatibility, and its behaviour has been made identical.
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse, after } from "next/server";
@@ -57,7 +57,7 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    // ✅ اطلاع به صاحب درخواست از مسیر مرکزی رویداد
+    // ✅ Notify the request owner through the central event route
     after(async () => {
       const result = await dispatchEvent("request.reviewed", {
         requestId: buyingRequest.id,

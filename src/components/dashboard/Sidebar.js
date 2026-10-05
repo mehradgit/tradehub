@@ -40,11 +40,11 @@ export default function Sidebar({ isOpen, onClose }) {
         const subData = await subRes.json();
         const rawName = subData.plan?.name || "Basic";
 
-        // ✅ نرمال‌سازی: "SILVER" / "silver" / "Silver" → "Silver"
+        // Normalise: "SILVER" / "silver" / "Silver" -> "Silver"
         const normalized =
           rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
 
-        // ✅ بررسی که کلید در PLAN_DISPLAY وجود دارد
+        // Check that the key exists in PLAN_DISPLAY
         const validKey = PLAN_DISPLAY[normalized] ? normalized : "Basic";
 
         console.log("🔍 Sidebar plan:", { rawName, normalized, validKey });

@@ -1,10 +1,10 @@
 // src/app/api/vocabularies/route.js
 // ============================================================
-// واژگان کنترل‌شده برای فرم‌ها (عمومی، فقط خواندنی)
+// Controlled vocabularies for forms (public, read-only)
 //
-// فرم‌های ثبت محصول/درخواست/پروفایل از این استفاده می‌کنند تا
-// به‌جای input متنی آزاد، dropdown داشته باشند. این کار باعث
-// می‌شود فیلترها روی داده‌ی تمیز کار کنند.
+// The product / request / profile forms use these to render
+// dropdowns instead of free-text inputs. That keeps the
+// filters working against clean data.
 // ============================================================
 import { NextResponse } from "next/server";
 import {
@@ -17,7 +17,7 @@ export const revalidate = 60;
 
 export async function GET() {
   try {
-    // اگر تنظیمات وجود ندارد، مقادیر پیش‌فرض را یک‌بار بنویس
+    // If the setting does not exist yet, write the defaults once
     await ensureVocabularies();
 
     const vocab = await getVocabularies();

@@ -20,7 +20,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ message: "Inquiry not found" }, { status: 404 });
     }
 
-    // اگر کاربر نه تأمین‌کننده است و نه خریدار، دسترسی ندارد
+    // If the user is neither the supplier nor the buyer, access is denied
     if (inquiry.supplierId !== session.user.id && inquiry.userId !== session.user.id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }

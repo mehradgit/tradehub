@@ -20,7 +20,7 @@ export default function SubmitQuoteModal({
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [permissionModal, setPermissionModal] = useState(null); // ✅ مودال پیام مجوز
+  const [permissionModal, setPermissionModal] = useState(null); // ✅ Permission message modal
   const formRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -41,14 +41,14 @@ export default function SubmitQuoteModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ بررسی مجوز قبل از ارسال
+    // ✅ Check permission before submitting
     if (!session) {
       setIsLoginModalOpen(true);
       return;
     }
 
     if (permission && !permission.allowed) {
-      // نمایش مودال پیام مجوز
+      // Show the permission message modal
       if (permission.reason === "login_required") {
         setIsLoginModalOpen(true);
       } else {
@@ -189,7 +189,7 @@ export default function SubmitQuoteModal({
             onSubmit={handleSubmit}
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           >
-            {/* نام و نام خانوادگی */}
+            {/* First and last name */}
             <div
               style={{
                 display: "grid",
@@ -225,7 +225,7 @@ export default function SubmitQuoteModal({
               </div>
             </div>
 
-            {/* ایمیل و تلفن */}
+            {/* Email and phone */}
             <div
               style={{
                 display: "grid",
@@ -258,7 +258,7 @@ export default function SubmitQuoteModal({
               </div>
             </div>
 
-            {/* مقدار و قیمت */}
+            {/* Quantity and price */}
             <div
               style={{
                 display: "grid",
@@ -294,7 +294,7 @@ export default function SubmitQuoteModal({
               </div>
             </div>
 
-            {/* توضیحات */}
+            {/* Message */}
             <div className="form-group">
               <label className="form-label fw-semibold">Message</label>
               <textarea
@@ -329,14 +329,14 @@ export default function SubmitQuoteModal({
         </div>
       </div>
 
-      {/* ✅ مودال لاگین */}
+      {/* ✅ Login modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         redirectUrl={pathname}
       />
 
-      {/* ✅ مودال پیام مجوز (Upgrade / Quota) */}
+      {/* ✅ Permission message modal (Upgrade / Quota) */}
       {permissionModal && (
         <div
           className="modal-overlay"
@@ -349,7 +349,7 @@ export default function SubmitQuoteModal({
             bottom: 0,
             background: "rgba(0, 0, 0, 0.6)",
             backdropFilter: "blur(6px)",
-            zIndex: 10000, // ✅ بالاتر از SubmitQuoteModal
+            zIndex: 10000, // ✅ Above SubmitQuoteModal
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

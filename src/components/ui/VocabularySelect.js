@@ -6,13 +6,13 @@ import { useVocabulary } from "@/hooks/useVocabularies";
 import { parseList, joinList } from "@/lib/filters/params";
 
 // ============================================================
-// انتخاب از واژگان کنترل‌شده
+// Selection from controlled vocabularies
 //
-// • single  → یک <select> (مقدار: رشته)
-// • multiple→ چیپ‌های قابل حذف (مقدار: رشته‌ی جدا‌شده با کاما)
+// • single  → one <select> (value: string)
+// • multiple→ removable chips (value: comma-separated string)
 //
-// ذخیره به‌صورت «a,b,c» عمدی است: ستون‌های فعلی دیتابیس رشته‌اند
-// و فیلتر از matchMode:"contains" استفاده می‌کند، پس سازگار می‌ماند.
+// Storing as "a,b,c" is intentional: the current database columns are strings
+// and the filter uses matchMode:"contains", so it stays compatible.
 // ============================================================
 export default function VocabularySelect({
   vocabKey,
@@ -42,7 +42,7 @@ export default function VocabularySelect({
   };
 
   // ============================================================
-  // تک‌مقداری
+  // Single value
   // ============================================================
   if (!multiple) {
     const isCustomValue =
@@ -61,7 +61,7 @@ export default function VocabularySelect({
         >
           <option value="">{placeholder}</option>
 
-          {/* مقدار فعلی که در لیست نیست (داده‌ی قدیمی) را نشان بده */}
+          {/* Show the current value that is not in the list (legacy data) */}
           {isCustomValue && <option value={value}>{value}</option>}
 
           {options.map((o) => (
@@ -86,7 +86,7 @@ export default function VocabularySelect({
   }
 
   // ============================================================
-  // چندمقداری (رشته‌ی جدا‌شده با کاما)
+  // Multiple values (comma-separated string)
   // ============================================================
   const selected = parseList(value);
   const remaining = options.filter(
@@ -111,7 +111,7 @@ export default function VocabularySelect({
 
   return (
     <div>
-      {/* چیپ‌های انتخاب‌شده */}
+      {/* Selected chips */}
       {selected.length > 0 && (
         <div
           className="d-flex flex-wrap gap-2 mb-2"
@@ -152,7 +152,7 @@ export default function VocabularySelect({
         </div>
       )}
 
-      {/* افزودن از لیست */}
+      {/* Add from the list */}
       {remaining.length > 0 && (
         <select
           id={id}
@@ -174,7 +174,7 @@ export default function VocabularySelect({
         </select>
       )}
 
-      {/* افزودن مقدار دلخواه */}
+      {/* Add a custom value */}
       {allowCustom && (
         <div className="input-group mt-2">
           <input
