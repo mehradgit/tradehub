@@ -121,7 +121,7 @@ export default function ProductAttributesFields({
           );
         }
 
-        // ---------- چند انتخابی ----------
+        // ---------- Multi-select ----------
         if (attr.dataType === "multiSelect") {
           const list = Array.isArray(value) ? value : [];
           const options = Array.isArray(attr.options) ? attr.options : [];
@@ -172,7 +172,7 @@ export default function ProductAttributesFields({
           );
         }
 
-        // ---------- انتخابی تک‌مقداری ----------
+        // ---------- Single-value select ----------
         if (attr.dataType === "select") {
           const options = Array.isArray(attr.options) ? attr.options : [];
           return (
@@ -200,7 +200,7 @@ export default function ProductAttributesFields({
           );
         }
 
-        // ---------- عدد ----------
+        // ---------- Number ----------
         if (attr.dataType === "number") {
           return (
             <div className="col-md-4" key={attr.id}>

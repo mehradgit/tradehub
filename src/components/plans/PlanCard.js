@@ -15,14 +15,14 @@ export default function PlanCard({ plan, isCurrentPlan }) {
     }
 
     if (isCurrentPlan) {
-      // کاربر در این پلن است
+      // The user is already on this plan
       alert(`You are already on the ${plan.name} plan.`);
       return;
     }
 
-    // درخواست ارتقا/تغییر پلن
+    // Request a plan upgrade/change
     alert(`Upgrading to ${plan.name} plan...`);
-    // در عمل، به API /api/user/upgrade ارسال می‌شود
+    // In practice, this is sent to the /api/user/upgrade API
   };
 
   return (

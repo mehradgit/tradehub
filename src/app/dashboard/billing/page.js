@@ -26,10 +26,10 @@ export default async function BillingPage({ searchParams }) {
   const limit = 15;
   const skip = (page - 1) * limit;
 
-  // ====== وضعیت اشتراک فعال ======
+  // ====== Active subscription status ======
   const { plan, subscription } = await getUserActivePlan(userId);
 
-  // ====== فیلتر پرداخت‌ها ======
+  // ====== Payment filters ======
   const where = { userId };
   if (status && status !== "all") where.status = status;
   if (search) {
@@ -60,7 +60,7 @@ export default async function BillingPage({ searchParams }) {
   const totalPaid = Number(totalPaidAgg._sum.amount || 0);
   const totalPages = Math.ceil(totalCount / limit);
 
-  // ====== روزهای باقی‌مانده ======
+  // ====== Remaining days ======
   const daysRemaining = subscription
     ? Math.max(
         0,

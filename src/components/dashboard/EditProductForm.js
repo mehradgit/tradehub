@@ -624,7 +624,7 @@ export default function EditProductForm({ product }) {
           </section>
 
           {/* ============================================================
-             SECTION 4: Images - با محدودیت هوشمند
+             SECTION 4: Images - with a smart limit
              ============================================================ */}
           <section className="ep-card">
             <div className="ep-card-head">

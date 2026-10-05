@@ -18,7 +18,7 @@ export default async function CheckoutPage({ searchParams }) {
     redirect("/plans");
   }
 
-  // ====== دریافت پلن و قیمت ======
+  // ====== Fetch the plan and the price ======
   const [plan, price, user] = await Promise.all([
     prisma.plan.findUnique({ where: { id: planId } }),
     prisma.planPrice.findUnique({
@@ -44,7 +44,7 @@ export default async function CheckoutPage({ searchParams }) {
     redirect("/plans");
   }
 
-  // ====== چک کردن اطلاعات پروفایل ======
+  // ====== Check the profile information ======
   const requiredFields = [
     {
       key: "name",
