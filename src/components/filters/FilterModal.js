@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import FilterField, { DynamicAttributeField } from "./FilterField";
+import CountryFlag from "@/components/ui/CountryFlag";
 
 // ============================================================
 // مدال فیلترها — دو سطح
@@ -191,6 +192,22 @@ export default function FilterModal({
     return "";
   };
 
+  // کد کشورهای انتخاب‌شده — برای نمایش پرچم در ردیف سطح ۱
+  // (فقط وقتی گزینه‌ها کد دارند، یعنی فیلتر کشور)
+  const flagCodes = (row) => {
+    if (row.kind !== "field") return [];
+    const list = options[row.field.name] || row.field.options || [];
+    if (!list.some((o) => o.code)) return [];
+
+    const cur = draft[row.field.name];
+    const vals = Array.isArray(cur) ? cur : cur ? [cur] : [];
+
+    return vals
+      .map((v) => list.find((o) => String(o.value) === String(v))?.code)
+      .filter(Boolean)
+      .slice(0, 5);
+  };
+
   const setDraftValue = (name, v) =>
     setDraft((d) => {
       const next = { ...d };
@@ -335,6 +352,15 @@ export default function FilterModal({
                     <span style={S.rowText}>
                       <b style={S.rowTitle}>{row.label}</b>
                       <small style={rowSummary(row) ? S.rowValueSet : S.rowValue}>
+                        {/* پرچم کشورهای انتخاب‌شده */}
+                        {flagCodes(row).map((c) => (
+                          <CountryFlag
+                            key={c}
+                            countryCode={c}
+                            size="14px"
+                            className="me-1"
+                          />
+                        ))}
                         {rowSummary(row) || "Any"}
                       </small>
                     </span>

@@ -65,7 +65,11 @@ export default function HeaderSearch() {
     if (!schema) return out;
     for (const f of schema.fields) {
       if (f.optionsFrom === "countries") {
-        out[f.name] = (countries || []).map((c) => ({ value: c.name, label: c.name }));
+        out[f.name] = (countries || []).map((c) => ({
+          value: c.name,
+          label: c.name,
+          code: c.code,
+        }));
       } else if (f.optionsFrom) {
         out[f.name] = vocabularies?.[f.optionsFrom] || [];
       } else if (f.type === "sort") {

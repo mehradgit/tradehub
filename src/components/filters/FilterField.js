@@ -1,7 +1,13 @@
 // src/components/filters/FilterField.js
 "use client";
 
+import { useState } from "react";
 import CategoryCascader from "./CategoryCascader";
+import CountryFlag from "@/components/ui/CountryFlag";
+
+// آستانه‌ی نمایش کادر جست‌وجو: لیست‌های بلند (کشورها ~۲۰۰ مورد)
+// بدون جست‌وجو غیرقابل‌استفاده‌اند، ولی برای ۳ گزینه لازم نیست.
+const SEARCH_THRESHOLD = 8;
 
 const inputStyle = {
   width: "100%",
@@ -25,6 +31,38 @@ const optionRowStyle = {
   color: "var(--text)",
 };
 
+// ===== کادر جست‌وجوی داخل لیست گزینه‌ها =====
+const listSearchStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  border: "1px solid var(--line)",
+  borderRadius: "8px",
+  padding: "7px 10px",
+  marginBottom: "7px",
+  background: "#fff",
+};
+
+const listSearchInputStyle = {
+  flex: 1,
+  border: 0,
+  outline: 0,
+  background: "transparent",
+  fontSize: "11.5px",
+  fontFamily: "inherit",
+  color: "var(--text)",
+  minWidth: 0,
+};
+
+const listClearStyle = {
+  border: 0,
+  background: "transparent",
+  color: "var(--muted)",
+  cursor: "pointer",
+  padding: 0,
+  lineHeight: 1,
+};
+
 function OptionCount({ count }) {
   if (count === undefined || count === null) return null;
   return (
@@ -33,9 +71,15 @@ function OptionCount({ count }) {
 }
 
 // ============================================================
-// لیست چک‌باکسی با شمارش (facet)
+// لیست چک‌باکسی با شمارش (facet) + جست‌وجو + پرچم
+//
+// • لیست‌های بلند (کشورها) بدون جست‌وجو غیرقابل‌استفاده‌اند
+// • گزینه‌ای که code دارد (کشور) پرچم هم نشان می‌دهد
+// • گزینه‌های انتخاب‌شده حتی وقتی با عبارت جست‌وجو نمی‌خوانند
+//   دیده می‌شوند تا کاربر بتواند حذفشان کند
 // ============================================================
 function MultiSelectList({ options = [], value = [], onChange, counts = {} }) {
+  const [term, setTerm] = useState("");
   const selected = Array.isArray(value) ? value : [];
   const selectedSet = new Set(selected.map(String));
 
@@ -55,32 +99,84 @@ function MultiSelectList({ options = [], value = [], onChange, counts = {} }) {
     );
   }
 
+  const q = term.trim().toLowerCase();
+  const shown = q
+    ? options.filter(
+        (o) =>
+          String(o.label ?? o.value).toLowerCase().includes(q) ||
+          selectedSet.has(String(o.value))
+      )
+    : options;
+
   return (
-    <div
-      style={{
-        maxHeight: "190px",
-        overflowY: "auto",
-        border: "1px solid var(--line)",
-        borderRadius: "8px",
-        padding: "7px 10px",
-        background: "#fff",
-      }}
-    >
-      {options.map((opt) => {
-        const v = String(opt.value);
-        const count = counts?.[v];
-        return (
-          <label key={v} style={optionRowStyle}>
-            <input
-              type="checkbox"
-              checked={selectedSet.has(v)}
-              onChange={() => toggle(v)}
-            />
-            <span style={{ flex: 1 }}>{opt.label ?? opt.value}</span>
-            <OptionCount count={count} />
-          </label>
-        );
-      })}
+    <div>
+      {options.length >= SEARCH_THRESHOLD && (
+        <div style={listSearchStyle}>
+          <i
+            className="fa-solid fa-magnifying-glass"
+            style={{ color: "#9aa8a3", fontSize: "11px" }}
+          ></i>
+          <input
+            type="search"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            placeholder="Search…"
+            aria-label="Search options"
+            style={listSearchInputStyle}
+          />
+          {term && (
+            <button
+              type="button"
+              onClick={() => setTerm("")}
+              aria-label="Clear search"
+              style={listClearStyle}
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          )}
+        </div>
+      )}
+
+      <div
+        style={{
+          maxHeight: "230px",
+          overflowY: "auto",
+          border: "1px solid var(--line)",
+          borderRadius: "8px",
+          padding: "7px 10px",
+          background: "#fff",
+        }}
+      >
+        {shown.length === 0 ? (
+          <p style={{ fontSize: "11px", color: "var(--muted)", margin: "6px 2px" }}>
+            No match for “{term}”.
+          </p>
+        ) : (
+          shown.map((opt) => {
+            const v = String(opt.value);
+            const count = counts?.[v];
+            return (
+              <label key={v} style={optionRowStyle}>
+                <input
+                  type="checkbox"
+                  checked={selectedSet.has(v)}
+                  onChange={() => toggle(v)}
+                />
+                {/* پرچم — فقط وقتی گزینه کد کشور دارد */}
+                {opt.code && <CountryFlag countryCode={opt.code} size="18px" />}
+                <span style={{ flex: 1 }}>{opt.label ?? opt.value}</span>
+                <OptionCount count={count} />
+              </label>
+            );
+          })
+        )}
+      </div>
+
+      {selected.length > 0 && (
+        <p style={{ fontSize: "10px", color: "var(--muted)", margin: "5px 0 0" }}>
+          {selected.length} selected
+        </p>
+      )}
     </div>
   );
 }

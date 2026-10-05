@@ -465,7 +465,7 @@ FilterBar همان صفحه (داده‌ی سرور را دارد) → مدال 
 | `src/components/layout/HeaderSearch.js` | فیلد کوچک + نوار مگا + انتخابگر حوزه + مرتب‌سازی |
 | `src/components/filters/FilterModal.js` | مدال سطح ۱ و ۲ (`summarizeField` هم اینجاست) |
 | `src/components/filters/FilterBar.js` | فیلد مصنوعی + دکمه Filters + چیپ‌ها + مدال |
-| `src/components/filters/FilterField.js` | رندرکننده‌ی هر نوع فیلد (بدون تغییر منطقی) |
+| `src/components/filters/FilterField.js` | رندرکننده‌ی هر نوع فیلد؛ لیست‌های بلند **کادر جست‌وجو** دارند و گزینه‌های دارای `code` (کشورها) **پرچم** نشان می‌دهند |
 
 > `src/components/filters/FilterSheet.js` دیگر استفاده نمی‌شود (کشویی
 > قدیمی) و `src/components/{product/ProductFilterBar,requests/FilterBar,
