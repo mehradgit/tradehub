@@ -12,7 +12,13 @@ import { FILTER_SCHEMAS } from "./schemas";
 
 function countryOptions() {
   return (countries || [])
-    .map((c) => ({ value: c.name, label: c.name }))
+    .map((c) => ({
+      // مقدار ذخیره‌شده در دیتابیس **نام** کشور است (نه کد)
+      value: c.name,
+      label: c.name,
+      // کد فقط برای نمایش پرچم در لیست فیلتر استفاده می‌شود
+      code: c.code,
+    }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
