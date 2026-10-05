@@ -1,23 +1,23 @@
 // src/lib/schedulerService.js
 // ============================================================
-// موتور زمان‌بندی
+// Scheduling engine
 //
-// یک endpoint واحد (/api/cron/tick) هر دقیقه صدا زده می‌شود و
-// این سرویس تصمیم می‌گیرد کدام job ها «سررسیده»اند.
+// A single endpoint (/api/cron/tick) is called every minute and
+// this service decides which jobs are "due".
 //
-// قفل: هر job با یک updateMany شرطی «رزرو» می‌شود؛ فقط برنده‌ی
-// رزرو اجرا می‌کند. این کار حتی با چند نمونه‌ی همزمان اپ هم
-// از اجرای تکراری جلوگیری می‌کند.
+// Locking: each job is "claimed" with a conditional updateMany; only the
+// winner of the claim runs it. This prevents duplicate execution even
+// when several instances of the app run at the same time.
 // ============================================================
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_JOBS, JOB_HANDLERS, runJobHandler } from "@/lib/jobHandlers";
 import { parseCron, matchesCron, getNextRunAt } from "@/lib/cronExpression";
 
-// اگر یک اجرا بیش از این مدت «running» بماند، مرده فرض می‌شود
+// If a run stays "running" longer than this, it is assumed dead
 const STALE_RUN_MS = 10 * 60 * 1000;
 
 // ============================================================
-// ساخت job های پیش‌فرض (idempotent)
+// Create the default jobs (idempotent)
 // ============================================================
 export async function ensureDefaultJobs() {
   if (DEFAULT_JOBS.length === 0) return;
@@ -27,13 +27,13 @@ export async function ensureDefaultJobs() {
       skipDuplicates: true,
     });
   } catch (err) {
-    // اگر جدول روی این دیتابیس وجود نداشت، اینجا نباید کل tick بشکند
+    // If the table does not exist on this database, the whole tick must not break here
     console.error("[scheduler] ensureDefaultJobs failed:", err.message);
   }
 }
 
 // ============================================================
-// لیست job ها + وضعیت محاسبه‌شده (برای پنل ادمین)
+// List of jobs + computed status (for the admin panel)
 // ============================================================
 export async function getJobsWithStatus() {
   await ensureDefaultJobs();
@@ -67,12 +67,12 @@ export async function getJobsWithStatus() {
 }
 
 // ============================================================
-// اجرای job های سررسیده
+// Run the due jobs
 //
 // options:
-//   jobId          → فقط همین job
-//   force          → بدون توجه به زمان‌بندی (برای «Run now»)
-//   includeInactive→ اجرای job غیرفعال (فقط برای Run now)
+//   jobId          → only this job
+//   force          → ignore the schedule (used for "Run now")
+//   includeInactive→ also run an inactive job (only for Run now)
 // ============================================================
 export async function runDueJobs(now = new Date(), options = {}) {
   const { jobId = null, force = false, includeInactive = false } = options;
@@ -96,7 +96,7 @@ export async function runDueJobs(now = new Date(), options = {}) {
   const results = [];
 
   for (const job of jobs) {
-    // ===== اعتبارسنجی زمان‌بندی =====
+    // ===== Schedule validation =====
     const parsed = parseCron(job.cronExpression);
     if (!parsed.ok) {
       results.push({
@@ -108,9 +108,9 @@ export async function runDueJobs(now = new Date(), options = {}) {
 
     if (!force && !matchesCron(parsed, now)) continue;
 
-    // ===== قفل اتمیک =====
-    // محافظ ۱: اجرای همزمان + بازیابی اجرای گیرکرده
-    //   (lastRunStatus ممکن است NULL باشد، پس صریح چک می‌شود)
+    // ===== Atomic lock =====
+    // Guard 1: concurrent runs + recovery of a stuck run
+    //   (lastRunStatus may be NULL, so it is checked explicitly)
     const guards = [
       {
         OR: [
@@ -121,7 +121,7 @@ export async function runDueJobs(now = new Date(), options = {}) {
       },
     ];
 
-    // محافظ ۲: در حالت خودکار، در همان دقیقه دوباره اجرا نشود
+    // Guard 2: in automatic mode, do not run again within the same minute
     if (!force) {
       guards.push({
         OR: [{ lastRunAt: null }, { lastRunAt: { lt: minuteStart } }],
@@ -146,7 +146,7 @@ export async function runDueJobs(now = new Date(), options = {}) {
       continue;
     }
 
-    // ===== اجرا =====
+    // ===== Execution =====
     const outcome = await runJobHandler(job.handlerKey);
 
     try {
@@ -176,7 +176,7 @@ export async function runDueJobs(now = new Date(), options = {}) {
 }
 
 // ============================================================
-// اجرای فوری یک job (از پنل ادمین)
+// Run a job immediately (from the admin panel)
 // ============================================================
 export async function runJobNow(id) {
   const job = await prisma.scheduledJob.findUnique({ where: { id } });
@@ -207,7 +207,7 @@ export async function runJobNow(id) {
 }
 
 // ============================================================
-// ساخت job جدید در دیتابیس (برای job هایی که در کد اضافه شده‌اند)
+// Create a new job in the database (for jobs added in code)
 // ============================================================
 export async function syncJobDefinitions() {
   await ensureDefaultJobs();

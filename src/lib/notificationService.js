@@ -1,7 +1,7 @@
 // src/lib/notificationService.js
 import { prisma } from "@/lib/prisma";
 import { sendWebPushToUser } from "./pushService";
-// ====== انواع نوتیفیکیشن ======
+// ====== Notification types ======
 export const NOTIFICATION_TYPES = {
   // Products
   PRODUCT_APPROVED: "product_approved",
@@ -23,7 +23,7 @@ export const NOTIFICATION_TYPES = {
   SUBSCRIPTION_ACTIVATED: "subscription_activated",
 };
 
-// ====== آیکون پیش‌فرض برای هر نوع ======
+// ====== Default icon for each type ======
 const TYPE_ICONS = {
   product_approved: "fa-check-circle",
   product_rejected: "fa-times-circle",
@@ -39,8 +39,8 @@ const TYPE_ICONS = {
   subscription_activated: "fa-crown",
 };
 
-// ====== تابع اصلی: ساخت نوتیفیکیشن ======
-// ⚠️ همیشه fire-and-forget (await نمی‌شود)
+// ====== Main function: create a notification ======
+// ⚠️ Always fire-and-forget (never awaited)
 export async function createNotification({
   userId,
   type,
@@ -74,10 +74,10 @@ export async function createNotification({
       },
     });
 
-    // ✅ ارسال Web Push (fire-and-forget)
-    // وقتی از eventService صدا زده می‌شویم، پوش همان‌جا و بر اساس
-    // ترجیحات کاربر مدیریت می‌شود، پس skipPush=true می‌آید تا
-    // نوتیفیکیشن تکراری ارسال نشود.
+    // ✅ Send Web Push (fire-and-forget)
+    // When this is called from eventService, the push is handled there and
+    // managed according to the user's preferences, so skipPush=true is passed
+    // in order to avoid sending a duplicate notification.
     if (!skipPush) {
       sendWebPushToUser(userId, {
         title: notification.title,
@@ -97,7 +97,7 @@ export async function createNotification({
   }
 }
 
-// ====== تابع bulk: برای چند کاربر ======
+// ====== Bulk function: for multiple users ======
 export async function createBulkNotifications({
   userIds,
   type,
@@ -126,7 +126,7 @@ export async function createBulkNotifications({
   }
 }
 
-// ====== helper: ارسال به همه‌ی ادمین‌ها ======
+// ====== helper: send to all admins ======
 export async function notifyAllAdmins({
   type,
   title,

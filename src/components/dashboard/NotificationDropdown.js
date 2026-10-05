@@ -16,7 +16,7 @@ export default function NotificationDropdown({
   const [unreadCount, setUnreadCount] = useState(0);
   const wrapperRef = useRef(null);
 
-  // ====== بستن با کلیک بیرون ======
+  // ====== Close on outside click ======
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -36,7 +36,7 @@ export default function NotificationDropdown({
     };
   }, [isOpen, onClose]);
 
-  // ====== دریافت لیست ======
+  // ====== Fetch the list ======
   useEffect(() => {
     if (!isOpen) return;
 

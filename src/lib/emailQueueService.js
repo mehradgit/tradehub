@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // ============================================================
-// افزودن ایمیل به صف
+// Add an email to the queue
 // ============================================================
 export async function queueEmail({
   userId = null,
@@ -39,7 +39,7 @@ export async function queueEmail({
     let finalHtml = htmlBody;
     let finalText = textBody;
 
-    // اگر templateKey داریم و subject/htmlBody پاس نشده، از قالب استفاده کن
+    // If we have a templateKey and subject/htmlBody were not passed, use the template
     if (templateKey && (!finalSubject || !finalHtml)) {
       const rendered = await renderEmail(templateKey, variables);
       if (!rendered) {
@@ -67,8 +67,8 @@ export async function queueEmail({
       },
     });
 
-    // محتوای ایمیل را در metadata موقت ذخیره می‌کنیم تا worker از آن استفاده کند
-    // (به‌جای ستون جدا، برای سادگی فاز ۱)
+    // We temporarily store the email content in metadata so the worker can use it
+    // (instead of a separate column, to keep phase 1 simple)
     await prisma.emailLog.update({
       where: { id: log.id },
       data: {
@@ -88,9 +88,9 @@ export async function queueEmail({
 }
 
 // ============================================================
-// پردازش صف (batch)
-// options.ids — اگر بدهی، فقط همان ردیف‌ها پردازش می‌شوند
-// (برای retry دستی از پنل ادمین)
+// Process the queue (batch)
+// options.ids — if provided, only those rows are processed
+// (for manual retry from the admin panel)
 // ============================================================
 export async function processEmailQueue(limit = 30, options = {}) {
   const { ids = null } = options;
@@ -154,7 +154,7 @@ export async function processEmailQueue(limit = 30, options = {}) {
 }
 
 // ============================================================
-// مدیریت خطا و retry
+// Error handling and retry
 // ============================================================
 async function handleFailure(log, errorMessage) {
   const newRetryCount = log.retryCount + 1;
@@ -199,12 +199,11 @@ async function markPermanentlyFailed(id, errorMessage) {
 }
 
 // ============================================================
-// retry دستی یک ایمیل (از پنل ادمین)
+// Manually retry a single email (from the admin panel)
 //
-// فقط ردیف‌هایی قابل retry هستند که محتوای رندرشده‌شان ذخیره
-// شده باشد (metadata._html). اگر رندر اولیه شکست خورده باشد
-// (مثلاً قالب وجود نداشته)، retry بی‌فایده است و پیام روشن
-// برگردانده می‌شود.
+// Only rows whose rendered content was stored (metadata._html) can be
+// retried. If the initial render failed (for example the template did not
+// exist), retrying is pointless and a clear message is returned.
 // ============================================================
 export async function retryEmailLog(id) {
   const log = await prisma.emailLog.findUnique({ where: { id } });
@@ -244,7 +243,7 @@ export async function retryEmailLog(id) {
 }
 
 // ============================================================
-// retry دستی همه‌ی ایمیل‌های ناموفق (failed + permanently_failed)
+// Manually retry all failed emails (failed + permanently_failed)
 // ============================================================
 export async function retryAllFailedEmails(batchSize = 20) {
   const failed = await prisma.emailLog.findMany({
@@ -256,7 +255,7 @@ export async function retryAllFailedEmails(batchSize = 20) {
     take: batchSize,
   });
 
-  // ✅ فیلتر کردن در JS — فیلتر null روی ستون Json در Prisma شکننده است
+  // ✅ Filtering in JS — filtering on null for a Json column in Prisma is fragile
   const retryable = failed.filter((l) => l.metadata?._html);
 
   if (retryable.length === 0) {
@@ -281,9 +280,9 @@ export async function retryAllFailedEmails(batchSize = 20) {
 }
 
 // ============================================================
-// ارسال ایمیل تستی از پنل ادمین
-// قالب را با متغیرهای نمونه رندر می‌کند و فوراً می‌فرستد تا
-// ادمین بتواند SMTP و قالب را قبل از رویداد واقعی بررسی کند.
+// Send a test email from the admin panel
+// Renders the template with sample variables and sends it immediately so the
+// admin can check SMTP and the template before the real event.
 // ============================================================
 export async function sendTestEmail({ toEmail, templateKey, variables }) {
   if (!toEmail) return { ok: false, error: "No recipient email" };

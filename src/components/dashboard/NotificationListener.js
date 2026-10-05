@@ -25,7 +25,7 @@ export default function NotificationListener() {
     };
 
     checkForUpdates();
-    const interval = setInterval(checkForUpdates, 60000); // هر 60 ثانیه
+    const interval = setInterval(checkForUpdates, 60000); // every 60 seconds
 
     return () => clearInterval(interval);
   }, []);

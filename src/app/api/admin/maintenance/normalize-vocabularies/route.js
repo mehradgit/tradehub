@@ -1,35 +1,35 @@
 // src/app/api/admin/maintenance/normalize-vocabularies/route.js
 // ============================================================
-// نرمال‌سازی مقادیر قدیمی واژگان در ردیف‌های موجود
+// Normalise legacy vocabulary values in existing rows
 //
-// فرم‌های قدیمی «رشته‌ی نمایشی» ذخیره می‌کردند:
+// The old forms stored a "display string":
 //     shippingTerms = "FOB (Free On Board)"
 //     paymentTerms  = "T/T"
-// و فرم‌های جدید مقدار استاندارد واژگان را ذخیره می‌کنند:
-//     "FOB" ، "T/T in advance"
+// while the new forms store the canonical vocabulary value:
+//     "FOB", "T/T in advance"
 //
-// فیلترهای فروشگاه با contains کار می‌کنند، پس بعضی فیلترها
-// ردیف‌های قدیمی را پیدا نمی‌کنند ("T/T in advance" ≠ "T/T").
-// این اندپوینت مقادیر قدیمی را به مقدار استاندارد تبدیل می‌کند.
+// The storefront filters use contains, so some filters do not
+// find the old rows ("T/T in advance" ≠ "T/T").
+// This endpoint converts the old values to the canonical value.
 //
-// ورودی (اختیاری، JSON):
+// Input (optional, JSON):
 //   { dryRun: true|false, only: "both" | "requests" | "products" }
-//   پیش‌فرض: dryRun = true  و  only = "both"
-//   یعنی حتی یک فراخوانی بی‌احتیاط هم داده را تغییر نمی‌دهد.
+//   Defaults: dryRun = true  and  only = "both"
+//   so even a careless call does not change any data.
 //
-// خروجی:
+// Output:
 //   { message, dryRun, durationMs, vocabularies: { incoterms: 12, ... },
 //     requests: { scanned, changed, unmatched, samples },
 //     products: { scanned, changed, unmatched, samples } }
 //
-//   scanned   → تعداد ردیف خوانده‌شده
-//   changed   → تعداد ردیفی که (حداقل) یک فیلدش عوض می‌شود/عوض شد
-//   unmatched → تعداد مقادیری که تطبیق پیدا نکردند (دست‌نخورده ماندند)
-//   samples   → حداکثر ۵۰ نمونه؛ after === null یعنی تطبیق‌نشده و
-//               مقدار قبلی حفظ شده است
+//   scanned   → number of rows read
+//   changed   → number of rows where (at least) one field is/was changed
+//   unmatched → number of values that did not match (left untouched)
+//   samples   → at most 50 samples; after === null means unmatched and
+//               the previous value was kept
 //
-// هیچ مقداری حذف یا خالی نمی‌شود؛ مقادیر ناشناخته عیناً می‌مانند و
-// فقط گزارش می‌شوند.
+// No value is deleted or emptied; unknown values stay exactly as they
+// are and are only reported.
 // ============================================================
 export const maxDuration = 300;
 
@@ -44,14 +44,14 @@ import {
   normalizeVocabularyValue,
 } from "@/lib/vocabularies";
 
-// اندازه‌ی هر batch — حافظه و event loop آزاد می‌ماند
+// Size of each batch — keeps memory and the event loop free
 const BATCH_SIZE = 200;
 
-// حداکثر نمونه‌های گزارش‌شده برای هر مدل
+// Maximum number of samples reported per model
 const MAX_SAMPLES = 50;
 
 // ============================================================
-// فیلدهای مورد بررسی
+// Fields to inspect
 // ============================================================
 const REQUEST_FIELDS = [
   { field: "shippingTerms", vocabulary: "incoterms", multi: false },
@@ -68,10 +68,10 @@ const PRODUCT_FIELDS = [
 ];
 
 // ============================================================
-// پارس ورودی
+// Parse the input
 // ============================================================
 
-// فقط false صریح، اجرای واقعی را فعال می‌کند؛ هر چیز دیگری dry-run است
+// Only an explicit false enables a real run; anything else is a dry run
 function parseDryRun(raw) {
   const explicitApply =
     raw === false || raw === 0 || raw === "false" || raw === "0";
@@ -90,12 +90,12 @@ function parseOnly(raw) {
 }
 
 // ============================================================
-// ابزارهای داخلی
+// Internal helpers
 // ============================================================
 
-// آیا رشته در سطح-بالا (بیرون از پرانتز) کاما دارد؟
-// "CIF (Cost, Insurance, Freight)" → نه
-// "FOB (Free On Board), CIF"       → بله (چند مقدار در یک فیلد تک‌مقداری)
+// Does the string contain a top-level comma (outside parentheses)?
+// "CIF (Cost, Insurance, Freight)" → no
+// "FOB (Free On Board), CIF"       → yes (several values in a single-value field)
 function hasTopLevelComma(text) {
   let depth = 0;
 
@@ -111,8 +111,9 @@ function hasTopLevelComma(text) {
   return false;
 }
 
-// جدول alias را با واژگان زنده تطبیق می‌دهد: هر alias که هدفش دیگر
-// در واژگان نیست حذف می‌شود تا هیچ‌وقت مقدار نامعتبر نوشته نشود.
+// Reconciles the alias table against the live vocabularies: any alias whose
+// target is no longer in the vocabularies is dropped, so an invalid value is
+// never written.
 function buildLiveAliases(vocabularies) {
   const live = {};
 
@@ -145,16 +146,16 @@ function addSample(summary, sample) {
 }
 
 // ============================================================
-// پیمایش یک مدل در batch های ۲۰۰ تایی
+// Walk one model in batches of 200
 //
-// حلقه با کورسر پایدار کنترل می‌شود: orderBy: { id: "asc" } و skip.
-// چون هیچ ردیفی حذف/اضافه نمی‌شود (فقط update و آن هم بعد از
-// پیمایش)، ترتیب پایدار است و حلقه قطعاً تمام می‌شود:
-// به‌محض اینکه batch کمتر از BATCH_SIZE باشد، یعنی تمام شده.
+// The loop is driven by a stable cursor: orderBy: { id: "asc" } and skip.
+// Because no row is deleted or added (only updates, and those happen after
+// the walk), the order stays stable and the loop is guaranteed to finish:
+// as soon as a batch is smaller than BATCH_SIZE, we are done.
 // ============================================================
 async function normalizeModel({ model, fields, vocabularies, aliases, dryRun }) {
   const summary = { scanned: 0, changed: 0, unmatched: 0, samples: [] };
-  const pending = []; // ردیف‌هایی که باید به‌روزرسانی شوند
+  const pending = []; // rows that need to be updated
 
   const select = { id: true };
   for (const def of fields) select[def.field] = true;
@@ -189,7 +190,7 @@ async function normalizeModel({ model, fields, vocabularies, aliases, dryRun }) 
       for (const def of fields) {
         const raw = row[def.field];
 
-        // فیلد خالی/ناموجود → رد شود
+        // Empty/missing field → skip
         if (raw === null || raw === undefined) continue;
         const stored = String(raw);
         if (!stored.trim()) continue;
@@ -197,7 +198,7 @@ async function normalizeModel({ model, fields, vocabularies, aliases, dryRun }) 
         const options = vocabularies[def.vocabulary] || [];
         const table = aliases[def.vocabulary] || null;
 
-        // ===== فیلد چندمقداری (CSV) =====
+        // ===== Multi-value field (CSV) =====
         if (def.multi) {
           const outcome = normalizeCsvValue(stored, options, table);
 
@@ -207,11 +208,11 @@ async function normalizeModel({ model, fields, vocabularies, aliases, dryRun }) 
               id: row.id,
               field: def.field,
               before: item,
-              after: null, // دست‌نخورده مانده
+              after: null, // left untouched
             });
           }
 
-          // «تغییر» فقط وقتی که رشته‌ی نرمال‌شده با مقدار ذخیره‌شده فرق کند
+          // A "change" only counts when the normalised string differs from the stored value
           if (!outcome.value || outcome.value === stored) continue;
 
           data[def.field] = outcome.value;
@@ -224,9 +225,9 @@ async function normalizeModel({ model, fields, vocabularies, aliases, dryRun }) 
           continue;
         }
 
-        // ===== فیلد تک‌مقداری =====
-        // اگر چند مقدار با کاما آمده باشد، حدس نمی‌زنیم و دست نمی‌زنیم
-        // تا چیزی از دست نرود (مثلاً "FOB (Free On Board), CIF").
+        // ===== Single-value field =====
+        // If several values are separated by commas we do not guess and we
+        // leave it alone, so nothing is lost (for example "FOB (Free On Board), CIF").
         if (hasTopLevelComma(stored)) {
           summary.unmatched += 1;
           addSample(summary, {
@@ -268,14 +269,14 @@ async function normalizeModel({ model, fields, vocabularies, aliases, dryRun }) 
       }
     }
 
-    // پایان: batch ناقص یعنی آخرین صفحه بود
+    // Done: a partial batch means this was the last page
     if (batch.length < BATCH_SIZE) break;
 
     skip += batch.length;
   }
 
-  // ===== نوشتن (فقط وقتی dry-run نیست) =====
-  // ردیف‌به‌ردیف تا یک ردیف خراب کل اجرا را متوقف نکند.
+  // ===== Write (only when this is not a dry run) =====
+  // Row by row, so one broken row does not stop the whole run.
   let failed = 0;
 
   if (!dryRun) {
@@ -299,24 +300,24 @@ async function normalizeModel({ model, fields, vocabularies, aliases, dryRun }) 
 }
 
 // ============================================================
-// POST — پیش‌نمایش (پیش‌فرض) یا اجرای واقعی
+// POST — preview (default) or a real run
 // ============================================================
 export async function POST(request) {
   const startedAt = Date.now();
 
   try {
-    // ====== دسترسی ادمین ======
+    // ====== Admin access ======
     const session = await auth();
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // ====== ورودی (بدنه اختیاری است) ======
+    // ====== Input (the body is optional) ======
     let body = null;
     try {
       body = await request.json();
     } catch {
-      // بدنه‌ی خالی یا نامعتبر → پیش‌فرض‌ها
+      // Empty or invalid body → use the defaults
       body = null;
     }
 
@@ -325,7 +326,7 @@ export async function POST(request) {
     const doRequests = only === "both" || only === "requests";
     const doProducts = only === "both" || only === "products";
 
-    // ====== واژگان یک‌بار خوانده می‌شود ======
+    // ====== Read the vocabularies once ======
     await ensureVocabularies();
     const vocabularies = await getVocabularies();
 
@@ -334,7 +335,7 @@ export async function POST(request) {
       vocabularyCounts[key] = Array.isArray(options) ? options.length : 0;
     }
 
-    // فقط alias هایی که هدفشان در واژگان زنده وجود دارد
+    // Only the aliases whose target exists in the live vocabularies
     const aliases = buildLiveAliases(vocabularies);
 
     const requests = { scanned: 0, changed: 0, unmatched: 0, samples: [] };
@@ -383,7 +384,7 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // نتیجه
+    // Result
     // ============================================================
     return NextResponse.json({
       message,
@@ -394,7 +395,7 @@ export async function POST(request) {
       products,
     });
   } catch (error) {
-    // پیام داخلی در پاسخ لو نمی‌رود
+    // The internal message is not leaked in the response
     console.error("Normalize vocabularies error:", error);
     return NextResponse.json(
       { message: "Normalisation failed. Check server logs for details." },

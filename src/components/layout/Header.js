@@ -29,7 +29,7 @@ export default function Header() {
   }, []);
 
   // ============================================================
-  // موقعیت dropdown کاربر
+  // User dropdown position
   // ============================================================
   const updateDropdownPosition = () => {
     if (triggerRef.current) {
@@ -42,7 +42,7 @@ export default function Header() {
   };
 
   // ============================================================
-  // موقعیت dropdown Join Free
+  // Join Free dropdown position
   // ============================================================
   const updateJoinMenuPosition = () => {
     if (joinTriggerRef.current) {
@@ -107,7 +107,7 @@ export default function Header() {
   }, [isUserMenuOpen, isJoinMenuOpen]);
 
   // ============================================================
-  // بستن dropdownها هنگام تغییر مسیر
+  // Close the dropdowns when the route changes
   // ============================================================
   useEffect(() => {
     setIsUserMenuOpen(false);
@@ -130,7 +130,7 @@ export default function Header() {
   };
 
   // ============================================================
-  // لینک‌های ناوبری
+  // Navigation links
   // ============================================================
   const navLinks = [
     { href: "/products", label: "Products" },
@@ -141,7 +141,7 @@ export default function Header() {
   ];
 
   // ============================================================
-  // اطلاعات کاربر
+  // User information
   // ============================================================
   const displayName =
     session?.user?.companyName || session?.user?.name || "User";
@@ -165,7 +165,7 @@ export default function Header() {
   };
 
   // ============================================================
-  // محتوای Dropdown کاربر (فقط لاگین‌کرده)
+  // User dropdown content (signed-in only)
   // ============================================================
   const userDropdownContent = session ? (
     <div
@@ -196,7 +196,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Navigation - فقط موبایل */}
+      {/* Navigation - mobile only */}
       <div className="dropdown-nav-section dropdown-mobile-only">
         <div className="dropdown-section-label">Navigation</div>
         {navLinks.map((link) => (
@@ -274,7 +274,7 @@ export default function Header() {
   ) : null;
 
   // ============================================================
-  // محتوای Dropdown Join Free (فقط مهمان)
+  // Join Free dropdown content (guests only)
   // ============================================================
   const joinDropdownContent = !session ? (
     <div
@@ -365,7 +365,7 @@ export default function Header() {
 
             {/* ===== Header Actions ===== */}
             <div className="header-actions">
-              {/* Search — داخل Suspense چون از useSearchParams استفاده می‌کند */}
+              {/* Search — inside Suspense because it uses useSearchParams */}
               <Suspense fallback={null}>
                 <HeaderSearch />
               </Suspense>
@@ -373,7 +373,7 @@ export default function Header() {
               {status !== "loading" && (
                 <>
                   {session ? (
-                    /* ====== کاربر لاگین کرده ====== */
+                    /* ====== Signed-in user ====== */
                     <>
                       <Link
                         href="/requests/new"
@@ -415,7 +415,7 @@ export default function Header() {
                       </button>
                     </>
                   ) : (
-                    /* ====== مهمان ====== */
+                    /* ====== Guest ====== */
                     <>
                       {/* Login - Desktop only */}
                       <Link href="/login" className="btn-login">
@@ -443,7 +443,7 @@ export default function Header() {
                         </button>
                       </div>
 
-                      {/* Post a Request - همه‌جا */}
+                      {/* Post a Request - everywhere */}
                       <Link
                         href="/requests/new"
                         className="btn-post-request"
@@ -453,7 +453,7 @@ export default function Header() {
                         <span>Post a Request</span>
                       </Link>
 
-                      {/* Menu trigger برای موبایل - آیکون کاربر */}
+                      {/* Menu trigger for mobile - user icon */}
                       <button
                         ref={triggerRef}
                         type="button"
@@ -476,14 +476,14 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ===== Portalها ===== */}
+      {/* ===== Portals ===== */}
       {mounted &&
         session &&
         isUserMenuOpen &&
         userDropdownContent &&
         createPortal(userDropdownContent, document.body)}
 
-      {/* Menu dropdown برای مهمان روی موبایل */}
+      {/* Menu dropdown for guests on mobile */}
       {mounted &&
         !session &&
         isUserMenuOpen &&
@@ -498,7 +498,7 @@ export default function Header() {
               zIndex: 10000,
             }}
           >
-            {/* Navigation - فقط موبایل */}
+            {/* Navigation - mobile only */}
             <div className="dropdown-nav-section">
               <div className="dropdown-section-label">Navigation</div>
               {navLinks.map((link) => (
@@ -515,7 +515,7 @@ export default function Header() {
             </div>
 
             {/* Auth Options */}
-            {/* Auth Options - رنگ‌بندی‌شده */}
+            {/* Auth Options - color-coded */}
             <div className="auth-section">
               <Link
                 href="/login"
@@ -572,7 +572,7 @@ export default function Header() {
           document.body
         )}
 
-      {/* Join Free dropdown (مهمان - دسکتاپ) */}
+      {/* Join Free dropdown (guest - desktop) */}
       {mounted &&
         !session &&
         isJoinMenuOpen &&

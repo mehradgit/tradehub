@@ -22,7 +22,7 @@ export async function POST(request) {
       );
     }
 
-    // بررسی وجود درخواست
+    // Check that the request exists
     const buyingRequest = await prisma.buyingRequest.findUnique({
       where: { id: requestId },
       select: {
@@ -48,12 +48,12 @@ export async function POST(request) {
       );
     }
 
-    // ✅ خریدار، صاحبِ درخواست است — نه مقداری که کلاینت در body فرستاده.
-    //    قبلاً هر کاربری می‌توانست buyerId دلخواه بدهد و برای شخص ثالث
-    //    نوتیفیکیشن/پیام بسازد و رکورد معامله را جعل کند.
+    // ✅ The buyer is the owner of the request — not the value the client sent in the body.
+    //    Previously any user could pass an arbitrary buyerId and create
+    //    notifications/messages for a third party and forge the deal record.
     const buyerId = buyingRequest.userId;
 
-    // ✅ بررسی RevealedBuyerInfo (سهمیه در مرحله Reveal مصرف شده)
+    // ✅ Check RevealedBuyerInfo (the quota is consumed at the Reveal step)
     const revealed = await prisma.revealedBuyerInfo.findUnique({
       where: {
         userId_requestId: { userId, requestId },
@@ -61,7 +61,7 @@ export async function POST(request) {
     });
 
     if (!revealed) {
-      // ادمین مجاز است (بدون نیاز به Reveal)
+      // Admins are allowed (no Reveal required)
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { isAdmin: true },
@@ -78,7 +78,7 @@ export async function POST(request) {
       }
     }
 
-    // ثبت Quote (بدون مصرف سهمیه)
+    // Create the Quote (without consuming quota)
     const quote = await prisma.quote.create({
       data: {
         requestId,
@@ -89,7 +89,7 @@ export async function POST(request) {
         message,
       },
     });
-    // ✅ ایجاد پیام چت برای خریدار
+    // ✅ Create a chat message for the buyer
     const baseUrl = (
       process.env.NEXTAUTH_URL || "http://localhost:3000"
     ).replace(/\/+$/, "");
@@ -105,7 +105,7 @@ export async function POST(request) {
       },
     });
 
-    // ✅ نوتیفیکیشن + Web Push + ایمیل از مسیر مرکزی رویداد
+    // ✅ Notification + Web Push + email through the central event dispatcher
     after(async () => {
       const result = await dispatchEvent("quote.submitted", {
         quoteId: quote.id,

@@ -263,7 +263,7 @@ export default function CategoryManager({
                     )}
                   </div>
                   <div className="admin-subtitle">
-                    {subs.length} subcategories آ· {productCount} products آ·{" "}
+                    {subs.length} subcategories · {productCount} products ·{" "}
                     {requestCount} requests
                   </div>
                 </div>
@@ -459,7 +459,7 @@ export default function CategoryManager({
                   marginTop: 4,
                 }}
               >
-                Font Awesome class name (مثل fa-leaf یا fa-crown)
+                Font Awesome class name (e.g. fa-leaf or fa-crown)
               </div>
             </div>
 

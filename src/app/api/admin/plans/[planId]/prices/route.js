@@ -14,11 +14,11 @@ export async function PUT(request, { params }) {
 
   try {
     for (const price of body.prices) {
-      // تبدیل price به عدد اگر رشته باشد
+      // Convert price to a number if it is a string
       const priceValue =
         typeof price.price === "string" ? parseFloat(price.price) : price.price;
 
-      // اعتبارسنجی duration
+      // Validate duration
       const duration = parseInt(price.duration, 10);
       if (isNaN(duration)) continue;
 

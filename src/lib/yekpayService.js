@@ -11,7 +11,7 @@ const YEKPAY_BASE_URL =
 // src/lib/yekpayService.js
 
 // ============================================================
-// انتخاب محیط بر اساس متغیر محیطی
+// Choose the environment based on an environment variable
 // ============================================================
 const IS_SANDBOX = process.env.YEKPAY_SANDBOX === "true";
 
@@ -28,7 +28,7 @@ const ENDPOINTS = IS_SANDBOX
     };
 
 // ============================================================
-// درخواست پرداخت (Payment Request)
+// Payment Request
 // ============================================================
 export async function requestYekPayPayment({
     amount,
@@ -90,7 +90,7 @@ export async function requestYekPayPayment({
 }
 
 // ============================================================
-// تأیید پرداخت (Verify Payment)
+// Verify Payment
 // ============================================================
 export async function verifyYekPayPayment(authority) {
     const merchantId = process.env.YEKPAY_MERCHANT_ID;

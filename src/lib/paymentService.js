@@ -5,7 +5,7 @@ import {
   generateReferenceNumber,
 } from "@/utils/invoiceHelpers";
 
-// ====== محاسبه تخفیف کد تخفیف ======
+// ====== Calculate the coupon discount ======
 export async function calculateCouponDiscount(couponCode, planId, amount) {
   if (!couponCode) {
     return { valid: false, discount: 0, coupon: null, error: "No coupon code" };
@@ -37,7 +37,7 @@ export async function calculateCouponDiscount(couponCode, planId, amount) {
     return { valid: false, discount: 0, coupon, error: "This coupon has reached its usage limit" };
   }
 
-  // بررسی پلن‌های مجاز
+  // Check the allowed plans
   if (coupon.appliesToPlans && Array.isArray(coupon.appliesToPlans)) {
     const plan = await prisma.plan.findUnique({
       where: { id: planId },
@@ -53,7 +53,7 @@ export async function calculateCouponDiscount(couponCode, planId, amount) {
     }
   }
 
-  // بررسی حداقل مبلغ
+  // Check the minimum amount
   if (coupon.minAmount && amount < Number(coupon.minAmount)) {
     return {
       valid: false,
@@ -63,7 +63,7 @@ export async function calculateCouponDiscount(couponCode, planId, amount) {
     };
   }
 
-  // محاسبه تخفیف
+  // Calculate the discount
   let discount = 0;
   if (coupon.type === "percentage") {
     discount = (amount * Number(coupon.value)) / 100;
@@ -79,7 +79,7 @@ export async function calculateCouponDiscount(couponCode, planId, amount) {
   return { valid: true, discount, coupon };
 }
 
-// ====== اعتبارسنجی مصرف کد تخفیف ======
+// ====== Validate coupon redemption ======
 export async function hasUserUsedCoupon(userId, couponId) {
   const usage = await prisma.couponUsage.findFirst({
     where: { userId, couponId },
@@ -87,7 +87,7 @@ export async function hasUserUsedCoupon(userId, couponId) {
   return !!usage;
 }
 
-// ====== ایجاد Payment ======
+// ====== Create Payment ======
 export async function createPayment({
   userId,
   planId,
@@ -127,7 +127,7 @@ export async function createPayment({
     },
   });
 
-  // اگر کد تخفیف استفاده شده، ثبت مصرف
+  // If a coupon was used, record its redemption
   if (couponId && discountAmount > 0) {
     await prisma.$transaction([
       prisma.couponUsage.create({
@@ -148,7 +148,7 @@ export async function createPayment({
   return payment;
 }
 
-// ====== تأیید پرداخت (شبیه‌سازی) ======
+// ====== Confirm payment (simulated) ======
 export async function confirmPayment(paymentId) {
   const payment = await prisma.payment.update({
     where: { id: paymentId },
@@ -160,14 +160,14 @@ export async function confirmPayment(paymentId) {
   return payment;
 }
 
-// ====== ایجاد اشتراک از Payment ======
+// ====== Create a subscription from a Payment ======
 export async function createSubscriptionFromPayment(payment) {
   const startDate = new Date();
   const endDate = new Date(
     startDate.getTime() + payment.duration * 24 * 60 * 60 * 1000
   );
 
-  // بررسی اشتراک فعال
+  // Check for an active subscription
   const activeSub = await prisma.userSubscription.findFirst({
     where: {
       userId: payment.userId,
@@ -191,7 +191,7 @@ export async function createSubscriptionFromPayment(payment) {
     },
   });
 
-  // لینک دادن subscription به payment
+  // Link the subscription to the payment
   await prisma.payment.update({
     where: { id: payment.id },
     data: { subscriptionId: subscription.id },

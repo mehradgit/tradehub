@@ -14,7 +14,7 @@ function getBaseUrl() {
 }
 
 // ============================================================
-// HTML با ریدایرکت خودکار (کار می‌کند برای POST و GET)
+// HTML with automatic redirect (works for both POST and GET)
 // ============================================================
 function htmlRedirect(url, message = "Redirecting...") {
   return new NextResponse(
@@ -39,15 +39,15 @@ function htmlRedirect(url, message = "Redirecting...") {
 }
 
 // ============================================================
-// منطق مشترک تأیید
+// Shared verification logic
 // ============================================================
 async function handleVerify(authority, status, baseUrl) {
-  // ====== بررسی پارامترها ======
+  // ====== Validate the parameters ======
   if (!authority) {
     return `${baseUrl}/dashboard/billing?error=missing_authority`;
   }
 
-  // ====== پیدا کردن Payment ======
+  // ====== Find the Payment ======
   const payment = await prisma.payment.findFirst({
     where: { transactionId: authority },
     include: { plan: true },
@@ -57,12 +57,12 @@ async function handleVerify(authority, status, baseUrl) {
     return `${baseUrl}/dashboard/billing?error=payment_not_found`;
   }
 
-  // ====== اگر قبلاً پرداخت شده ======
+  // ====== Already paid ======
   if (payment.status === "paid") {
     return `${baseUrl}/dashboard/billing/invoice/${payment.id}`;
   }
 
-  // ====== اگر کاربر لغو کرده ======
+  // ====== The user cancelled ======
   if (String(status) === "0") {
     await prisma.payment.update({
       where: { id: payment.id },
@@ -71,7 +71,7 @@ async function handleVerify(authority, status, baseUrl) {
     return `${baseUrl}/dashboard/billing?error=payment_cancelled`;
   }
 
-  // ====== تأیید با YekPay ======
+  // ====== Verify with YekPay ======
   let verifyResult;
   try {
     verifyResult = await verifyYekPayPayment(authority);
@@ -84,7 +84,7 @@ async function handleVerify(authority, status, baseUrl) {
     return `${baseUrl}/dashboard/billing?error=verify_failed`;
   }
 
-  // ====== علامت‌گذاری به‌عنوان پرداخت‌شده ======
+  // ====== Mark as paid ======
   const paidPayment = await prisma.payment.update({
     where: { id: payment.id },
     data: {
@@ -102,10 +102,10 @@ async function handleVerify(authority, status, baseUrl) {
     },
   });
 
-  // ====== ساخت اشتراک ======
+  // ====== Create the subscription ======
   await createSubscriptionFromPayment(paidPayment);
 
-  // ====== به‌روزرسانی پلن کاربر ======
+  // ====== Update the user's plan ======
   await prisma.user.update({
     where: { id: payment.userId },
     data: { plan: payment.plan.name.toUpperCase() },
@@ -115,7 +115,7 @@ async function handleVerify(authority, status, baseUrl) {
 }
 
 // ============================================================
-// POST — YekPay این‌جا callback می‌زند
+// POST — YekPay sends its callback here
 // ============================================================
 export async function POST(request) {
   const baseUrl = getBaseUrl();
@@ -136,7 +136,7 @@ export async function POST(request) {
 }
 
 // ============================================================
-// GET — پشتیبانی از مرورگرهایی که با GET برمی‌گردند
+// GET — support for browsers that come back with a GET request
 // ============================================================
 export async function GET(request) {
   const baseUrl = getBaseUrl();

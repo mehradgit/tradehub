@@ -282,9 +282,11 @@ export default function EditRequestForm({ request }) {
                 value={formData.quantity}
                 onChange={handleChange}
                 type="number"
+                inputMode="numeric"
                 placeholder="2000"
                 required
                 icon="fa-cube"
+                hint="How much you want to buy, in the unit selected here."
               />
               <Field
                 label="Unit"
@@ -293,6 +295,7 @@ export default function EditRequestForm({ request }) {
                 onChange={handleChange}
                 type="select"
                 icon="fa-balance-scale"
+                hint="Unit used for the quantity you entered."
                 options={[
                   "kg",
                   "g",
@@ -328,6 +331,7 @@ export default function EditRequestForm({ request }) {
                 </label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   className="er-input"
                   name="targetPrice"
@@ -1489,6 +1493,7 @@ function Field({
   hint,
   options = [],
   step,
+  inputMode,
 }) {
   return (
     <div className="er-field">
@@ -1523,6 +1528,7 @@ function Field({
           disabled={disabled}
           required={required}
           step={step}
+          inputMode={inputMode}
           className="er-input"
         />
       )}

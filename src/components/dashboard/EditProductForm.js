@@ -28,7 +28,7 @@ export default function EditProductForm({ product }) {
   const fileInputRef = useRef(null);
 
   // ===== Image limit from plan =====
-  // null = هنوز لود نشده | -1 = نامحدود | n = عدد
+  // null = not loaded yet | -1 = unlimited | n = a number
   const [imageLimit, setImageLimit] = useState(null);
 
   // ===== Form State =====
@@ -49,14 +49,14 @@ export default function EditProductForm({ product }) {
     packaging: product.packaging || "",
     certifications: product.certifications || "",
     paymentTerms: product.paymentTerms || "",
-    // ====== مشخصات پویا (EAV): { [attributeId]: value } ======
+    // ====== Dynamic attributes (EAV): { [attributeId]: value } ======
     attributes: productAttributesToMap(product.attributes || []),
     origin: product.origin || "",
     countryCode: product.countryCode || "",
     isVisible: product.isVisible !== undefined ? product.isVisible : true,
   });
 
-  // ====== مسیر دسته‌بندی برای پنل مشخصات پویا ======
+  // ====== Category path for the dynamic attributes panel ======
   const { tree } = useCategories();
 
   const categoryPath = useMemo(
@@ -72,10 +72,10 @@ export default function EditProductForm({ product }) {
     [formData.category, formData.subCategory, formData.productType, tree],
   );
 
-  // ====== آیا مقادیر اتریبیوت از قبل در دسترس‌اند؟ ======
-  // اگر صفحه‌ی ویرایش attributes را پاس نداده باشد، از API خوانده
-  // می‌شود. تا وقتی لود نشده، کلید attributes در payload فرستاده
-  // نمی‌شود تا مقادیر موجود پاک نشوند.
+  // ====== Are the attribute values already available? ======
+  // If the edit page did not pass the attributes in, they are read from the
+  // API. Until they are loaded, the attributes key is not sent in the payload
+  // so that existing values are not wiped.
   const [attributesLoaded, setAttributesLoaded] = useState(
     Array.isArray(product.attributes),
   );
@@ -92,7 +92,7 @@ export default function EditProductForm({ product }) {
         if (cancelled) return;
         const map = productAttributesToMap(data?.attributes || []);
         setFormData((prev) =>
-          // اگر کاربر تا رسیدن پاسخ چیزی انتخاب کرده، دست نمی‌زنیم
+          // If the user picked something before the response arrived, leave it alone
           Object.keys(prev.attributes || {}).length > 0
             ? prev
             : { ...prev, attributes: map },
@@ -139,13 +139,13 @@ export default function EditProductForm({ product }) {
   };
 
   const handleCategoryChange = (category) => {
-    // اتریبیوت‌ها به دسته‌بندی وابسته‌اند → مقادیر قبلی ریست می‌شوند
-    // (فلگ attributesLoaded دست‌نخورده می‌ماند تا منطق ارسال به API تغییر نکند)
+    // Attributes depend on the category → previous values are reset
+    // (the attributesLoaded flag stays untouched so the API payload logic is unchanged)
     setFormData((prev) => ({
       ...prev,
       category: category || "",
-      subCategory: "",          // âœ… ریست شدن
-      productType: "",          // âœ… ریست شدن
+      subCategory: "",          // reset
+      productType: "",          // reset
       attributes: {},
     }));
   };
@@ -154,7 +154,7 @@ export default function EditProductForm({ product }) {
     setFormData((prev) => ({
       ...prev,
       subCategory: subCategory || "",
-      productType: "",          // âœ… ریست شدن
+      productType: "",          // reset
       attributes: {},
     }));
   };
@@ -180,7 +180,7 @@ export default function EditProductForm({ product }) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // ✅ چک کلاینت: تعداد انتخابی نباید از ظرفیت باقی‌مانده بیشتر باشه
+    // ✅ Client-side check: the selected count must not exceed the remaining capacity
     if (isLimitKnown && files.length > remainingSlots) {
       toast.warning(
         `You can only add ${remainingSlots} more image${remainingSlots !== 1 ? "s" : ""
@@ -206,8 +206,8 @@ export default function EditProductForm({ product }) {
           continue;
         }
 
-        // ⚠️ نکته: targetId رو پاس نمی‌دیم تا سرور چک نکنه.
-        // چک اصلی در PUT /api/products/[id] انجام می‌شه (هنگام Save).
+        // ⚠️ Note: we do not pass targetId so the server does not check it.
+        // The real check happens in PUT /api/products/[id] (on Save).
         const result = await uploadFileWithProgress(
           file,
           "products",
@@ -249,7 +249,7 @@ export default function EditProductForm({ product }) {
         return;
       }
 
-      // attributes از فرم به‌صورت map است و باید به آرایه‌ی API تبدیل شود
+      // attributes in the form is a map and must be converted to the API array
       const { attributes: attributesMap, ...formRest } = formData;
 
       const payload = {
@@ -261,9 +261,9 @@ export default function EditProductForm({ product }) {
         stock: formData.stock ? parseInt(formData.stock) : null,
         leadTime: formData.leadTime ? parseInt(formData.leadTime) : null,
         paymentTerms: formData.paymentTerms || null,
-        // ====== مشخصات پویا: map → [{ attributeId, value }] ======
-        // فقط وقتی مقادیر واقعاً خوانده شده‌اند فرستاده می‌شود؛
-        // آرایه‌ی خالی یعنی «همه‌ی مقادیر پاک شوند».
+        // ====== Dynamic attributes: map → [{ attributeId, value }] ======
+        // Only sent when the values have actually been loaded;
+        // an empty array means "clear all values".
         ...(attributesLoaded
           ? { attributes: attributesMapToArray(attributesMap) }
           : {}),
@@ -354,6 +354,7 @@ export default function EditProductForm({ product }) {
               <label className="ep-label">
                 <i className="fas fa-align-left"></i>
                 Short Description
+                <span style={{ color: "#dc2626" }}>*</span>
                 <span className="ep-label-meta">
                   {formData.shortDesc?.length || 0}/200
                 </span>
@@ -390,6 +391,10 @@ export default function EditProductForm({ product }) {
                 height={250}
               />
               <div className="ep-hint">
+                Full description of the product. It is shown on the product
+                page, so add all the details a buyer needs.
+              </div>
+              <div className="ep-hint">
                 Use the toolbar to format text (bold, lists, links, images...)
               </div>
             </div>
@@ -413,6 +418,7 @@ export default function EditProductForm({ product }) {
                 value={formData.price}
                 onChange={handleChange}
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 placeholder="0.00"
                 required
@@ -434,6 +440,7 @@ export default function EditProductForm({ product }) {
                 onChange={handleChange}
                 type="select"
                 icon="fa-balance-scale"
+                hint="Unit used for the price and the minimum order quantity."
                 options={[
                   "kg",
                   "g",
@@ -456,9 +463,11 @@ export default function EditProductForm({ product }) {
                 value={formData.moq}
                 onChange={handleChange}
                 type="number"
+                inputMode="numeric"
                 placeholder="100"
                 required
                 icon="fa-cube"
+                hint="Smallest quantity a buyer can order."
               />
               <Field
                 label="Available Stock"
@@ -466,8 +475,10 @@ export default function EditProductForm({ product }) {
                 value={formData.stock}
                 onChange={handleChange}
                 type="number"
+                inputMode="numeric"
                 placeholder="Optional"
                 icon="fa-warehouse"
+                hint="How many units you have ready to sell."
               />
               <Field
                 label="Lead Time (days)"
@@ -475,8 +486,10 @@ export default function EditProductForm({ product }) {
                 value={formData.leadTime}
                 onChange={handleChange}
                 type="number"
+                inputMode="numeric"
                 placeholder="Optional"
                 icon="fa-clock"
+                hint="How many days you need to get the order ready."
               />
             </div>
           </section>
@@ -493,7 +506,7 @@ export default function EditProductForm({ product }) {
             </div>
 
             <div className="ep-grid-2">
-              {/* ===== Shipping Terms — واژگان کنترل‌شده (incoterms) ===== */}
+              {/* ===== Shipping Terms — controlled vocabulary (incoterms) ===== */}
               <div className="ep-field">
                 <label className="ep-label">
                   <i className="fas fa-truck"></i>
@@ -510,7 +523,7 @@ export default function EditProductForm({ product }) {
                 />
               </div>
 
-              {/* ===== Payment Terms — فیلد جدید ===== */}
+              {/* ===== Payment Terms — new field ===== */}
               <div className="ep-field">
                 <label className="ep-label">
                   <i className="fas fa-money-check-dollar"></i>
@@ -527,7 +540,7 @@ export default function EditProductForm({ product }) {
                 />
               </div>
 
-              {/* ===== Packaging — چندانتخابی ===== */}
+              {/* ===== Packaging — multi-select ===== */}
               <div className="ep-field">
                 <label className="ep-label">
                   <i className="fas fa-box-open"></i>
@@ -546,7 +559,7 @@ export default function EditProductForm({ product }) {
                 />
               </div>
 
-              {/* ===== Certifications — چندانتخابی ===== */}
+              {/* ===== Certifications — multi-select ===== */}
               <div className="ep-field">
                 <label className="ep-label">
                   <i className="fas fa-certificate"></i>
@@ -588,7 +601,7 @@ export default function EditProductForm({ product }) {
           </section>
 
           {/* ============================================================
-             SECTION 3.5: Technical Specifications — پویا بر اساس دسته
+             SECTION 3.5: Technical Specifications — dynamic based on the category
              ============================================================ */}
           <section className="ep-card">
             <div className="ep-card-head">
@@ -1659,6 +1672,7 @@ function Field({
   hint,
   options = [],
   step,
+  inputMode,
 }) {
   return (
     <div className="ep-field">
@@ -1693,6 +1707,7 @@ function Field({
           disabled={disabled}
           required={required}
           step={step}
+          inputMode={inputMode}
           className="ep-input"
         />
       )}

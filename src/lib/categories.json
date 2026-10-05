@@ -5,7 +5,7 @@
     {
       "id": "grains-cereals",
       "name_en": "Grains & Cereals",
-      "name_fa": "غلات و حبوبات اصلی",
+      "name_fa": "Grains & Cereals",
       "slug": "grains-cereals",
       "icon": "wheat",
       "description": "Bulk grains, cereals and staple grain products for food manufacturers, wholesalers and international buyers.",
@@ -14,7 +14,7 @@
         {
           "id": "rice",
           "name_en": "Rice",
-          "name_fa": "برنج",
+          "name_fa": "Rice",
           "slug": "rice",
           "icon": "wheat",
           "description": "Different varieties and processing types of rice for wholesale and international trade.",
@@ -33,7 +33,7 @@
         {
           "id": "wheat",
           "name_en": "Wheat",
-          "name_fa": "گندم",
+          "name_fa": "Wheat",
           "slug": "wheat",
           "icon": "wheat",
           "description": "Food-grade wheat varieties for milling, food processing and industrial applications.",
@@ -47,7 +47,7 @@
         {
           "id": "corn-maize",
           "name_en": "Corn / Maize",
-          "name_fa": "ذرت",
+          "name_fa": "Corn / Maize",
           "slug": "corn-maize",
           "icon": "wheat",
           "description": "Corn and maize products for food, feed and industrial applications.",
@@ -63,7 +63,7 @@
         {
           "id": "barley",
           "name_en": "Barley",
-          "name_fa": "جو",
+          "name_fa": "Barley",
           "slug": "barley",
           "icon": "wheat",
           "description": "Barley products for food, brewing and agricultural applications.",
@@ -77,7 +77,7 @@
         {
           "id": "oats",
           "name_en": "Oats",
-          "name_fa": "جو دوسر",
+          "name_fa": "Oats",
           "slug": "oats",
           "icon": "wheat",
           "description": "Oats and oat-based ingredients for food manufacturing and consumer products.",
@@ -91,7 +91,7 @@
         {
           "id": "other-cereals",
           "name_en": "Other Cereals",
-          "name_fa": "سایر غلات",
+          "name_fa": "Other Cereals",
           "slug": "other-cereals",
           "icon": "wheat",
           "description": "Specialty and alternative grains and cereals.",
@@ -108,7 +108,7 @@
         {
           "id": "flours-milling-products",
           "name_en": "Flours & Milling Products",
-          "name_fa": "آرد و محصولات آسیاب‌شده",
+          "name_fa": "Flours & Milling Products",
           "slug": "flours-milling-products",
           "icon": "wheat",
           "description": "Flours, meals and milled cereal products for food manufacturing and bakery applications.",
@@ -129,7 +129,7 @@
     {
       "id": "pulses-legumes",
       "name_en": "Pulses & Legumes",
-      "name_fa": "حبوبات و بقولات",
+      "name_fa": "Pulses & Legumes",
       "slug": "pulses-legumes",
       "icon": "bean",
       "description": "Beans, lentils, chickpeas, peas and other dried legumes for food and industrial use.",
@@ -138,7 +138,7 @@
         {
           "id": "beans",
           "name_en": "Beans",
-          "name_fa": "لوبیا",
+          "name_fa": "Beans",
           "slug": "beans",
           "icon": "bean",
           "description": "Dried and processed bean varieties for wholesale and food manufacturing.",
@@ -157,7 +157,7 @@
         {
           "id": "lentils",
           "name_en": "Lentils",
-          "name_fa": "عدس",
+          "name_fa": "Lentils",
           "slug": "lentils",
           "icon": "bean",
           "description": "Various lentil varieties for food processing and wholesale trade.",
@@ -172,7 +172,7 @@
         {
           "id": "chickpeas",
           "name_en": "Chickpeas",
-          "name_fa": "نخود",
+          "name_fa": "Chickpeas",
           "slug": "chickpeas",
           "icon": "bean",
           "description": "Kabuli and Desi chickpeas for food processing and wholesale markets.",
@@ -185,7 +185,7 @@
         {
           "id": "peas",
           "name_en": "Peas",
-          "name_fa": "نخود فرنگی",
+          "name_fa": "Peas",
           "slug": "peas",
           "icon": "bean",
           "description": "Dried and processed pea products.",
@@ -199,7 +199,7 @@
         {
           "id": "soybeans",
           "name_en": "Soybeans",
-          "name_fa": "سویا",
+          "name_fa": "Soybeans",
           "slug": "soybeans",
           "icon": "bean",
           "description": "Soybeans for food, ingredient and industrial applications.",
@@ -213,7 +213,7 @@
         {
           "id": "other-legumes",
           "name_en": "Other Legumes",
-          "name_fa": "سایر حبوبات",
+          "name_fa": "Other Legumes",
           "slug": "other-legumes",
           "icon": "bean",
           "description": "Other dried legumes and specialty pulses.",
@@ -226,7 +226,7 @@
     {
       "id": "nuts-seeds-dried-fruits",
       "name_en": "Nuts, Seeds & Dried Fruits",
-      "name_fa": "خشکبار، مغزها و میوه‌های خشک",
+      "name_fa": "Nuts, Seeds & Dried Fruits",
       "slug": "nuts-seeds-dried-fruits",
       "icon": "nut",
       "description": "Premium nuts, edible seeds and dried fruits for wholesale, retail and food manufacturing.",
@@ -235,7 +235,7 @@
         {
           "id": "tree-nuts",
           "name_en": "Tree Nuts",
-          "name_fa": "مغزها",
+          "name_fa": "Tree Nuts",
           "slug": "tree-nuts",
           "icon": "nut",
           "description": "Tree nuts in raw, roasted, shelled and processed forms.",
@@ -255,7 +255,7 @@
         {
           "id": "peanuts",
           "name_en": "Peanuts",
-          "name_fa": "بادام زمینی",
+          "name_fa": "Peanuts",
           "slug": "peanuts",
           "icon": "nut",
           "description": "Peanuts for wholesale, snack production and food manufacturing.",
@@ -269,7 +269,7 @@
         {
           "id": "seeds",
           "name_en": "Edible Seeds",
-          "name_fa": "دانه‌های خوراکی",
+          "name_fa": "Edible Seeds",
           "slug": "seeds",
           "icon": "sprout",
           "description": "Edible seeds used in food, bakery, snack and ingredient applications.",
@@ -287,7 +287,7 @@
         {
           "id": "dried-fruits",
           "name_en": "Dried Fruits",
-          "name_fa": "میوه‌های خشک",
+          "name_fa": "Dried Fruits",
           "slug": "dried-fruits",
           "icon": "apple",
           "description": "Dried and dehydrated fruits for wholesale, retail and food manufacturing.",
@@ -311,7 +311,7 @@
     {
       "id": "fruits-vegetables",
       "name_en": "Fruits & Vegetables",
-      "name_fa": "میوه و سبزیجات",
+      "name_fa": "Fruits & Vegetables",
       "slug": "fruits-vegetables",
       "icon": "apple",
       "description": "Fresh, frozen, canned, dried and processed fruits and vegetables for international food trade.",
@@ -320,7 +320,7 @@
         {
           "id": "fresh-fruits",
           "name_en": "Fresh Fruits",
-          "name_fa": "میوه تازه",
+          "name_fa": "Fresh Fruits",
           "slug": "fresh-fruits",
           "icon": "apple",
           "description": "Fresh fruits for wholesale, distribution and international export.",
@@ -337,7 +337,7 @@
         {
           "id": "fresh-vegetables",
           "name_en": "Fresh Vegetables",
-          "name_fa": "سبزیجات تازه",
+          "name_fa": "Fresh Vegetables",
           "slug": "fresh-vegetables",
           "icon": "carrot",
           "description": "Fresh vegetables for wholesale and international distribution.",
@@ -354,7 +354,7 @@
         {
           "id": "frozen-fruits-vegetables",
           "name_en": "Frozen Fruits & Vegetables",
-          "name_fa": "میوه و سبزیجات منجمد",
+          "name_fa": "Frozen Fruits & Vegetables",
           "slug": "frozen-fruits-vegetables",
           "icon": "snowflake",
           "description": "Frozen fruits and vegetables including IQF products, purees and pulps.",
@@ -370,7 +370,7 @@
         {
           "id": "canned-jarred-fruits-vegetables",
           "name_en": "Canned & Jarred",
-          "name_fa": "کنسروی و شیشه‌ای",
+          "name_fa": "Canned & Jarred",
           "slug": "canned-jarred-fruits-vegetables",
           "icon": "package",
           "description": "Canned and jarred fruit and vegetable products.",
@@ -386,7 +386,7 @@
         {
           "id": "dried-dehydrated-fruits-vegetables",
           "name_en": "Dried & Dehydrated",
-          "name_fa": "خشک و آب‌گیری‌شده",
+          "name_fa": "Dried & Dehydrated",
           "slug": "dried-dehydrated-fruits-vegetables",
           "icon": "sun",
           "description": "Dried and dehydrated fruits, vegetables and mushrooms.",
@@ -400,7 +400,7 @@
         {
           "id": "purees-pastes-concentrates",
           "name_en": "Purees, Pastes & Concentrates",
-          "name_fa": "پوره، رب و کنسانتره",
+          "name_fa": "Purees, Pastes & Concentrates",
           "slug": "purees-pastes-concentrates",
           "icon": "container",
           "description": "Fruit and vegetable purees, pastes and concentrates for food manufacturing.",
@@ -419,7 +419,7 @@
     {
       "id": "spices-herbs-seasonings",
       "name_en": "Spices, Herbs & Seasonings",
-      "name_fa": "ادویه، گیاهان و چاشنی‌ها",
+      "name_fa": "Spices, Herbs & Seasonings",
       "slug": "spices-herbs-seasonings",
       "icon": "leaf",
       "description": "Whole spices, ground spices, herbs, seasonings, salt and specialty flavoring products.",
@@ -428,7 +428,7 @@
         {
           "id": "whole-spices",
           "name_en": "Whole Spices",
-          "name_fa": "ادویه کامل",
+          "name_fa": "Whole Spices",
           "slug": "whole-spices",
           "icon": "leaf",
           "description": "Whole spices for food manufacturing, seasoning and culinary applications.",
@@ -450,7 +450,7 @@
         {
           "id": "ground-spices",
           "name_en": "Ground Spices",
-          "name_fa": "ادویه آسیاب‌شده",
+          "name_fa": "Ground Spices",
           "slug": "ground-spices",
           "icon": "leaf",
           "description": "Ground and powdered spices for industrial and commercial food applications.",
@@ -460,7 +460,7 @@
         {
           "id": "dried-herbs",
           "name_en": "Dried Herbs",
-          "name_fa": "گیاهان خشک",
+          "name_fa": "Dried Herbs",
           "slug": "dried-herbs",
           "icon": "leaf",
           "description": "Dried culinary herbs for food manufacturers, wholesalers and distributors.",
@@ -477,7 +477,7 @@
         {
           "id": "blends-seasonings",
           "name_en": "Blends & Seasonings",
-          "name_fa": "ترکیبات و چاشنی‌ها",
+          "name_fa": "Blends & Seasonings",
           "slug": "blends-seasonings",
           "icon": "flask",
           "description": "Blended spices and seasoning mixes for food manufacturing and culinary use.",
@@ -493,7 +493,7 @@
         {
           "id": "salt-pepper",
           "name_en": "Salt & Pepper",
-          "name_fa": "نمک و فلفل",
+          "name_fa": "Salt & Pepper",
           "slug": "salt-pepper",
           "icon": "sprout",
           "description": "Edible salt and pepper products in bulk and packaged formats.",
@@ -509,7 +509,7 @@
         {
           "id": "vanilla-extracts",
           "name_en": "Vanilla & Extracts",
-          "name_fa": "وانیل و عصاره‌ها",
+          "name_fa": "Vanilla & Extracts",
           "slug": "vanilla-extracts",
           "icon": "flask",
           "description": "Vanilla products and natural or food-grade extracts for food manufacturing.",
@@ -526,7 +526,7 @@
     {
       "id": "oils-fats-shortenings",
       "name_en": "Oils, Fats & Shortenings",
-      "name_fa": "روغن، چربی و شورتنینگ",
+      "name_fa": "Oils, Fats & Shortenings",
       "slug": "oils-fats-shortenings",
       "icon": "droplet",
       "description": "Edible vegetable oils, specialty oils, animal fats, margarine and shortening products.",
@@ -535,7 +535,7 @@
         {
           "id": "vegetable-oils",
           "name_en": "Vegetable Oils",
-          "name_fa": "روغن‌های گیاهی",
+          "name_fa": "Vegetable Oils",
           "slug": "vegetable-oils",
           "icon": "droplet",
           "description": "Edible vegetable oils for food manufacturing, retail and wholesale.",
@@ -559,7 +559,7 @@
         {
           "id": "specialty-oils",
           "name_en": "Specialty Oils",
-          "name_fa": "روغن‌های خاص",
+          "name_fa": "Specialty Oils",
           "slug": "specialty-oils",
           "icon": "droplet",
           "description": "Specialty and premium edible oils.",
@@ -573,7 +573,7 @@
         {
           "id": "animal-fats",
           "name_en": "Animal Fats",
-          "name_fa": "چربی‌های حیوانی",
+          "name_fa": "Animal Fats",
           "slug": "animal-fats",
           "icon": "droplet",
           "description": "Food-grade animal fats and rendered edible fats.",
@@ -589,7 +589,7 @@
         {
           "id": "margarine-shortening",
           "name_en": "Margarine & Shortening",
-          "name_fa": "مارگارین و شورتنینگ",
+          "name_fa": "Margarine & Shortening",
           "slug": "margarine-shortening",
           "icon": "container",
           "description": "Margarine and shortening products for bakery and food manufacturing.",
@@ -602,7 +602,7 @@
     {
       "id": "sweeteners-sugar-honey",
       "name_en": "Sweeteners, Sugar & Honey",
-      "name_fa": "شیرین‌کننده‌ها، شکر و عسل",
+      "name_fa": "Sweeteners, Sugar & Honey",
       "slug": "sweeteners-sugar-honey",
       "icon": "candy",
       "description": "Sugar, syrups, honey, natural sweeteners and specialty sweetening products.",
@@ -611,7 +611,7 @@
         {
           "id": "sugar",
           "name_en": "Sugar",
-          "name_fa": "شکر",
+          "name_fa": "Sugar",
           "slug": "sugar",
           "icon": "candy",
           "description": "Refined and specialty sugars for food manufacturing and wholesale trade.",
@@ -631,7 +631,7 @@
         {
           "id": "syrups",
           "name_en": "Syrups",
-          "name_fa": "شربت‌ها و سیروپ‌ها",
+          "name_fa": "Syrups",
           "slug": "syrups",
           "icon": "droplet",
           "description": "Natural and industrial syrups for food and beverage manufacturing.",
@@ -649,7 +649,7 @@
         {
           "id": "honey-bee-products",
           "name_en": "Honey & Bee Products",
-          "name_fa": "عسل و محصولات زنبور",
+          "name_fa": "Honey & Bee Products",
           "slug": "honey-bee-products",
           "icon": "hexagon",
           "description": "Natural honey and bee-derived products for food, retail and specialty markets.",
@@ -666,7 +666,7 @@
         {
           "id": "natural-sweeteners",
           "name_en": "Natural Sweeteners",
-          "name_fa": "شیرین‌کننده‌های طبیعی",
+          "name_fa": "Natural Sweeteners",
           "slug": "natural-sweeteners",
           "icon": "leaf",
           "description": "Natural and low-calorie sweetening products.",
@@ -681,7 +681,7 @@
         {
           "id": "jaggery-panela",
           "name_en": "Jaggery & Panela",
-          "name_fa": "جاگری و پانلا",
+          "name_fa": "Jaggery & Panela",
           "slug": "jaggery-panela",
           "icon": "candy",
           "description": "Traditional unrefined sugar products used in food and beverage applications.",
@@ -694,7 +694,7 @@
     {
       "id": "coffee-tea-cocoa",
       "name_en": "Coffee, Tea & Cocoa",
-      "name_fa": "قهوه، چای و کاکائو",
+      "name_fa": "Coffee, Tea & Cocoa",
       "slug": "coffee-tea-cocoa",
       "icon": "coffee",
       "description": "Coffee, tea, cocoa and related beverage and food ingredients.",
@@ -703,7 +703,7 @@
         {
           "id": "coffee",
           "name_en": "Coffee",
-          "name_fa": "قهوه",
+          "name_fa": "Coffee",
           "slug": "coffee",
           "icon": "coffee",
           "description": "Green coffee beans, roasted coffee, instant coffee and specialty coffee products.",
@@ -720,7 +720,7 @@
         {
           "id": "tea",
           "name_en": "Tea",
-          "name_fa": "چای",
+          "name_fa": "Tea",
           "slug": "tea",
           "icon": "coffee",
           "description": "Tea varieties and specialty tea products for wholesale and international trade.",
@@ -739,7 +739,7 @@
         {
           "id": "cocoa",
           "name_en": "Cocoa",
-          "name_fa": "کاکائو",
+          "name_fa": "Cocoa",
           "slug": "cocoa",
           "icon": "candy",
           "description": "Cocoa beans and processed cocoa ingredients for chocolate and food manufacturing.",
@@ -755,7 +755,7 @@
         {
           "id": "other-infusions",
           "name_en": "Herbal & Other Infusions",
-          "name_fa": "دمنوش‌ها و نوشیدنی‌های گیاهی",
+          "name_fa": "Herbal & Other Infusions",
           "slug": "herbal-other-infusions",
           "icon": "leaf",
           "description": "Herbal infusions and specialty tea-like beverages.",
@@ -772,7 +772,7 @@
     {
       "id": "dairy-eggs",
       "name_en": "Dairy & Eggs",
-      "name_fa": "لبنیات و تخم‌مرغ",
+      "name_fa": "Dairy & Eggs",
       "slug": "dairy-eggs",
       "icon": "milk",
       "description": "Milk, cheese, yogurt, butter, cream, eggs and dairy ingredients.",
@@ -781,7 +781,7 @@
         {
           "id": "milk",
           "name_en": "Milk",
-          "name_fa": "شیر",
+          "name_fa": "Milk",
           "slug": "milk",
           "icon": "milk",
           "description": "Fresh, UHT, powdered and concentrated milk products.",
@@ -798,7 +798,7 @@
         {
           "id": "cheese",
           "name_en": "Cheese",
-          "name_fa": "پنیر",
+          "name_fa": "Cheese",
           "slug": "cheese",
           "icon": "milk",
           "description": "Cheese products in different styles and processing formats.",
@@ -815,7 +815,7 @@
         {
           "id": "yogurt-fermented-dairy",
           "name_en": "Yogurt & Fermented Dairy",
-          "name_fa": "ماست و لبنیات تخمیری",
+          "name_fa": "Yogurt & Fermented Dairy",
           "slug": "yogurt-fermented-dairy",
           "icon": "milk",
           "description": "Yogurt and fermented dairy products.",
@@ -825,7 +825,7 @@
         {
           "id": "butter-cream-ghee",
           "name_en": "Butter, Cream & Ghee",
-          "name_fa": "کره، خامه و گی",
+          "name_fa": "Butter, Cream & Ghee",
           "slug": "butter-cream-ghee",
           "icon": "milk",
           "description": "Butter, cream, ghee and related dairy fats.",
@@ -835,7 +835,7 @@
         {
           "id": "eggs",
           "name_en": "Eggs",
-          "name_fa": "تخم‌مرغ",
+          "name_fa": "Eggs",
           "slug": "eggs",
           "icon": "egg",
           "description": "Fresh, liquid, powdered and frozen egg products.",
@@ -850,7 +850,7 @@
         {
           "id": "dairy-ingredients",
           "name_en": "Dairy Ingredients",
-          "name_fa": "مواد اولیه لبنی",
+          "name_fa": "Dairy Ingredients",
           "slug": "dairy-ingredients",
           "icon": "milk",
           "description": "Milk-based ingredients for industrial food manufacturing.",
@@ -869,7 +869,7 @@
     {
       "id": "meat-poultry-game",
       "name_en": "Meat, Poultry & Game",
-      "name_fa": "گوشت، طیور و شکار",
+      "name_fa": "Meat, Poultry & Game",
       "slug": "meat-poultry-game",
       "icon": "beef",
       "description": "Fresh, chilled, frozen and processed meat and poultry products.",
@@ -878,7 +878,7 @@
         {
           "id": "beef",
           "name_en": "Beef",
-          "name_fa": "گوشت گاو",
+          "name_fa": "Beef",
           "slug": "beef",
           "icon": "beef",
           "description": "Beef products in fresh, chilled, frozen and processed formats.",
@@ -894,7 +894,7 @@
         {
           "id": "pork",
           "name_en": "Pork",
-          "name_fa": "گوشت خوک",
+          "name_fa": "Pork",
           "slug": "pork",
           "icon": "beef",
           "description": "Pork products for markets where permitted.",
@@ -909,7 +909,7 @@
         {
           "id": "lamb-mutton",
           "name_en": "Lamb & Mutton",
-          "name_fa": "گوشت بره و گوسفند",
+          "name_fa": "Lamb & Mutton",
           "slug": "lamb-mutton",
           "icon": "beef",
           "description": "Lamb and mutton products for wholesale and international food trade.",
@@ -919,7 +919,7 @@
         {
           "id": "poultry",
           "name_en": "Poultry",
-          "name_fa": "طیور",
+          "name_fa": "Poultry",
           "slug": "poultry",
           "icon": "bird",
           "description": "Chicken, turkey, duck and goose products.",
@@ -934,7 +934,7 @@
         {
           "id": "game",
           "name_en": "Game",
-          "name_fa": "گوشت شکار",
+          "name_fa": "Game",
           "slug": "game",
           "icon": "beef",
           "description": "Game meat products where legally permitted.",
@@ -948,7 +948,7 @@
         {
           "id": "processed-meats",
           "name_en": "Processed Meats",
-          "name_fa": "گوشت‌های فرآوری‌شده",
+          "name_fa": "Processed Meats",
           "slug": "processed-meats",
           "icon": "beef",
           "description": "Processed and preserved meat products.",
@@ -966,7 +966,7 @@
     {
       "id": "seafood-aquaculture",
       "name_en": "Seafood & Aquaculture",
-      "name_fa": "غذاهای دریایی و آبزی‌پروری",
+      "name_fa": "Seafood & Aquaculture",
       "slug": "seafood-aquaculture",
       "icon": "fish",
       "description": "Fish, shellfish, cephalopods, caviar, seaweed and aquaculture products.",
@@ -975,7 +975,7 @@
         {
           "id": "fish",
           "name_en": "Fish",
-          "name_fa": "ماهی",
+          "name_fa": "Fish",
           "slug": "fish",
           "icon": "fish",
           "description": "Fresh, chilled, frozen, smoked, dried and canned fish products.",
@@ -991,7 +991,7 @@
         {
           "id": "shellfish",
           "name_en": "Shellfish",
-          "name_fa": "صدف‌داران",
+          "name_fa": "Shellfish",
           "slug": "shellfish",
           "icon": "fish",
           "description": "Shrimp, prawns, crab, lobster and other shellfish.",
@@ -1010,7 +1010,7 @@
         {
           "id": "cephalopods",
           "name_en": "Cephalopods",
-          "name_fa": "سرپایان",
+          "name_fa": "Cephalopods",
           "slug": "cephalopods",
           "icon": "fish",
           "description": "Squid, octopus and cuttlefish products.",
@@ -1024,7 +1024,7 @@
         {
           "id": "roe-caviar",
           "name_en": "Roe & Caviar",
-          "name_fa": "خاویار و تخم ماهی",
+          "name_fa": "Roe & Caviar",
           "slug": "roe-caviar",
           "icon": "circle-dot",
           "description": "Caviar and fish roe products for specialty food markets.",
@@ -1034,7 +1034,7 @@
         {
           "id": "seaweed-algae",
           "name_en": "Seaweed & Algae",
-          "name_fa": "جلبک دریایی",
+          "name_fa": "Seaweed & Algae",
           "slug": "seaweed-algae",
           "icon": "leaf",
           "description": "Edible seaweed, algae and related food products.",
@@ -1047,7 +1047,7 @@
     {
       "id": "bakery-confectionery-snacks",
       "name_en": "Bakery, Confectionery & Snacks",
-      "name_fa": "نانوایی، شیرینی و تنقلات",
+      "name_fa": "Bakery, Confectionery & Snacks",
       "slug": "bakery-confectionery-snacks",
       "icon": "cake",
       "description": "Bakery products, confectionery, chocolate, candy and snack foods.",
@@ -1056,7 +1056,7 @@
         {
           "id": "bakery",
           "name_en": "Bakery Products",
-          "name_fa": "محصولات نانوایی",
+          "name_fa": "Bakery Products",
           "slug": "bakery",
           "icon": "croissant",
           "description": "Bread, cakes, biscuits, cookies, pastries and frozen bakery products.",
@@ -1073,7 +1073,7 @@
         {
           "id": "confectionery",
           "name_en": "Confectionery",
-          "name_fa": "شیرینی‌جات",
+          "name_fa": "Confectionery",
           "slug": "confectionery",
           "icon": "candy",
           "description": "Chocolate, candy, gums, marshmallows, nougat and traditional sweets.",
@@ -1091,7 +1091,7 @@
         {
           "id": "snacks",
           "name_en": "Snacks",
-          "name_fa": "تنقلات",
+          "name_fa": "Snacks",
           "slug": "snacks",
           "icon": "popcorn",
           "description": "Packaged and bulk snack products.",
@@ -1107,7 +1107,7 @@
         {
           "id": "bakery-ingredients",
           "name_en": "Bakery Ingredients",
-          "name_fa": "مواد اولیه نانوایی",
+          "name_fa": "Bakery Ingredients",
           "slug": "bakery-ingredients",
           "icon": "wheat",
           "description": "Ingredients used in bakery and pastry manufacturing.",
@@ -1126,7 +1126,7 @@
     {
       "id": "processed-convenience-foods",
       "name_en": "Processed & Convenience Foods",
-      "name_fa": "غذاهای فرآوری‌شده و آماده",
+      "name_fa": "Processed & Convenience Foods",
       "slug": "processed-convenience-foods",
       "icon": "utensils",
       "description": "Processed, preserved, ready-to-eat and convenience food products.",
@@ -1135,7 +1135,7 @@
         {
           "id": "canned-preserved-foods",
           "name_en": "Canned & Preserved Foods",
-          "name_fa": "کنسروها و غذاهای نگهداری‌شده",
+          "name_fa": "Canned & Preserved Foods",
           "slug": "canned-preserved-foods",
           "icon": "package",
           "description": "Canned, preserved and shelf-stable food products.",
@@ -1145,7 +1145,7 @@
         {
           "id": "ready-meals-frozen-meals",
           "name_en": "Ready Meals & Frozen Meals",
-          "name_fa": "غذاهای آماده و منجمد",
+          "name_fa": "Ready Meals & Frozen Meals",
           "slug": "ready-meals-frozen-meals",
           "icon": "utensils",
           "description": "Ready-to-eat, ready-to-cook and frozen meal products.",
@@ -1155,7 +1155,7 @@
         {
           "id": "soups-sauces-dressings",
           "name_en": "Soups, Sauces & Dressings",
-          "name_fa": "سوپ، سس و چاشنی",
+          "name_fa": "Soups, Sauces & Dressings",
           "slug": "soups-sauces-dressings",
           "icon": "bottle",
           "description": "Soups, sauces, dressings and prepared condiments.",
@@ -1165,7 +1165,7 @@
         {
           "id": "pasta-noodles",
           "name_en": "Pasta & Noodles",
-          "name_fa": "پاستا و نودل",
+          "name_fa": "Pasta & Noodles",
           "slug": "pasta-noodles",
           "icon": "utensils",
           "description": "Pasta, noodles and related products.",
@@ -1175,7 +1175,7 @@
         {
           "id": "breakfast-cereals-bars",
           "name_en": "Breakfast Cereals & Bars",
-          "name_fa": "غلات صبحانه و بار",
+          "name_fa": "Breakfast Cereals & Bars",
           "slug": "breakfast-cereals-bars",
           "icon": "wheat",
           "description": "Breakfast cereals, granola and nutritional bars.",
@@ -1188,7 +1188,7 @@
     {
       "id": "food-ingredients-additives",
       "name_en": "Food Ingredients & Additives",
-      "name_fa": "مواد اولیه و افزودنی‌های غذایی",
+      "name_fa": "Food Ingredients & Additives",
       "slug": "food-ingredients-additives",
       "icon": "flask",
       "description": "Functional ingredients, additives and specialty ingredients for food manufacturing.",
@@ -1197,7 +1197,7 @@
         {
           "id": "thickeners-stabilizers",
           "name_en": "Thickeners & Stabilizers",
-          "name_fa": "غلیظ‌کننده‌ها و پایدارکننده‌ها",
+          "name_fa": "Thickeners & Stabilizers",
           "slug": "thickeners-stabilizers",
           "icon": "flask",
           "description": "Hydrocolloids, thickeners and stabilizers for food applications.",
@@ -1207,7 +1207,7 @@
         {
           "id": "emulsifiers",
           "name_en": "Emulsifiers",
-          "name_fa": "امولسیفایرها",
+          "name_fa": "Emulsifiers",
           "slug": "emulsifiers",
           "icon": "flask",
           "description": "Food-grade emulsifiers for industrial food production.",
@@ -1217,7 +1217,7 @@
         {
           "id": "preservatives",
           "name_en": "Preservatives",
-          "name_fa": "نگهدارنده‌ها",
+          "name_fa": "Preservatives",
           "slug": "preservatives",
           "icon": "flask",
           "description": "Food preservatives for extending shelf life and maintaining product quality.",
@@ -1227,7 +1227,7 @@
         {
           "id": "colors-flavors",
           "name_en": "Colors & Flavors",
-          "name_fa": "رنگ‌ها و طعم‌دهنده‌ها",
+          "name_fa": "Colors & Flavors",
           "slug": "colors-flavors",
           "icon": "flask",
           "description": "Food colors, natural colors, flavors and flavoring systems.",
@@ -1237,7 +1237,7 @@
         {
           "id": "enzymes",
           "name_en": "Enzymes",
-          "name_fa": "آنزیم‌ها",
+          "name_fa": "Enzymes",
           "slug": "enzymes",
           "icon": "flask",
           "description": "Food-grade enzymes for bakery, dairy, beverage and industrial applications.",
@@ -1247,7 +1247,7 @@
         {
           "id": "vitamins-minerals",
           "name_en": "Vitamins & Minerals",
-          "name_fa": "ویتامین‌ها و مواد معدنی",
+          "name_fa": "Vitamins & Minerals",
           "slug": "vitamins-minerals",
           "icon": "pill",
           "description": "Food-grade vitamins, minerals and nutritional ingredients.",
@@ -1257,7 +1257,7 @@
         {
           "id": "protein-isolates-concentrates",
           "name_en": "Protein Isolates & Concentrates",
-          "name_fa": "ایزوله و کنسانتره پروتئین",
+          "name_fa": "Protein Isolates & Concentrates",
           "slug": "protein-isolates-concentrates",
           "icon": "dumbbell",
           "description": "Protein isolates and concentrates for food and beverage manufacturing.",
@@ -1267,7 +1267,7 @@
         {
           "id": "starches",
           "name_en": "Starches",
-          "name_fa": "نشاسته‌ها",
+          "name_fa": "Starches",
           "slug": "starches",
           "icon": "wheat",
           "description": "Food-grade starches and modified starches.",
@@ -1277,7 +1277,7 @@
         {
           "id": "cultures-yeasts",
           "name_en": "Cultures & Yeasts",
-          "name_fa": "کشت‌ها و مخمرها",
+          "name_fa": "Cultures & Yeasts",
           "slug": "cultures-yeasts",
           "icon": "flask",
           "description": "Food cultures, starter cultures and yeast products.",
@@ -1290,7 +1290,7 @@
     {
       "id": "plant-based-alternative-foods",
       "name_en": "Plant-Based & Alternative Foods",
-      "name_fa": "غذاهای گیاهی و جایگزین",
+      "name_fa": "Plant-Based & Alternative Foods",
       "slug": "plant-based-alternative-foods",
       "icon": "leaf",
       "description": "Plant-based foods, alternative proteins and dairy alternatives.",
@@ -1299,7 +1299,7 @@
         {
           "id": "plant-based-meat",
           "name_en": "Plant-Based Meat",
-          "name_fa": "گوشت گیاهی",
+          "name_fa": "Plant-Based Meat",
           "slug": "plant-based-meat",
           "icon": "leaf",
           "description": "Plant-based meat alternatives for retail and foodservice.",
@@ -1309,7 +1309,7 @@
         {
           "id": "plant-based-dairy",
           "name_en": "Plant-Based Dairy",
-          "name_fa": "لبنیات گیاهی",
+          "name_fa": "Plant-Based Dairy",
           "slug": "plant-based-dairy",
           "icon": "leaf",
           "description": "Plant-based milk, cheese and yogurt alternatives.",
@@ -1323,7 +1323,7 @@
         {
           "id": "tofu-tempeh-seitan",
           "name_en": "Tofu, Tempeh & Seitan",
-          "name_fa": "توفو، تمپه و سیتان",
+          "name_fa": "Tofu, Tempeh & Seitan",
           "slug": "tofu-tempeh-seitan",
           "icon": "leaf",
           "description": "Plant-based protein products including tofu, tempeh and seitan.",
@@ -1333,7 +1333,7 @@
         {
           "id": "alternative-proteins",
           "name_en": "Alternative Proteins",
-          "name_fa": "پروتئین‌های جایگزین",
+          "name_fa": "Alternative Proteins",
           "slug": "alternative-proteins",
           "icon": "leaf",
           "description": "Emerging alternative protein products for food manufacturing.",
@@ -1349,7 +1349,7 @@
     {
       "id": "organic-specialty-foods",
       "name_en": "Organic & Specialty Foods",
-      "name_fa": "محصولات ارگانیک و ویژه",
+      "name_fa": "Organic & Specialty Foods",
       "slug": "organic-specialty-foods",
       "icon": "leaf",
       "description": "Specialty food products that do not fit into conventional product categories.",
@@ -1358,7 +1358,7 @@
         {
           "id": "superfoods",
           "name_en": "Superfoods",
-          "name_fa": "سوپرفودها",
+          "name_fa": "Superfoods",
           "slug": "superfoods",
           "icon": "leaf",
           "description": "Nutrient-rich specialty foods and ingredients.",
@@ -1368,7 +1368,7 @@
         {
           "id": "specialty-foods",
           "name_en": "Specialty Foods",
-          "name_fa": "غذاهای ویژه",
+          "name_fa": "Specialty Foods",
           "slug": "specialty-foods",
           "icon": "star",
           "description": "Premium, traditional and specialty food products.",
@@ -1381,7 +1381,7 @@
     {
       "id": "beverages",
       "name_en": "Beverages",
-      "name_fa": "نوشیدنی‌ها",
+      "name_fa": "Beverages",
       "slug": "beverages",
       "icon": "cup-soda",
       "description": "Water, juices, soft drinks, functional beverages and beverage concentrates.",
@@ -1390,7 +1390,7 @@
         {
           "id": "water",
           "name_en": "Water",
-          "name_fa": "آب",
+          "name_fa": "Water",
           "slug": "water",
           "icon": "droplet",
           "description": "Bottled and packaged drinking water.",
@@ -1404,7 +1404,7 @@
         {
           "id": "soft-drinks",
           "name_en": "Soft Drinks",
-          "name_fa": "نوشابه و نوشیدنی‌های غیرالکلی",
+          "name_fa": "Soft Drinks",
           "slug": "soft-drinks",
           "icon": "cup-soda",
           "description": "Carbonated and non-carbonated soft drinks.",
@@ -1414,7 +1414,7 @@
         {
           "id": "juices-nectars",
           "name_en": "Juices & Nectars",
-          "name_fa": "آبمیوه و نکتار",
+          "name_fa": "Juices & Nectars",
           "slug": "juices-nectars",
           "icon": "cup-soda",
           "description": "Fruit juices, nectars and juice-based beverages.",
@@ -1424,7 +1424,7 @@
         {
           "id": "functional-drinks",
           "name_en": "Functional Beverages",
-          "name_fa": "نوشیدنی‌های عملکردی",
+          "name_fa": "Functional Beverages",
           "slug": "functional-drinks",
           "icon": "activity",
           "description": "Functional, energy and wellness-oriented beverages.",
@@ -1434,7 +1434,7 @@
         {
           "id": "powders-concentrates",
           "name_en": "Beverage Powders & Concentrates",
-          "name_fa": "پودر و کنسانتره نوشیدنی",
+          "name_fa": "Beverage Powders & Concentrates",
           "slug": "powders-concentrates",
           "icon": "flask",
           "description": "Powders, concentrates and bases for beverage manufacturing.",
@@ -1447,7 +1447,7 @@
     {
       "id": "pet-food",
       "name_en": "Pet Food",
-      "name_fa": "غذای حیوانات خانگی",
+      "name_fa": "Pet Food",
       "slug": "pet-food",
       "icon": "dog",
       "description": "Commercial pet food, treats and specialty nutrition products.",
@@ -1456,7 +1456,7 @@
         {
           "id": "dog-food",
           "name_en": "Dog Food",
-          "name_fa": "غذای سگ",
+          "name_fa": "Dog Food",
           "slug": "dog-food",
           "icon": "dog",
           "description": "Dry, wet and specialty dog food products.",
@@ -1470,7 +1470,7 @@
         {
           "id": "cat-food",
           "name_en": "Cat Food",
-          "name_fa": "غذای گربه",
+          "name_fa": "Cat Food",
           "slug": "cat-food",
           "icon": "cat",
           "description": "Dry, wet and specialty cat food products.",
@@ -1484,7 +1484,7 @@
         {
           "id": "pet-treats",
           "name_en": "Pet Treats",
-          "name_fa": "تشویقی حیوانات خانگی",
+          "name_fa": "Pet Treats",
           "slug": "pet-treats",
           "icon": "bone",
           "description": "Treats and snacks for pets.",
@@ -1497,7 +1497,7 @@
     {
       "id": "animal-feed",
       "name_en": "Animal Feed",
-      "name_fa": "خوراک دام و طیور",
+      "name_fa": "Animal Feed",
       "slug": "animal-feed",
       "icon": "wheat",
       "description": "Feed products and feed ingredients for livestock, poultry and aquaculture.",
@@ -1506,7 +1506,7 @@
         {
           "id": "poultry-feed",
           "name_en": "Poultry Feed",
-          "name_fa": "خوراک طیور",
+          "name_fa": "Poultry Feed",
           "slug": "poultry-feed",
           "icon": "bird",
           "description": "Feed products for poultry production.",
@@ -1516,7 +1516,7 @@
         {
           "id": "cattle-feed",
           "name_en": "Cattle & Livestock Feed",
-          "name_fa": "خوراک دام",
+          "name_fa": "Cattle & Livestock Feed",
           "slug": "cattle-feed",
           "icon": "wheat",
           "description": "Feed products for cattle and livestock.",
@@ -1526,7 +1526,7 @@
         {
           "id": "aquaculture-feed",
           "name_en": "Aquaculture Feed",
-          "name_fa": "خوراک آبزیان",
+          "name_fa": "Aquaculture Feed",
           "slug": "aquaculture-feed",
           "icon": "fish",
           "description": "Feed products for fish and aquaculture operations.",
@@ -1536,7 +1536,7 @@
         {
           "id": "feed-ingredients",
           "name_en": "Feed Ingredients",
-          "name_fa": "مواد اولیه خوراک دام",
+          "name_fa": "Feed Ingredients",
           "slug": "feed-ingredients",
           "icon": "wheat",
           "description": "Raw materials and ingredients used in animal feed production.",
@@ -1549,7 +1549,7 @@
     {
       "id": "food-packaging-equipment",
       "name_en": "Food Packaging & Equipment",
-      "name_fa": "بسته‌بندی و تجهیزات صنایع غذایی",
+      "name_fa": "Food Packaging & Equipment",
       "slug": "food-packaging-equipment",
       "icon": "package",
       "description": "Food packaging materials, processing machinery and cold-chain equipment.",
@@ -1558,7 +1558,7 @@
         {
           "id": "food-packaging",
           "name_en": "Food Packaging",
-          "name_fa": "بسته‌بندی مواد غذایی",
+          "name_fa": "Food Packaging",
           "slug": "food-packaging",
           "icon": "package",
           "description": "Packaging materials and solutions for food products.",
@@ -1576,7 +1576,7 @@
         {
           "id": "processing-packaging-equipment",
           "name_en": "Processing & Packaging Equipment",
-          "name_fa": "تجهیزات فرآوری و بسته‌بندی",
+          "name_fa": "Processing & Packaging Equipment",
           "slug": "processing-packaging-equipment",
           "icon": "settings",
           "description": "Machinery and equipment for food processing and packaging.",
@@ -1586,7 +1586,7 @@
         {
           "id": "cold-chain-equipment",
           "name_en": "Cold Chain & Refrigeration",
-          "name_fa": "زنجیره سرد و تجهیزات برودتی",
+          "name_fa": "Cold Chain & Refrigeration",
           "slug": "cold-chain-equipment",
           "icon": "snowflake",
           "description": "Cold storage, refrigeration and temperature-controlled equipment.",
@@ -1601,7 +1601,7 @@
     {
       "id": "logistics-shipping",
       "name_en": "Logistics & Shipping",
-      "name_fa": "لجستیک و حمل‌ونقل",
+      "name_fa": "Logistics & Shipping",
       "slug": "logistics-shipping",
       "icon": "truck",
       "sortOrder": 10
@@ -1609,7 +1609,7 @@
     {
       "id": "certification-compliance",
       "name_en": "Certification & Compliance",
-      "name_fa": "گواهی و انطباق",
+      "name_fa": "Certification & Compliance",
       "slug": "certification-compliance",
       "icon": "badge-check",
       "sortOrder": 20
@@ -1617,7 +1617,7 @@
     {
       "id": "trade-finance",
       "name_en": "Trade Finance",
-      "name_fa": "تأمین مالی تجارت",
+      "name_fa": "Trade Finance",
       "slug": "trade-finance",
       "icon": "landmark",
       "sortOrder": 30
@@ -1625,7 +1625,7 @@
     {
       "id": "quality-inspection",
       "name_en": "Quality Inspection",
-      "name_fa": "بازرسی کیفیت",
+      "name_fa": "Quality Inspection",
       "slug": "quality-inspection",
       "icon": "search-check",
       "sortOrder": 40

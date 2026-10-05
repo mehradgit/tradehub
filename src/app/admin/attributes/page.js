@@ -24,12 +24,11 @@ export default async function AdminAttributesPage() {
 
   const tree = buildCategoryTree(categories);
 
-  // ===== سریال‌سازی: Date → ISO و ساخت شکل امن برای کلاینت =====
+  // ===== Serialization: Date → ISO and building a client-safe shape =====
   const serialized = attributes.map((a) => ({
     id: a.id,
     key: a.key,
     label: a.label,
-    labelFa: a.labelFa ?? null,
     dataType: a.dataType,
     unit: a.unit ?? null,
     options: Array.isArray(a.options)

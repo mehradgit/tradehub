@@ -318,6 +318,7 @@ export default function NewRequestPage() {
                   </label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     className="form-control"
                     name="quantity"
                     placeholder="2000"
@@ -326,6 +327,9 @@ export default function NewRequestPage() {
                     min="1"
                     required
                   />
+                  <div className="help-text">
+                    How much you want to buy, in the unit selected below.
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>
@@ -373,6 +377,7 @@ export default function NewRequestPage() {
                   <label>Target Price</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     className="form-control"
                     name="targetPrice"
                     step="0.01"

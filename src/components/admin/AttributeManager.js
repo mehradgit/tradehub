@@ -1,11 +1,11 @@
 // src/components/admin/AttributeManager.js
 "use client";
 // ============================================================
-// مدیریت اتریبیوت‌های محصول (EAV)
+// Product attribute management (EAV)
 //
-// اتریبیوتی که این‌جا ساخته می‌شود خودکار در فیلترهای فروشگاه و
-// فرم‌های ساخت محصول ظاهر می‌شود (resolveAttributesForPath).
-// scopeId همان slug سطح انتخاب‌شده از درخت سه‌سطحی دسته‌بندی است.
+// An attribute created here automatically appears in the storefront
+// filters and in the product create forms (resolveAttributesForPath).
+// scopeId is the slug of the selected level in the three-level category tree.
 // ============================================================
 
 import { useRef, useState } from "react";
@@ -59,7 +59,6 @@ const smallBtnStyle = {
 const EMPTY_FORM = {
   key: "",
   label: "",
-  labelFa: "",
   dataType: "text",
   unit: "",
   scope: "global",
@@ -79,7 +78,7 @@ const CHECKBOX_FIELDS = [
 ];
 
 // ============================================================
-// پیدا کردن انتخاب درخت از یک scopeId (فقط slug را داریم)
+// Find the tree selection from a scopeId (we only have the slug)
 // ============================================================
 function findScopeSelection(tree, scope, scopeId) {
   const empty = { l1: "", l2: "", l3: "" };
@@ -107,7 +106,7 @@ function findScopeSelection(tree, scope, scopeId) {
 }
 
 // ============================================================
-// نام خوانا برای scope یک اتریبیوت
+// Human-readable name for an attribute scope
 // ============================================================
 function describeScopePath(attr, tree) {
   if (!attr || attr.scope === "global" || !attr.scopeId) return "All products";
@@ -123,7 +122,7 @@ function describeScopePath(attr, tree) {
 }
 
 // ============================================================
-// پاک‌سازی گزینه‌های select / multiSelect
+// Clean up select / multiSelect options
 // ============================================================
 function cleanOptions(options) {
   const seen = new Set();
@@ -176,11 +175,11 @@ export default function AttributeManager({
   const [form, setForm] = useState(EMPTY_FORM);
   const [sel, setSel] = useState({ l1: "", l2: "", l3: "" });
   const [bulk, setBulk] = useState("");
-  const [busy, setBusy] = useState(null); // "save" یا `delete:${id}`
+  const [busy, setBusy] = useState(null); // "save" or `delete:${id}`
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
-  // ===== گزینه‌های درخت برای سه select وابسته =====
+  // ===== Tree options for the three dependent selects =====
   const l1Nodes = tree || [];
   const l1Node = l1Nodes.find((n) => n.slug === sel.l1) || null;
   const l2Nodes = l1Node?.children || [];
@@ -207,7 +206,7 @@ export default function AttributeManager({
     }, 0);
   };
 
-  // ===== باز/بسته کردن پنل =====
+  // ===== Open/close the panel =====
   const openCreate = () => {
     if (panel.open && panel.mode === "create") {
       setPanel({ open: false, mode: "create", id: null });
@@ -224,7 +223,6 @@ export default function AttributeManager({
     setForm({
       key: attr.key || "",
       label: attr.label || "",
-      labelFa: attr.labelFa || "",
       dataType: attr.dataType || "text",
       unit: attr.unit || "",
       scope: attr.scope || "global",
@@ -248,7 +246,7 @@ export default function AttributeManager({
 
   const closePanel = () => setPanel({ open: false, mode: "create", id: null });
 
-  // ===== ویرایش گزینه‌ها =====
+  // ===== Edit options =====
   const addOption = () =>
     setForm((f) => ({ ...f, options: [...f.options, { value: "", label: "" }] }));
 
@@ -264,7 +262,7 @@ export default function AttributeManager({
       options: f.options.filter((_, i) => i !== index),
     }));
 
-  // ===== افزودن دسته‌ای: هر خط یک گزینه =====
+  // ===== Bulk add: one option per line =====
   const applyBulk = () => {
     const lines = String(bulk || "")
       .split("\n")
@@ -296,7 +294,7 @@ export default function AttributeManager({
     setBulk("");
   };
 
-  // ===== ذخیره (POST برای ساخت، PATCH برای ویرایش) =====
+  // ===== Save (POST to create, PATCH to edit) =====
   const save = async () => {
     const isEdit = panel.mode === "edit";
     const key = String(form.key || "").trim();
@@ -333,7 +331,6 @@ export default function AttributeManager({
     const payload = {
       key,
       label,
-      labelFa: String(form.labelFa || "").trim(),
       dataType: form.dataType,
       unit: String(form.unit || "").trim(),
       scope: form.scope,
@@ -369,7 +366,7 @@ export default function AttributeManager({
     }
   };
 
-  // ===== حذف =====
+  // ===== Delete =====
   const remove = async (attr) => {
     const ok = window.confirm(
       `Delete the attribute "${attr.label}" (${attr.key})?\n\nAll product values stored for this attribute will be removed.`
@@ -399,7 +396,7 @@ export default function AttributeManager({
 
   return (
     <>
-      {/* ===== نوار بالا ===== */}
+      {/* ===== Top bar ===== */}
       <div
         style={{
           display: "flex",
@@ -435,7 +432,7 @@ export default function AttributeManager({
         </button>
       </div>
 
-      {/* ===== پنل ساخت/ویرایش ===== */}
+      {/* ===== Create/edit panel ===== */}
       {panel.open && (
         <div
           className="admin-card"
@@ -489,7 +486,7 @@ export default function AttributeManager({
           </div>
 
           <div style={{ display: "grid", gap: "13px" }}>
-            {/* ===== ردیف ۱: key / label / labelFa ===== */}
+            {/* ===== Row 1: key / label ===== */}
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: "180px" }}>
                 <label style={labelStyle}>Key</label>
@@ -518,19 +515,9 @@ export default function AttributeManager({
                   placeholder="Moisture content"
                 />
               </div>
-
-              <div style={{ flex: 1, minWidth: "180px" }}>
-                <label style={labelStyle}>Label (Persian)</label>
-                <input
-                  style={inputStyle}
-                  value={form.labelFa}
-                  onChange={(e) => set("labelFa", e.target.value)}
-                  placeholder="میزان رطوبت"
-                />
-              </div>
             </div>
 
-            {/* ===== ردیف ۲: dataType / unit / sortOrder ===== */}
+            {/* ===== Row 2: dataType / unit / sortOrder ===== */}
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <div style={{ width: "180px" }}>
                 <label style={labelStyle}>Data type</label>
@@ -588,7 +575,7 @@ export default function AttributeManager({
               </div>
             </div>
 
-            {/* ===== ردیف ۳: scope + انتخاب سطح دسته‌بندی ===== */}
+            {/* ===== Row 3: scope + category level selection ===== */}
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <div style={{ width: "230px" }}>
                 <label style={labelStyle}>Scope</label>
@@ -691,7 +678,7 @@ export default function AttributeManager({
               )}
             </div>
 
-            {/* ===== ردیف ۴: گزینه‌های select / multiSelect ===== */}
+            {/* ===== Row 4: select / multiSelect options ===== */}
             {needsOptions && (
               <div
                 style={{
@@ -794,7 +781,7 @@ export default function AttributeManager({
         </div>
       )}
 
-      {/* ===== جدول اتریبیوت‌ها ===== */}
+      {/* ===== Attributes table ===== */}
       {attributes.length === 0 ? (
         <div className="admin-card" style={{ padding: 60, textAlign: "center" }}>
           <i
@@ -837,7 +824,6 @@ export default function AttributeManager({
                       >
                         <code>{attr.key}</code>
                         {attr.unit ? <span> · unit {attr.unit}</span> : null}
-                        {attr.labelFa ? <span> · {attr.labelFa}</span> : null}
                       </div>
                     </td>
 

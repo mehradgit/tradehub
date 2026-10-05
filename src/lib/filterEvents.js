@@ -2,20 +2,20 @@
 "use client";
 
 // ============================================================
-// گذرگاه رویداد کوچک بین هدر و نوار فیلتر صفحات
+// Small event bus between the header and the page filter bars
 //
-// چرا: مدال فیلترها به داده‌ی سمت سرور نیاز دارد (گزینه‌ها، درخت
-// دسته، تعاریف اتریبیوت، facet). آن داده فقط در خودِ صفحه موجود
-// است، نه در هدر. پس هدر داده را نمی‌سازد؛ فقط رویداد می‌فرستد و
-// صفحه مدال را باز می‌کند. این کار از ساختن یک API جدید برای facet
-// و از تکرار منطق جلوگیری می‌کند.
+// Why: the filter modal needs server-side data (options, category
+// tree, attribute definitions, facets). That data only exists inside
+// the page itself, not in the header. So the header does not build
+// the data; it only emits an event and the page opens the modal.
+// This avoids adding a new API for facets and avoids duplicating logic.
 // ============================================================
 import { useEffect } from "react";
 
 export const FILTER_EVENTS = {
-  // دکمه‌ی Filters هدر → مدال همان صفحه باز شود
+  // Header Filters button → open the modal of that same page
   OPEN_FILTERS: "foodhub:open-filters",
-  // فیلد مصنوعی داخل صفحه → نوار مگا سرچ هدر باز شود
+  // Fake in-page field → open the header mega search bar
   OPEN_MEGA: "foodhub:open-mega-search",
 };
 

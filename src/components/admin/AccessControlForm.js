@@ -343,9 +343,9 @@ function AccessBlock({
                 onChange={(e) => onChange("quotaType", e.target.value)}
                 style={selectStyle}
               >
-                <option value="inquiry">Inquiry (استعلام)</option>
-                <option value="quote">Quote (پیشنهاد)</option>
-                <option value="request">Request (درخواست)</option>
+                <option value="inquiry">Inquiry</option>
+                <option value="quote">Quote</option>
+                <option value="request">Request</option>
               </select>
             </FieldRow>
           )}

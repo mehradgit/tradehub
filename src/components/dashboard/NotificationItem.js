@@ -15,7 +15,7 @@ export default function NotificationItem({
   const [marking, setMarking] = useState(false);
 
   const handleClick = async () => {
-    // علامت خوانده‌شده
+    // Mark as read
     if (!notification.read) {
       setMarking(true);
       try {
@@ -30,7 +30,7 @@ export default function NotificationItem({
       }
     }
 
-    // ریدایرکت
+    // Redirect
     if (notification.link) {
       router.push(notification.link);
     }

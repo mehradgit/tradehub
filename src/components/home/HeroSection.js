@@ -8,7 +8,7 @@ export default function HeroSection({ stats }) {
     <section className="hero-new">
       <div className="container">
         <div className="hero-new-grid">
-          {/* ====== متن + CTA ====== */}
+          {/* ====== Text + CTA ====== */}
           <div className="hero-content">
             <div className="eyebrow">
               <i className="fa-solid fa-globe"></i>
@@ -26,7 +26,7 @@ export default function HeroSection({ stats }) {
               international trade relationships — all in one place.
             </p>
 
-            {/* ====== دکمه‌های CTA ====== */}
+            {/* ====== CTA buttons ====== */}
             <div className="hero-actions">
               <Link href="/profiles" className="btn-hero-primary">
                 <i className="fa-solid fa-magnifying-glass"></i>
@@ -38,7 +38,7 @@ export default function HeroSection({ stats }) {
               </Link>
             </div>
 
-            {/* ====== ویژگی‌ها ====== */}
+            {/* ====== Features ====== */}
             <div className="hero-features">
               <div className="hero-feature">
                 <i className="fa-solid fa-circle-check"></i>
@@ -55,7 +55,7 @@ export default function HeroSection({ stats }) {
             </div>
           </div>
 
-          {/* ====== تصویر ====== */}
+          {/* ====== Image ====== */}
           <div className="hero-image">
             <img src="/images/hero.jpg" alt="Global food marketplace" />
             <div className="floating-card">

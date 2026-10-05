@@ -1,7 +1,7 @@
 // src/lib/pushClient.js
 "use client";
 
-// ====== تبدیل VAPID Key ======
+// ====== Convert VAPID Key ======
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
@@ -17,7 +17,7 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-// ====== بررسی پشتیبانی مرورگر ======
+// ====== Check browser support ======
 export function isPushSupported() {
   if (typeof window === "undefined") return false;
 
@@ -28,13 +28,13 @@ export function isPushSupported() {
   );
 }
 
-// ====== وضعیت فعلی permission ======
+// ====== Current permission state ======
 export function getNotificationPermission() {
   if (typeof window === "undefined") return "default";
   return Notification.permission; // "default" | "granted" | "denied"
 }
 
-// ====== ثبت Service Worker ======
+// ====== Register Service Worker ======
 export async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return null;
 
@@ -50,7 +50,7 @@ export async function registerServiceWorker() {
   }
 }
 
-// ====== بررسی وجود subscription فعال ======
+// ====== Check for an existing active subscription ======
 export async function getExistingSubscription() {
   if (!("serviceWorker" in navigator)) return null;
 
@@ -64,13 +64,13 @@ export async function getExistingSubscription() {
   }
 }
 
-// ====== درخواست Permission + Subscribe ======
+// ====== Request Permission + Subscribe ======
 export async function subscribeToPush() {
   if (!isPushSupported()) {
     throw new Error("Push notifications are not supported on this browser.");
   }
 
-  // ۱. درخواست Permission
+  // 1. Request Permission
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
     throw new Error(
@@ -78,27 +78,27 @@ export async function subscribeToPush() {
     );
   }
 
-  // ۲. ثبت Service Worker
+  // 2. Register Service Worker
   const registration = await navigator.serviceWorker.register(
     "/service-worker.js",
     { scope: "/" }
   );
   await navigator.serviceWorker.ready;
 
-  // ۳. دریافت VAPID Public Key
+  // 3. Fetch VAPID Public Key
   const keyRes = await fetch("/api/push/vapid-public-key");
   if (!keyRes.ok) {
     throw new Error("Failed to get VAPID public key");
   }
   const { publicKey } = await keyRes.json();
 
-  // ۴. Subscribe
+  // 4. Subscribe
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(publicKey),
   });
 
-  // ۵. ذخیره در سرور
+  // 5. Save on the server
   const saveRes = await fetch("/api/push/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -119,7 +119,7 @@ export async function subscribeToPush() {
   return subscription;
 }
 
-// ====== لغو Subscribe ======
+// ====== Unsubscribe ======
 export async function unsubscribeFromPush() {
   const subscription = await getExistingSubscription();
 
@@ -131,7 +131,7 @@ export async function unsubscribeFromPush() {
     }
   }
 
-  // حذف از سرور
+  // Remove from the server
   await fetch("/api/push/unsubscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

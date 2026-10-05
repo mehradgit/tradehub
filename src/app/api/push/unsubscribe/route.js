@@ -14,12 +14,12 @@ export async function POST(request) {
     const { endpoint } = body;
 
     if (endpoint) {
-      // حذف یک subscription خاص
+      // Delete a specific subscription
       await prisma.pushSubscription.deleteMany({
         where: { endpoint, userId: session.user.id },
       });
     } else {
-      // حذف همه‌ی subscriptions کاربر
+      // Delete all of the user's subscriptions
       await prisma.pushSubscription.deleteMany({
         where: { userId: session.user.id },
       });

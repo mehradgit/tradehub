@@ -695,7 +695,6 @@ model AttributeDefinition {
   id           String   @id @default(cuid())
   key          String // "moisture" — نام ماشینی
   label        String // "Moisture content"
-  labelFa      String?
   // text | number | boolean | select | multiSelect
   dataType     String   @default("text")
   unit         String? // "%", "mm", "kg"

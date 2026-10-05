@@ -43,7 +43,7 @@ export default async function AdminEmailsPage({ searchParams }) {
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
-      // ⚠️ metadata انتخاب نمی‌شود؛ حاوی HTML کامل ایمیل است
+      // ⚠️ metadata is not selected; it holds the full email HTML
       select: {
         id: true,
         toEmail: true,

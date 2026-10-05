@@ -2,9 +2,9 @@
 import { prisma } from "@/lib/prisma";
 
 // ============================================================
-// helper: آدرس پایه سایت (بدون اسلش انتهایی)
-// اگر env ست نباشد، به localhost برمی‌گردد تا لینک‌ها "undefined/..."
-// نشوند.
+// helper: site base URL (without a trailing slash)
+// If the env var is not set, it falls back to localhost so links do not
+// become "undefined/...".
 // ============================================================
 function baseUrl() {
   const raw =
@@ -16,7 +16,7 @@ function baseUrl() {
 }
 
 // ============================================================
-// helper: کوتاه‌کردن متن برای تیتر/پیش‌نمایش
+// helper: truncate text for a title/preview
 // ============================================================
 function truncate(text, max = 140) {
   if (!text) return "";
@@ -25,8 +25,8 @@ function truncate(text, max = 140) {
 }
 
 // ============================================================
-// هر handler یک تابع async است که payload می‌گیرد
-// و یک آرایه از action برمی‌گرداند.
+// Each handler is an async function that receives a payload
+// and returns an array of actions.
 //
 // action = {
 //   userId,
@@ -37,13 +37,13 @@ function truncate(text, max = 140) {
 //   inAppData,
 //   pushData,
 //   metadata,
-//   bypassPreferences,   // برای ایمیل‌های تراکنشی
+//   bypassPreferences,   // for transactional emails
 // }
 // ============================================================
 
 export const HANDLERS = {
   // ============================================================
-  // ۱. کاربر ثبت‌نام کرد → ایمیل خوش‌آمدگویی
+  // 1. User registered → welcome email
   // ============================================================
   "user.registered": async ({ userId }) => {
     if (!userId) return [];
@@ -65,14 +65,14 @@ export const HANDLERS = {
           dashboardUrl: `${baseUrl()}/dashboard`,
         },
         channels: ["email"],
-        bypassPreferences: true, // ✅ همیشه برود
+        bypassPreferences: true, // ✅ always send
         metadata: { event: "user.registered" },
       },
     ];
   },
 
   // ============================================================
-  // ۲. استعلام جدید روی محصول → اطلاع به تأمین‌کننده
+  // 2. New inquiry on a product → notify the supplier
   // ============================================================
   "inquiry.created": async ({ inquiryId }) => {
     if (!inquiryId) return [];
@@ -124,7 +124,7 @@ export const HANDLERS = {
   },
 
   // ============================================================
-  // ۳. نقل قول جدید → اطلاع به خریدار
+  // 3. New quote → notify the buyer
   // ============================================================
   "quote.submitted": async ({ quoteId }) => {
     if (!quoteId) return [];
@@ -175,7 +175,7 @@ export const HANDLERS = {
   },
 
   // ============================================================
-  // ۴. تیکت جدید → اطلاع به همه ادمین‌ها
+  // 4. New ticket → notify all admins
   // ============================================================
   "ticket.created": async ({ ticketId }) => {
     if (!ticketId) return [];
@@ -231,10 +231,10 @@ export const HANDLERS = {
   },
 
   // ============================================================
-  // ۵. پاسخ روی تیکت
-  //    byAdmin=true  → اطلاع به صاحب تیکت
-  //    byAdmin=false → اطلاع به همه ادمین‌ها
-  //    یادداشت داخلی (isInternal) هیچ نوتیفیکیشنی نمی‌فرستد.
+  // 5. Reply on a ticket
+  //    byAdmin=true  → notify the ticket owner
+  //    byAdmin=false → notify all admins
+  //    An internal note (isInternal) sends no notification at all.
   // ============================================================
   "ticket.replied": async ({ ticketId, messageId, byAdmin = false }) => {
     if (!ticketId) return [];
@@ -247,7 +247,7 @@ export const HANDLERS = {
     });
     if (!ticket) return [];
 
-    // ===== متن پیام =====
+    // ===== Message text =====
     let preview = "";
     let senderName = "Support";
 
@@ -260,7 +260,7 @@ export const HANDLERS = {
           sender: { select: { name: true, companyName: true, email: true } },
         },
       });
-      // یادداشت داخلی هرگز به کاربر اعلام نمی‌شود
+      // An internal note is never announced to the user
       if (!msg || msg.isInternal) return [];
       preview = truncate(msg.message, 200);
       if (!byAdmin) {
@@ -272,7 +272,7 @@ export const HANDLERS = {
       }
     }
 
-    // ===== ادمین پاسخ داده → صاحب تیکت =====
+    // ===== Admin replied → ticket owner =====
     if (byAdmin) {
       if (!ticket.userId) return [];
 
@@ -310,7 +310,7 @@ export const HANDLERS = {
       ];
     }
 
-    // ===== کاربر پاسخ داده → همه ادمین‌ها =====
+    // ===== User replied → all admins =====
     const admins = await prisma.user.findMany({
       where: { isAdmin: true },
       select: { id: true, name: true },
@@ -350,7 +350,7 @@ export const HANDLERS = {
   },
 
   // ============================================================
-  // ۶. نتیجه بررسی محصول (تأیید / رد)
+  // 6. Product review result (approved / rejected)
   // ============================================================
   "product.reviewed": async ({
     productId,
@@ -403,7 +403,7 @@ export const HANDLERS = {
   },
 
   // ============================================================
-  // ۷. نتیجه بررسی درخواست خرید (تأیید / رد)
+  // 7. Buying request review result (approved / rejected)
   // ============================================================
   "request.reviewed": async ({
     requestId,
@@ -458,7 +458,7 @@ export const HANDLERS = {
   },
 
   // ============================================================
-  // ۸. بستن خودکار تیکت → اطلاع به صاحب تیکت
+  // 8. Ticket auto-closed → notify the ticket owner
   // ============================================================
   "ticket.auto_closed": async ({ ticketId }) => {
     if (!ticketId) return [];
@@ -504,7 +504,7 @@ export const HANDLERS = {
   },
 
   // ============================================================
-  // ۹. یادآوری انقضای اشتراک → اطلاع به صاحب اشتراک
+  // 9. Subscription expiry reminder → notify the subscription owner
   // ============================================================
   "subscription.expiring": async ({ subscriptionId, daysLeft }) => {
     if (!subscriptionId) return [];

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// تاریخ‌ها رو از رشته به Date تبدیل کن
+// Convert date strings back to Date objects
 function parseDates(obj) {
   if (obj === null || obj === undefined) return obj;
 
@@ -12,7 +12,7 @@ function parseDates(obj) {
   }
 
   if (typeof obj === "object") {
-    // اگر آبجکت Date نبود، تک‌تک کلیدها رو چک کن
+    // If it is not a Date object, check every key
     const result = {};
     for (const [key, value] of Object.entries(obj)) {
       if (
@@ -42,7 +42,7 @@ export async function POST(request) {
     const body = await request.json();
     const { backup, mode = "replace" } = body;
 
-    // ====== اعتبارسنجی ساختار ======
+    // ====== Structure validation ======
     if (!backup?.data || !backup?.meta) {
       return NextResponse.json(
         { message: "Invalid backup file structure" },
@@ -59,19 +59,19 @@ export async function POST(request) {
 
     const d = parseDates(backup.data);
 
-    // ====== اجرای عملیات در یک تراکنش ======
+    // ====== Run the whole operation in a single transaction ======
     const result = await prisma.$transaction(
       async (tx) => {
         const counts = {};
 
-        // -------- مرحله ۱: پاک کردن (اگه mode === "replace") --------
+        // -------- Step 1: Delete (when mode === "replace") --------
         if (mode === "replace") {
-          // وابسته‌های کوپن
+          // Coupon dependencies
           await tx.couponUsage.deleteMany({});
           await tx.payment.deleteMany({});
           await tx.coupon.deleteMany({});
 
-          // Push و Notifications
+          // Push and Notifications
           await tx.pushSubscription.deleteMany({});
           await tx.notification.deleteMany({});
 
@@ -113,13 +113,13 @@ export async function POST(request) {
           });
           await tx.verificationToken.deleteMany({});
 
-          // Users (به‌جز ادمین فعلی)
+          // Users (except the current admin)
           await tx.user.deleteMany({
             where: { id: { not: currentAdminId } },
           });
         }
 
-        // -------- مرحله ۲: درج پلن‌ها و قیمت‌ها (upsert بر اساس name) --------
+        // -------- Step 2: Insert plans and prices (upsert by name) --------
         const planIdMap = new Map(); // oldId -> newId
 
         for (const plan of d.plans || []) {
@@ -173,21 +173,21 @@ export async function POST(request) {
               },
             });
           } catch (e) {
-            // اگر قیمتی از قبل بود، رد شو
+            // If the price already existed, skip it
           }
         }
 
-        // -------- مرحله ۳: درج کاربران --------
+        // -------- Step 3: Insert users --------
         counts.users = 0;
         for (const user of d.users || []) {
-          // ادمین فعلی رو دست نزن
+          // Do not touch the current admin
           if (user.id === currentAdminId) continue;
 
           try {
             await tx.user.create({
               data: {
                 ...user,
-                // فیلدهای JSON رو مستقیماً درج می‌کنیم
+                // JSON fields are inserted directly
                 socialLinks: user.socialLinks || undefined,
                 galleryImages: user.galleryImages || undefined,
               },
@@ -198,7 +198,7 @@ export async function POST(request) {
           }
         }
 
-        // -------- مرحله ۴: Account و Session --------
+        // -------- Step 4: Account and Session --------
         counts.accounts = 0;
         for (const account of d.accounts || []) {
           if (account.userId === currentAdminId) continue;
@@ -217,7 +217,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۵: Products --------
+        // -------- Step 5: Products --------
         counts.products = 0;
         for (const product of d.products || []) {
           try {
@@ -233,7 +233,7 @@ export async function POST(request) {
           }
         }
 
-        // -------- مرحله ۶: Buying Requests --------
+        // -------- Step 6: Buying Requests --------
         counts.buyingRequests = 0;
         for (const req of d.buyingRequests || []) {
           try {
@@ -250,7 +250,7 @@ export async function POST(request) {
           }
         }
 
-        // -------- مرحله ۷: Product Inquiries --------
+        // -------- Step 7: Product Inquiries --------
         counts.productInquiries = 0;
         for (const inq of d.productInquiries || []) {
           try {
@@ -259,7 +259,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۸: Messages --------
+        // -------- Step 8: Messages --------
         counts.messages = 0;
         for (const msg of d.messages || []) {
           try {
@@ -268,7 +268,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۹: Quotes --------
+        // -------- Step 9: Quotes --------
         counts.quotes = 0;
         for (const q of d.quotes || []) {
           try {
@@ -277,7 +277,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۰: Saved items --------
+        // -------- Step 10: Saved items --------
         for (const s of d.savedProducts || []) {
           try {
             await tx.savedProduct.create({ data: s });
@@ -294,7 +294,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۱: Revealed infos --------
+        // -------- Step 11: Revealed infos --------
         for (const r of d.revealedBuyerInfos || []) {
           try {
             await tx.revealedBuyerInfo.create({ data: r });
@@ -306,7 +306,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۲: Tickets --------
+        // -------- Step 12: Tickets --------
         counts.tickets = 0;
         for (const t of d.tickets || []) {
           try {
@@ -325,7 +325,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۳: Notifications --------
+        // -------- Step 13: Notifications --------
         counts.notifications = 0;
         for (const n of d.notifications || []) {
           try {
@@ -334,14 +334,14 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۴: Push Subscriptions --------
+        // -------- Step 14: Push Subscriptions --------
         for (const p of d.pushSubscriptions || []) {
           try {
             await tx.pushSubscription.create({ data: p });
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۵: Usage Counters + User Subscriptions --------
+        // -------- Step 15: Usage Counters + User Subscriptions --------
         for (const uc of d.usageCounters || []) {
           try {
             await tx.usageCounter.create({ data: uc });
@@ -359,7 +359,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۶: Coupons --------
+        // -------- Step 16: Coupons --------
         counts.coupons = 0;
         for (const c of d.coupons || []) {
           try {
@@ -368,7 +368,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۷: Payments --------
+        // -------- Step 17: Payments --------
         counts.payments = 0;
         for (const p of d.payments || []) {
           try {
@@ -380,14 +380,14 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۸: Coupon Usages --------
+        // -------- Step 18: Coupon Usages --------
         for (const cu of d.couponUsages || []) {
           try {
             await tx.couponUsage.create({ data: cu });
           } catch (e) {}
         }
 
-        // -------- مرحله ۱۹: Settings (upsert) --------
+        // -------- Step 19: Settings (upsert) --------
         for (const s of d.settings || []) {
           try {
             await tx.setting.upsert({
@@ -398,7 +398,7 @@ export async function POST(request) {
           } catch (e) {}
         }
 
-        // -------- مرحله ۲۰: Verification Tokens (بعد از کاربران) --------
+        // -------- Step 20: Verification Tokens (after users) --------
         for (const v of d.verificationTokens || []) {
           try {
             await tx.verificationToken.create({ data: v });
@@ -408,7 +408,7 @@ export async function POST(request) {
         return counts;
       },
       {
-        timeout: 120000, // ۲ دقیقه
+        timeout: 120000, // 2 minutes
         maxWait: 15000,
       }
     );

@@ -251,15 +251,15 @@ export const countries = [
   { code: "ZW", name: "Zimbabwe" },
 ];
 
-// تابع کمکی برای یافتن کشور بر اساس کد
+// Helper function to find a country by code
 export function getCountryByCode(code) {
   return countries.find((c) => c.code === code);
 }
 export function getCountryName(code) {
   const found = countries.find((c) => c.code === code);
-  return found ? found.name : code; // اگر پیدا نشد، خود کد را برگردان
+  return found ? found.name : code; // If not found, return the code itself
 }
 export function getCountryViaCode(name) {
   const found = countries.find((c) => c.name === name);
-  return found ? found.code : name; // اگر پیدا نشد، خود کد را برگردان
+  return found ? found.code : name; // If not found, return the code itself
 }

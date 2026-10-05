@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { sendTestEmail } from "@/lib/emailQueueService";
 
 // ============================================================
-// مقادیر نمونه برای متغیرهای قالب
+// Sample values for the template variables
 // ============================================================
 function baseUrl() {
   const raw =
@@ -41,7 +41,7 @@ const SAMPLE_VARIABLES = {
 };
 
 // ============================================================
-// POST: ارسال ایمیل تستی به ایمیل خود ادمین
+// POST: send a test email to the admin's own email address
 // ============================================================
 export async function POST(request, { params }) {
   try {
@@ -64,7 +64,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    // متغیرهای نمونه + هر متغیر اعلام‌شده که نمونه ندارد
+    // Sample variables plus any declared variable that has no sample value
     const declared = Array.isArray(template.variables)
       ? template.variables
       : [];
@@ -73,7 +73,7 @@ export async function POST(request, { params }) {
       if (variables[key] === undefined) variables[key] = `[${key}]`;
     }
 
-    // ✅ فقط به ایمیل خود ادمین ارسال می‌شود (نه آدرس دلخواه)
+    // ✅ Sent only to the admin's own email address (never an arbitrary address)
     const admin = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { email: true },

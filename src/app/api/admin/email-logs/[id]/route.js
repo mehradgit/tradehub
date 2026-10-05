@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { retryEmailLog } from "@/lib/emailQueueService";
 
 // ============================================================
-// POST: retry یک ایمیل
+// POST: retry a single email
 // ============================================================
 export async function POST(request, { params }) {
   try {
@@ -39,7 +39,7 @@ export async function POST(request, { params }) {
 }
 
 // ============================================================
-// DELETE: حذف یک ردیف لاگ
+// DELETE: delete a single log row
 // ============================================================
 export async function DELETE(request, { params }) {
   try {

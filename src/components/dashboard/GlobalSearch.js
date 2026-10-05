@@ -38,7 +38,7 @@ export default function GlobalSearch() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // ====== بستن با کلیک بیرون ======
+  // ====== Close on outside click ======
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (

@@ -13,7 +13,7 @@ export async function GET() {
     orderBy: { maxProducts: "asc" },
   });
 
-  // تبدیل Decimal به Number
+  // Convert Decimal to Number
   const serialized = plans.map((plan) => ({
     ...plan,
     prices: plan.prices.map((price) => ({

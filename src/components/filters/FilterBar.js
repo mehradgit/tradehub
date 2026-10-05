@@ -8,16 +8,16 @@ import FilterModal from "./FilterModal";
 import ActiveFilterChips from "./ActiveFilterChips";
 
 // ============================================================
-// نوار فیلتر صفحات — سرچ داخل صفحه حذف شده
+// Page filter bar — the in-page search has been removed
 //
-// سرچ کل سایت در هدر است (مگا سرچ). اینجا فقط:
-//   • یک فیلد «مصنوعی» که با کلیک، مگا سرچ هدر را باز می‌کند
-//   • دکمه‌ی Filters که مدال را مستقیم باز می‌کند
-//   • چیپ فیلترهای فعال
-//   • خودِ مدال (داده‌ی فیلتر سمت سرور آمده، پس اینجا ساخته می‌شود)
+// Site-wide search lives in the header (mega search). Here we only have:
+//   • A "fake" field that opens the header mega search when clicked
+//   • The Filters button, which opens the modal directly
+//   • The active filter chips
+//   • The modal itself (the filter data comes from the server, so it is built here)
 //
-// هدر داده‌ی فیلتر ندارد، پس فقط رویداد می‌فرستد و این کامپوننت
-// مدال را باز می‌کند — به همین دلیل facet و گزینه‌ها درست کار می‌کنند.
+// The header has no filter data, so it only emits an event and this component
+// opens the modal — that is why facets and options work correctly.
 // ============================================================
 export default function FilterBar({
   schemaKey,
@@ -40,7 +40,7 @@ export default function FilterBar({
 
   const [modalOpen, setModalOpen] = useState(false);
 
-  // دکمه‌ی Filters هدر → همین مدال باز شود
+  // Header Filters button → open this same modal
   const openFromHeader = useCallback(() => {
     if (!schema) return;
     setModalOpen(true);
@@ -54,7 +54,7 @@ export default function FilterBar({
 
   return (
     <div style={{ marginBottom: "16px" }}>
-      {/* ================= فیلد مصنوعی + دکمه فیلترها ================= */}
+      {/* ================= Fake field + filters button ================= */}
       <div
         style={{
           display: "flex",
@@ -64,7 +64,7 @@ export default function FilterBar({
           marginBottom: "12px",
         }}
       >
-        {/* کادر جست‌وجوی واقعی نیست؛ فقط مگا سرچ هدر را باز می‌کند */}
+        {/* Not a real search box; it only opens the header mega search */}
         <button
           type="button"
           onClick={() => emitFilterEvent(FILTER_EVENTS.OPEN_MEGA)}
@@ -151,7 +151,7 @@ export default function FilterBar({
         </button>
       </div>
 
-      {/* ================= چیپ‌های فعال ================= */}
+      {/* ================= Active chips ================= */}
       <ActiveFilterChips
         schema={schema}
         values={values}
@@ -161,7 +161,7 @@ export default function FilterBar({
         onRemove={removeFilter}
       />
 
-      {/* ================= مدال ================= */}
+      {/* ================= Modal ================= */}
       <FilterModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

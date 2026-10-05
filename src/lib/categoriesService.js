@@ -5,13 +5,12 @@ import { categories as defaultCategories } from "@/lib/categories";
 const SETTING_KEY = "categories";
 
 // ============================================================
-// ساخت داده‌های اولیه از فایل استاتیک
+// Build the initial data from the static file
 // ============================================================
 function buildSeeded() {
   return defaultCategories.map((c, i) => ({
     id: c.id,
     name: c.name,
-    nameFa: c.nameFa || null,
     slug: c.slug,
     icon: c.icon,
     description: c.description,
@@ -23,21 +22,21 @@ function buildSeeded() {
 }
 
 // ============================================================
-// تشخیص نیاز به migration
+// Detect whether a migration is needed
 // ============================================================
 function needsMigration(value) {
   if (!value || !Array.isArray(value) || value.length === 0) return true;
 
-  // نسخه قدیمی: id عددی بود
+  // Old version: the id was numeric
   if (typeof value[0]?.id === "number") return true;
 
-  // نسخه جدید باید slug داشته باشد
+  // The new version must have a slug
   const hasNewStructure = value.some((c) => c.slug && c.parent !== undefined);
   return !hasNewStructure;
 }
 
 // ============================================================
-// دریافت
+// Read
 // ============================================================
 export async function getCategories() {
   const setting = await prisma.setting.findUnique({
@@ -58,7 +57,7 @@ export async function getCategories() {
 }
 
 // ============================================================
-// ذخیره
+// Save
 // ============================================================
 export async function saveCategories(categories) {
   return prisma.setting.upsert({
@@ -69,7 +68,7 @@ export async function saveCategories(categories) {
 }
 
 // ============================================================
-// âœ… Force re-seed
+// Force re-seed
 // ============================================================
 export async function reseedCategories() {
   const seeded = buildSeeded();

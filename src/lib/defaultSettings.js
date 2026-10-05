@@ -1,7 +1,7 @@
 // src/lib/defaultSettings.js
 
 export const ACCESS_CONTROL_DEFAULT = {
-  // ====== صفحه درخواست ======
+  // ====== Request page ======
   request: {
     showTitle: true,
     showDescription: true,
@@ -26,7 +26,7 @@ export const ACCESS_CONTROL_DEFAULT = {
     },
   },
 
-  // ====== صفحه محصول ======
+  // ====== Product page ======
   product: {
     showTitle: true,
     showDescription: true,
@@ -34,7 +34,7 @@ export const ACCESS_CONTROL_DEFAULT = {
     showSpecs: true,
     showImages: true,
 
-    // ✅ ادغام اطلاعات تأمین‌کننده + فرم Send Request
+    // ✅ Merged supplier info + Send Request form
     supplierInfo: {
       visibility: "paidPlans",
       allowedPlans: ["Bronze", "Silver", "Gold"],
@@ -45,7 +45,7 @@ export const ACCESS_CONTROL_DEFAULT = {
     },
   },
 
-  // ====== صفحه پروفایل ======
+  // ====== Profile page ======
   profile: {
     showBio: true,
     showStats: true,
@@ -62,7 +62,7 @@ export const ACCESS_CONTROL_DEFAULT = {
     },
   },
 
-  // ====== لیست پروفایل‌ها ======
+  // ====== Profiles list ======
   profilesList: {
     requiresLogin: false,
     showName: true,

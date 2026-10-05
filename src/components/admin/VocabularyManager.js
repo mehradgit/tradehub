@@ -1,11 +1,11 @@
 // src/components/admin/VocabularyManager.js
 "use client";
 // ============================================================
-// ویرایشگر واژگان کنترل‌شده
+// Controlled vocabularies editor
 //
-// هر گروه یک کارت است: چیپ‌های قابل حذف + ورودی افزودن.
-// «Save» فقط همان کلید را می‌فرستد (سرور با مقادیر فعلی ادغام
-// می‌کند) و «Save all» همه‌ی گروه‌ها را یک‌جا ذخیره می‌کند.
+// Each group is a card: removable chips + an add input.
+// "Save" sends only that one key (the server merges it with the
+// current values) and "Save all" saves every group at once.
 // ============================================================
 
 import { useState } from "react";
@@ -42,7 +42,7 @@ const btnStyle = {
 };
 
 // ============================================================
-// نرمال‌سازی ورودی سرور برای state داخلی
+// Normalize the server input for the internal state
 // ============================================================
 function fromGroups(groups) {
   return (Array.isArray(groups) ? groups : []).map((g) => ({
@@ -66,15 +66,15 @@ export default function VocabularyManager({ groups = [] }) {
 
   const [lists, setLists] = useState(() => fromGroups(groups));
   const [drafts, setDrafts] = useState(() => makeDrafts(groups));
-  const [busy, setBusy] = useState(null); // key یا "__all__"
+  const [busy, setBusy] = useState(null); // key or "__all__"
 
-  // ===== جایگزینی state با پاسخ سرور (منبع حقیقت) =====
+  // ===== Replace state with the server response (source of truth) =====
   const applyGroups = (next) => {
     setLists(fromGroups(next));
     setDrafts(makeDrafts(next));
   };
 
-  // ===== افزودن یک آیتم به یک گروه =====
+  // ===== Add one item to a group =====
   const addItem = (key) => {
     const list = lists.find((l) => l.key === key);
     if (!list) return;
@@ -91,7 +91,7 @@ export default function VocabularyManager({ groups = [] }) {
       return;
     }
 
-    // جلوگیری از تکرار بدون حساسیت به بزرگی/کوچکی حروف
+    // Prevent duplicates, case-insensitively
     if (
       list.items.some(
         (i) => String(i.value).toLowerCase() === raw.toLowerCase()
@@ -114,7 +114,7 @@ export default function VocabularyManager({ groups = [] }) {
     setDrafts((d) => ({ ...d, [key]: "" }));
   };
 
-  // ===== حذف یک آیتم =====
+  // ===== Remove one item =====
   const removeItem = (key, value) => {
     setLists((prev) =>
       prev.map((l) =>
@@ -125,7 +125,7 @@ export default function VocabularyManager({ groups = [] }) {
     );
   };
 
-  // ===== ذخیره‌ی یک گروه یا همه =====
+  // ===== Save one group or all of them =====
   const save = async (mode, key = null) => {
     const target = mode === "all" ? lists : lists.filter((l) => l.key === key);
     if (target.length === 0) return;
@@ -184,7 +184,7 @@ export default function VocabularyManager({ groups = [] }) {
 
   return (
     <>
-      {/* ===== نوار بالا: ذخیره‌ی همه ===== */}
+      {/* ===== Top bar: save all ===== */}
       <div
         style={{
           display: "flex",
@@ -220,7 +220,7 @@ export default function VocabularyManager({ groups = [] }) {
         </button>
       </div>
 
-      {/* ===== کارت هر گروه ===== */}
+      {/* ===== Card for each group ===== */}
       <div
         style={{
           display: "grid",
@@ -269,7 +269,7 @@ export default function VocabularyManager({ groups = [] }) {
               </button>
             </div>
 
-            {/* ===== چیپ‌ها ===== */}
+            {/* ===== Chips ===== */}
             <div
               style={{
                 display: "flex",
@@ -321,7 +321,7 @@ export default function VocabularyManager({ groups = [] }) {
               )}
             </div>
 
-            {/* ===== افزودن ===== */}
+            {/* ===== Add ===== */}
             <div style={{ display: "flex", gap: "8px" }}>
               <input
                 style={inputStyle}

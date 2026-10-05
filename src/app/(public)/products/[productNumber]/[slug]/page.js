@@ -79,7 +79,7 @@ async function getProductData(productNumber) {
     leadTime: product.leadTime || null,
     unit: product.unit || null,
     // ====== مشخصات پویا (EAV) — آرایه‌ای از plain objects ======
-    // { attributeId, key, label, labelFa, dataType, unit, options, values, value }
+    // { attributeId, key, label, dataType, unit, options, values, value }
     attributes,
     shippingCountries: ["Worldwide"],
     features: product.certifications?.split(",").map((s) => s.trim()) || [

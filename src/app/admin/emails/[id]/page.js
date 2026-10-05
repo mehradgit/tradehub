@@ -100,7 +100,7 @@ export default async function AdminEmailDetailPage({ params }) {
         </Link>
       </div>
 
-      {/* ===== اطلاعات ===== */}
+      {/* ===== Details ===== */}
       <div className="admin-card" style={{ padding: "6px 18px", marginBottom: "16px" }}>
         <Row label="Status">
           <span className={`admin-pill ${meta.cls}`}>{meta.label}</span>
@@ -129,7 +129,7 @@ export default async function AdminEmailDetailPage({ params }) {
         )}
       </div>
 
-      {/* ===== پیش‌نمایش ===== */}
+      {/* ===== Preview ===== */}
       {html ? (
         <div
           className="admin-card"
@@ -188,7 +188,7 @@ export default async function AdminEmailDetailPage({ params }) {
         </div>
       )}
 
-      {/* ===== متن ساده و HTML خام ===== */}
+      {/* ===== Plain text and raw HTML ===== */}
       {text && (
         <details
           className="admin-card"

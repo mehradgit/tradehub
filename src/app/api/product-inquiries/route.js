@@ -5,7 +5,7 @@ import { NextResponse, after } from "next/server";
 import { dispatchEvent } from "@/lib/eventService";
 import { getAccessControlSettings } from "@/lib/accessControlService";
 
-// ====== POST: ثبت درخواست جدید و ایجاد پیام ======
+// ====== POST: create a new inquiry and its chat message ======
 export async function POST(request) {
   try {
     const session = await auth();
@@ -42,16 +42,16 @@ export async function POST(request) {
       );
     }
 
-    // ✅ تأمین‌کننده از خودِ محصول استخراج می‌شود، نه از بدنه درخواست.
-    //    قبلاً هر کاربری می‌توانست supplierId دلخواه بفرستد و
-    //    نوتیفیکیشن/پیام برای شخص ثالث بسازد.
+    // ✅ The supplier is derived from the product itself, not from the request body.
+    //    Previously any user could send an arbitrary supplierId and
+    //    create a notification/message for a third party.
     const supplierId = product.userId;
 
     // ============================================================
-    // ✅ گارد امنیتی Reveal (فقط اگر تنظیمات ادمین اجبار کرده باشد)
+    // ✅ Reveal security guard (only when the admin settings enforce it)
     // ============================================================
     if (product.userId !== userId) {
-      // چک ادمین
+      // Admin check
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { isAdmin: true },
@@ -62,7 +62,7 @@ export async function POST(request) {
         const consumeQuota =
           settings.product?.supplierInfo?.consumeQuotaOnReveal ?? true;
 
-        // ✅ فقط اگر consumeQuotaOnReveal = true باشد، رکورد Reveal اجباری است
+        // ✅ A Reveal record is only required when consumeQuotaOnReveal = true
         if (consumeQuota) {
           const revealed = await prisma.revealedSupplierInfo.findUnique({
             where: { userId_productId: { userId, productId } },
@@ -78,12 +78,12 @@ export async function POST(request) {
             );
           }
         }
-        // اگر consumeQuotaOnReveal = false بود، اجازه بده بدون رکورد Reveal
+        // If consumeQuotaOnReveal = false, allow it without a Reveal record
       }
     }
 
     // ============================================================
-    // ثبت Inquiry
+    // Save the Inquiry
     // ============================================================
     const inquiry = await prisma.productInquiry.create({
       data: {
@@ -97,7 +97,7 @@ export async function POST(request) {
       },
     });
 
-    // ✅ ایجاد پیام چت (خلاصه استعلام برای مکالمه خریدار/تأمین‌کننده)
+    // ✅ Create the chat message (a summary of the inquiry for the buyer/supplier conversation)
     const baseUrl = (
       process.env.NEXTAUTH_URL || "http://localhost:3000"
     ).replace(/\/+$/, "");
@@ -113,9 +113,9 @@ export async function POST(request) {
       },
     });
 
-    // ✅ نوتیفیکیشن + Web Push + ایمیل، همه از مسیر مرکزی رویداد.
-    //    after() تضمین می‌کند کار پس از ارسال پاسخ اجرا شود
-    //    (نه fire-and-forget که ممکن است نیمه‌کاره بماند).
+    // ✅ Notification + Web Push + email, all through the central event pipeline.
+    //    after() guarantees the work runs after the response is sent
+    //    (not a fire-and-forget call that might be left half-done).
     after(async () => {
       const result = await dispatchEvent("inquiry.created", {
         inquiryId: inquiry.id,
@@ -125,7 +125,7 @@ export async function POST(request) {
       }
     });
 
-    // توجه: سهمیه در مرحله «Reveal» مصرف می‌شود، نه اینجا.
+    // Note: the quota is consumed at the "Reveal" step, not here.
 
     return NextResponse.json(
       { message: "Request sent successfully", inquiry },
@@ -140,7 +140,7 @@ export async function POST(request) {
   }
 }
 
-// ====== GET: دریافت درخواست‌های کاربر ======
+// ====== GET: fetch the user's inquiries ======
 export async function GET(request) {
   try {
     const session = await auth();
@@ -149,11 +149,11 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const role = searchParams.get("role") || "buyer"; // buyer یا supplier
+    const role = searchParams.get("role") || "buyer"; // buyer or supplier
 
-    // ✅ نقش فقط buyer یا supplier می‌تواند باشد.
-    //    قبلاً هر مقدار دیگری where را خالی می‌گذاشت و
-    //    همه‌ی استعلام‌های سیستم (همراه با ایمیل خریدار) برگردانده می‌شد.
+    // ✅ The role can only be buyer or supplier.
+    //    Previously any other value left `where` empty and
+    //    returned every inquiry in the system (including the buyer's email).
     if (role !== "buyer" && role !== "supplier") {
       return NextResponse.json(
         { message: "Invalid role. Use 'buyer' or 'supplier'." },

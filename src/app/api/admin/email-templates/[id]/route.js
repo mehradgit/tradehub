@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { clearTemplateCache } from "@/lib/emailTemplateService";
 
 // ============================================================
-// helper: استخراج متغیرهای {{...}} از یک متن
+// helper: extract the {{...}} variables from a text
 // ============================================================
 function extractVariables(text) {
   if (!text) return [];
@@ -19,7 +19,7 @@ function extractVariables(text) {
 }
 
 // ============================================================
-// GET: یک قالب
+// GET: a single template
 // ============================================================
 export async function GET(request, { params }) {
   try {
@@ -49,7 +49,7 @@ export async function GET(request, { params }) {
 }
 
 // ============================================================
-// PATCH: ویرایش قالب
+// PATCH: update a template
 // ============================================================
 export async function PATCH(request, { params }) {
   try {
@@ -125,10 +125,10 @@ export async function PATCH(request, { params }) {
       },
     });
 
-    // ✅ کش درون‌پروسه‌ای پاک می‌شود تا تغییر فوراً اعمال شود
+    // ✅ The in-process cache is cleared so the change takes effect immediately
     clearTemplateCache(updated.key);
 
-    // ===== بررسی هشدارها (بلاک‌کننده نیست) =====
+    // ===== Check for warnings (not blocking) =====
     const warnings = [];
     const declared = Array.isArray(updated.variables)
       ? updated.variables

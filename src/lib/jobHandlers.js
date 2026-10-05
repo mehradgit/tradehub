@@ -1,24 +1,24 @@
 // src/lib/jobHandlers.js
 // ============================================================
-// رجیستری job های زمان‌بندی‌شده
+// Registry of scheduled jobs
 //
-// هر job یک «کارِ» از پیش نوشته‌شده در کد است. پنل ادمین
-// می‌تواند زمان‌بندی و فعال/غیرفعال بودن را عوض کند، اما
-// امکان ساختن «کارِ جدید» از پنل وجود ندارد — برای job جدید
-// باید یک کلید اینجا اضافه شود.
+// Every job is a "task" that is pre-written in code. The admin panel
+// can change the schedule and whether it is active, but there is no
+// way to create a "new task" from the panel — a key must be added
+// here for a new job.
 //
-// برای اضافه‌کردن job جدید:
-//   ۱. یک handler اینجا اضافه کن (name, description, defaultCron, run)
-//   ۲. تمام — DEFAULT_JOBS در پایین همین فایل خودکار ساخته می‌شود
-//      و اولین tick آن را در دیتابیس ایجاد می‌کند.
+// To add a new job:
+//   1. Add a handler here (name, description, defaultCron, run)
+//   2. That is all — DEFAULT_JOBS at the bottom of this file is built
+//      automatically and the first tick creates it in the database.
 // ============================================================
 import { prisma } from "@/lib/prisma";
 import { processEmailQueue } from "@/lib/emailQueueService";
 import { dispatchEvent } from "@/lib/eventService";
 
 // ============================================================
-// تیکت‌های resolved قدیمی را می‌بندد.
-// مشترک بین job زمان‌بندی‌شده و روت‌های دستی.
+// Closes stale resolved tickets.
+// Shared between the scheduled job and the manual routes.
 // ============================================================
 export async function closeStaleTickets(days = 7) {
   const cutoffDate = new Date();
@@ -45,7 +45,7 @@ export async function closeStaleTickets(days = 7) {
 }
 
 // ============================================================
-// یادآوری انقضای اشتراک — روی روزهای ۷، ۳ و ۱ مانده
+// Subscription expiry reminder — on the days with 7, 3 and 1 remaining
 // ============================================================
 async function findExpiringSubscriptions(daysLeft) {
   const start = new Date();
@@ -70,7 +70,7 @@ async function findExpiringSubscriptions(daysLeft) {
 }
 
 // ============================================================
-// رجیستری
+// Registry
 // ============================================================
 export const JOB_HANDLERS = {
   // ----------------------------------------------------------
@@ -97,7 +97,7 @@ export const JOB_HANDLERS = {
     run: async () => {
       const { closed, tickets } = await closeStaleTickets(7);
 
-      // اطلاع به صاحبان تیکت‌ها از مسیر مرکزی رویداد
+      // Notify the ticket owners through the central event pipeline
       for (const t of tickets) {
         const res = await dispatchEvent("ticket.auto_closed", {
           ticketId: t.id,
@@ -124,8 +124,8 @@ export const JOB_HANDLERS = {
         const subscriptions = await findExpiringSubscriptions(daysLeft);
 
         for (const sub of subscriptions) {
-          // اگر کاربر قبلاً تمدید کرده (اشتراک reserved دارد)،
-          // یادآوری بی‌معنی است و اذیتش می‌کند.
+          // If the user has already renewed (has a reserved subscription),
+          // the reminder is pointless and would only annoy them.
           const alreadyRenewed = await prisma.userSubscription.findFirst({
             where: { userId: sub.userId, status: "reserved" },
             select: { id: true },
@@ -152,7 +152,7 @@ export const JOB_HANDLERS = {
 };
 
 // ============================================================
-// اجرای یک job با کلید آن
+// Run a job by its key
 // ============================================================
 export async function runJobHandler(handlerKey) {
   const handler = JOB_HANDLERS[handlerKey];
@@ -177,7 +177,7 @@ export async function runJobHandler(handlerKey) {
 }
 
 // ============================================================
-// job هایی که هنگام راه‌اندازی ساخته می‌شوند
+// Jobs that are created on startup
 // ============================================================
 export const DEFAULT_JOBS = Object.entries(JOB_HANDLERS).map(
   ([jobKey, def]) => ({

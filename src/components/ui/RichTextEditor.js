@@ -9,9 +9,9 @@ import "react-quill-new/dist/quill.snow.css";
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 export default function RichTextEditor({ value, onChange, placeholder, height = 200 }) {
-  // ====== ماژول‌های تولبار (با useMemo برای جلوگیری از بازسازی) ======
+  // ====== Toolbar modules (useMemo prevents rebuilding) ======
   const modules = useMemo(() => {
-    // تابع هندلر آپلود تصویر
+    // Image upload handler function
     const imageHandler = async () => {
       const input = document.createElement("input");
       input.setAttribute("type", "file");
@@ -29,7 +29,7 @@ export default function RichTextEditor({ value, onChange, placeholder, height = 
         }
 
         try {
-          // فشرده‌سازی تصویر (کد فعلی شما)
+          // Compress the image (your existing code)
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = async (event) => {
@@ -57,7 +57,7 @@ export default function RichTextEditor({ value, onChange, placeholder, height = 
               ctx.drawImage(img, 0, 0, width, height);
               const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
 
-              // تبدیل به Blob برای آپلود
+              // Convert to a Blob for upload
               const response = await fetch(compressedDataUrl);
               const blob = await response.blob();
               const compressedFile = new File([blob], file.name, { type: "image/jpeg" });
@@ -74,7 +74,7 @@ export default function RichTextEditor({ value, onChange, placeholder, height = 
               const data = await uploadRes.json();
               if (!uploadRes.ok) throw new Error(data.message || "Upload failed");
 
-              // درج تصویر در ویرایشگر
+              // Insert the image into the editor
               const quill = quillRef.current.getEditor();
               const range = quill.getSelection(true);
               quill.insertEmbed(range.index, "image", data.path);
@@ -109,7 +109,7 @@ export default function RichTextEditor({ value, onChange, placeholder, height = 
     []
   );
 
-  // ====== تابع onChange پایدار ======
+  // ====== Stable onChange function ======
   const handleChange = useCallback(
     (content) => {
       onChange(content);
@@ -121,7 +121,7 @@ export default function RichTextEditor({ value, onChange, placeholder, height = 
     <div className="rich-text-editor">
       <ReactQuill
         theme="snow"
-        value={value || ""} // ✅ همیشه رشته
+        value={value || ""} // ✅ always a string
         onChange={handleChange}
         modules={modules}
         formats={formats}

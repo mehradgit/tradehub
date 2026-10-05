@@ -11,11 +11,11 @@ import { getProductAttributes } from "@/lib/attributesService";
 // مشخصات پویا (EAV) — قالب‌بندی برای نمایش
 //
 // getProductAttributes() برای هر اتریبیوت این‌ها را می‌دهد:
-//   { attributeId, key, label, labelFa, dataType, unit, options, values, value }
+//   { attributeId, key, label, dataType, unit, options, values, value }
 // مقدار خالی → null (یعنی آن ردیف رندر نمی‌شود)
 // ============================================================
 function formatAttributeLabel(attr) {
-  const base = attr?.label || attr?.labelFa || attr?.key;
+  const base = attr?.label || attr?.key;
   if (!base) return null;
   // واحد اندازه‌گیری داخل پرانتز کنار برچسب
   return attr?.unit ? `${base} (${attr.unit})` : String(base);

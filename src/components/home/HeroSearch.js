@@ -14,7 +14,7 @@ export default function HeroSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ====== بستن با کلیک بیرون ======
+  // ====== Close on outside click ======
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -56,7 +56,7 @@ export default function HeroSearch() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      // مگا سرچ هدر تنها ورودی جست‌وجوست؛ صفحه‌ی /search حذف شد
+      // The header mega search is the only search entry point; the /search page was removed
       router.push(`/products?search=${encodeURIComponent(query.trim())}`);
       setIsOpen(false);
     }
@@ -118,7 +118,7 @@ export default function HeroSearch() {
     return (
       <div style={dropdownStyle}>
         <div style={{ maxHeight: 420, overflowY: "auto" }}>
-          {/* محصولات */}
+          {/* Products */}
           {results.products?.length > 0 && (
             <ResultGroup title="Products" icon="fa-box">
               {results.products.map((p) => (
@@ -134,7 +134,7 @@ export default function HeroSearch() {
             </ResultGroup>
           )}
 
-          {/* درخواست‌های خرید */}
+          {/* Buying requests */}
           {results.requests?.length > 0 && (
             <ResultGroup title="Buying Requests" icon="fa-cart-shopping">
               {results.requests.map((r) => (
@@ -152,7 +152,7 @@ export default function HeroSearch() {
             </ResultGroup>
           )}
 
-          {/* پروفایل‌ها */}
+          {/* Profiles */}
           {results.profiles?.length > 0 && (
             <ResultGroup title="Profiles" icon="fa-users">
               {results.profiles.map((u) => (
@@ -215,7 +215,7 @@ export default function HeroSearch() {
         </button>
       </form>
 
-      {/* دراپ‌داون */}
+      {/* Dropdown */}
       {isOpen && query.length >= 2 && (
         <div
           style={{

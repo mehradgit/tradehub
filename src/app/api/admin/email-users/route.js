@@ -7,7 +7,7 @@ import { auth } from "@/auth";
 
 const execAsync = promisify(exec);
 
-// ===== هش کردن رمز با SHA512-CRYPT =====
+// ===== Hash the password with SHA512-CRYPT =====
 async function hashPassword(password) {
   const escaped = password.replace(/'/g, "'\\''");
   const { stdout } = await execAsync(
@@ -16,7 +16,7 @@ async function hashPassword(password) {
   return stdout.trim();
 }
 
-// ===== محافظت: بررسی ادمین =====
+// ===== Guard: verify the admin =====
 async function checkAdmin() {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -28,7 +28,7 @@ async function checkAdmin() {
 }
 
 // ============================================================
-// GET: لیست کاربران ایمیل
+// GET: list the email users
 // ============================================================
 export async function GET() {
   const guard = await checkAdmin();
@@ -49,7 +49,7 @@ export async function GET() {
 }
 
 // ============================================================
-// POST: ساخت کاربر ایمیل جدید
+// POST: create a new email user
 // ============================================================
 export async function POST(request) {
   const guard = await checkAdmin();
@@ -121,7 +121,7 @@ export async function POST(request) {
 }
 
 // ============================================================
-// PATCH: تغییر رمز یا وضعیت فعال/غیرفعال
+// PATCH: change the password or the active/inactive state
 // ============================================================
 export async function PATCH(request) {
   const guard = await checkAdmin();
@@ -139,7 +139,7 @@ export async function PATCH(request) {
 
     const pool = getVmailPool();
 
-    // بررسی وجود کاربر
+    // Check that the user exists
     const [rows] = await pool.execute(
       "SELECT id FROM users WHERE email = ?",
       [email.toLowerCase()]
@@ -150,7 +150,7 @@ export async function PATCH(request) {
       );
     }
 
-    // ===== تغییر رمز =====
+    // ===== Change the password =====
     if (action === "change-password") {
       if (!password || password.length < 8) {
         return NextResponse.json(
@@ -171,7 +171,7 @@ export async function PATCH(request) {
       });
     }
 
-    // ===== تغییر وضعیت =====
+    // ===== Toggle the active state =====
     if (action === "toggle-active") {
       if (typeof active !== "boolean") {
         return NextResponse.json(
@@ -202,7 +202,7 @@ export async function PATCH(request) {
 }
 
 // ============================================================
-// DELETE: حذف کاربر ایمیل
+// DELETE: delete an email user
 // ============================================================
 export async function DELETE(request) {
   const guard = await checkAdmin();
@@ -230,7 +230,7 @@ export async function DELETE(request) {
       );
     }
 
-    // حذف فایل‌های Maildir
+    // Remove the Maildir files
     const domain = process.env.VMAIL_DOMAIN || "bulkfoodtrade.ir";
     const username = email.split("@")[0];
     const maildir = `/var/mail/vhosts/${domain}/${username}`;

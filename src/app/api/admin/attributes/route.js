@@ -1,12 +1,12 @@
 // src/app/api/admin/attributes/route.js
 // ============================================================
-// اتریبیوت‌های محصول (EAV) — API پنل ادمین
+// Product attributes (EAV) — admin panel API
 //
-// GET  : لیست تعاریف + انواع داده + scope ها + درخت دسته‌بندی
-// POST : ساخت یک اتریبیوت جدید
+// GET  : list of definitions + data types + scopes + category tree
+// POST : create a new attribute
 //
-// درخت دسته‌بندی برای انتخاب scope لازم است: scopeId همان slug
-// سطح انتخاب‌شده است (category / subCategory / productType).
+// The category tree is needed to pick a scope: scopeId is the slug of
+// the selected level (category / subCategory / productType).
 // ============================================================
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
@@ -20,7 +20,7 @@ import { getCategories } from "@/lib/categoriesService";
 import { buildCategoryTree } from "@/lib/categoryTree";
 
 // ============================================================
-// سریال‌سازی: Date → ISO string تا پاسخ JSON امن باشد
+// Serialization: Date → ISO string so the JSON response is safe
 // ============================================================
 function serializeAttribute(attr) {
   if (!attr) return null;
@@ -28,7 +28,6 @@ function serializeAttribute(attr) {
     id: attr.id,
     key: attr.key,
     label: attr.label,
-    labelFa: attr.labelFa ?? null,
     dataType: attr.dataType,
     unit: attr.unit ?? null,
     options: Array.isArray(attr.options) ? attr.options : null,
@@ -45,7 +44,7 @@ function serializeAttribute(attr) {
 }
 
 // ============================================================
-// GET: همه‌ی تعاریف (شامل غیرفعال‌ها) + گزینه‌های فرم + درخت
+// GET: all definitions (including inactive ones) + form options + tree
 // ============================================================
 export async function GET() {
   try {
@@ -75,7 +74,7 @@ export async function GET() {
 }
 
 // ============================================================
-// POST: ساخت اتریبیوت
+// POST: create an attribute
 // ============================================================
 export async function POST(request) {
   try {
@@ -97,7 +96,7 @@ export async function POST(request) {
     const result = await createAttributeDefinition(body);
 
     if (!result.ok) {
-      // خطاهای اعتبارسنجی سرویس برای نمایش به ادمین امن هستند
+      // Service validation errors are safe to show to the admin
       return NextResponse.json(
         {
           message: (result.errors || []).join("; ") || "Invalid attribute",

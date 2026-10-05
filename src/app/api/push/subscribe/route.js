@@ -20,7 +20,7 @@ export async function POST(request) {
       );
     }
 
-    // upsert: اگر endpoint وجود داشت، به‌روزرسانی کن
+    // upsert: if the endpoint already exists, update it
     const subscription = await prisma.pushSubscription.upsert({
       where: { endpoint },
       update: {

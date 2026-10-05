@@ -358,6 +358,10 @@ export default function NewProductPage() {
                   placeholder="Detailed description including origin, processing, certifications, etc."
                   height={250}
                 />
+                <div className="help-text">
+                  Full description of the product. It is shown on the product
+                  page, so add all the details a buyer needs.
+                </div>
                 <small className="text-muted">
                   Use the toolbar to format your text (bold, italic, lists,
                   links, etc.)
@@ -379,6 +383,7 @@ export default function NewProductPage() {
                   </label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     className="form-control"
                     name="price"
                     placeholder="0.00"
@@ -422,6 +427,9 @@ export default function NewProductPage() {
                     <option value="piece">piece</option>
                     <option value="box">box</option>
                   </select>
+                  <div className="help-text">
+                    Unit used for the price and the minimum order quantity.
+                  </div>
                 </div>
               </div>
 
@@ -433,6 +441,7 @@ export default function NewProductPage() {
                   </label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     className="form-control"
                     name="moq"
                     placeholder="100"
@@ -440,28 +449,39 @@ export default function NewProductPage() {
                     onChange={handleChange}
                     required
                   />
+                  <div className="help-text">
+                    Smallest quantity a buyer can order.
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>Available Stock</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     className="form-control"
                     name="stock"
                     placeholder="1000"
                     value={formData.stock}
                     onChange={handleChange}
                   />
+                  <div className="help-text">
+                    How many units you have ready to sell.
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>Lead Time (days)</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     className="form-control"
                     name="leadTime"
                     placeholder="7"
                     value={formData.leadTime}
                     onChange={handleChange}
                   />
+                  <div className="help-text">
+                    How many days you need to get the order ready.
+                  </div>
                 </div>
               </div>
 

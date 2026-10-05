@@ -2,7 +2,7 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 
-// ====== تنظیم VAPID (یک‌بار) ======
+// ====== Configure VAPID (once) ======
 let vapidConfigured = false;
 
 function configureVapid() {
@@ -29,7 +29,7 @@ function configureVapid() {
   }
 }
 
-// ====== ارسال Web Push به یک کاربر ======
+// ====== Send Web Push to a single user ======
 export async function sendWebPushToUser(userId, payload) {
   if (!configureVapid()) return { sent: 0, failed: 0 };
 
@@ -68,7 +68,7 @@ export async function sendWebPushToUser(userId, payload) {
         sent++;
       } catch (error) {
         failed++;
-        // subscription باطل شده → حذف کن
+        // subscription is no longer valid → delete it
         if (error.statusCode === 410 || error.statusCode === 404) {
           await prisma.pushSubscription
             .delete({ where: { id: sub.id } })
@@ -89,7 +89,7 @@ export async function sendWebPushToUser(userId, payload) {
   }
 }
 
-// ====== ارسال به چند کاربر ======
+// ====== Send to multiple users ======
 export async function sendWebPushToUsers(userIds, payload) {
   if (!userIds?.length) return { sent: 0, failed: 0 };
 
@@ -105,7 +105,7 @@ export async function sendWebPushToUsers(userIds, payload) {
   return { sent: totalSent, failed: totalFailed };
 }
 
-// ====== ارسال به همه‌ی ادمین‌ها ======
+// ====== Send to all admins ======
 export async function sendWebPushToAllAdmins(payload) {
   try {
     const admins = await prisma.user.findMany({

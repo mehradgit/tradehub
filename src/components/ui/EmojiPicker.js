@@ -29,17 +29,17 @@ export default function EmojiPickerWrapper({ onEmojiSelect }) {
   const togglePicker = () => {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      const pickerHeight = 350; // ارتفاع تقریبی پکر
+      const pickerHeight = 350; // approximate picker height
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
       let top;
-      // اگر فضای پایین کافی است، به پایین باز شود، در غیر این صورت به بالا
+      // If there is enough space below, open downward; otherwise open upward
       if (spaceBelow > pickerHeight) {
         top = rect.bottom + 8;
       } else if (spaceAbove > pickerHeight) {
         top = rect.top - pickerHeight - 8;
       } else {
-        // اگر هیچ کدام کافی نیست، به پایین باز شود (با اسکرول)
+        // If neither side has enough space, open downward (with scrolling)
         top = rect.bottom + 8;
       }
       setPosition({

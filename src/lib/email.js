@@ -1,7 +1,7 @@
 // src/lib/email.js
 import nodemailer from "nodemailer";
 
-// ====== تنظیمات SMTP (بدون تغییر) ======
+// ====== SMTP configuration (unchanged) ======
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: parseInt(process.env.SMTP_PORT) || 587,
@@ -12,11 +12,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ====== ثابت‌ها ======
+// ====== Constants ======
 const APP_NAME = "FoodTradeLink";
 const BASE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
-// ====== قالب پایه ایمیل ======
+// ====== Base email layout ======
 function emailLayout(content) {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e8e2da; border-radius: 16px;">
@@ -34,8 +34,8 @@ function emailLayout(content) {
   `;
 }
 
-// ====== ۱. ایمیل تأیید ایمیل (همان قبلی - بدون تغییر) ======
-// ====== ۱. ایمیل تأیید ایمیل (لینک‌محور) ======
+// ====== 1. Email verification email (same as before - unchanged) ======
+// ====== 1. Email verification email (link-based) ======
 export async function sendVerificationEmail(email, verificationUrl) {
   const mailOptions = {
     from: `"${APP_NAME}" <${process.env.SMTP_USER}>`,
@@ -106,10 +106,10 @@ export async function sendVerificationEmail(email, verificationUrl) {
 }
 
 // ============================================================
-// ✅ توابع جدید برای سیستم تیکت (اضافه کنید)
+// ✅ New functions for the ticket system (add these)
 // ============================================================
 
-// ====== ۲. ایمیل تیکت جدید به ادمین‌ها ======
+// ====== 2. New ticket email to admins ======
 export async function sendNewTicketEmailToAdmin({
   adminEmail,
   ticketNumber,
@@ -179,7 +179,7 @@ export async function sendNewTicketEmailToAdmin({
   }
 }
 
-// ====== ۳. ایمیل پاسخ ادمین به کاربر ======
+// ====== 3. Admin reply email to the user ======
 export async function sendTicketReplyEmailToUser({
   userEmail,
   ticketNumber,
@@ -226,7 +226,7 @@ export async function sendTicketReplyEmailToUser({
   }
 }
 
-// ====== ۴. ایمیل پاسخ کاربر به ادمین‌ها ======
+// ====== 4. User reply email to admins ======
 export async function sendTicketReplyEmailToAdmin({
   adminEmail,
   ticketNumber,
@@ -273,16 +273,16 @@ export async function sendTicketReplyEmailToAdmin({
   }
 }
 
-// ====== helper: کوتاه کردن متن ======
+// ====== helper: truncate text ======
 export function truncateMessage(text, maxLength = 200) {
   if (!text) return "";
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + "...";
 }
 
-// ====== ۵. ایمیل فرم تماس با ما ======
+// ====== 5. Contact form email ======
 export async function sendContactEmail({ name, email, subject, message }) {
-  const adminEmail = process.env.SMTP_USER; // ایمیل خودت
+  const adminEmail = process.env.SMTP_USER; // your own email
 
   const mailOptions = {
     from: `"${APP_NAME} Contact" <${process.env.SMTP_USER}>`,
@@ -336,7 +336,7 @@ export async function sendContactEmail({ name, email, subject, message }) {
   }
 }
 
-// ====== ۶. ایمیل بازیابی رمز عبور ======
+// ====== 6. Password reset email ======
 export async function sendPasswordResetEmail(email, resetUrl) {
   const mailOptions = {
     from: `"${APP_NAME}" <${process.env.SMTP_USER}>`,

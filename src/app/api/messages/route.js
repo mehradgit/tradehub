@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-// ====== GET: دریافت پیام‌ها یا لیست مکالمات ======
+// ====== GET: fetch messages or the conversation list ======
 export async function GET(request) {
   try {
     const session = await auth();
@@ -12,10 +12,10 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId"); // اگر وجود داشته باشد، پیام‌های بین دو کاربر را برمی‌گرداند
+    const userId = searchParams.get("userId"); // if present, returns the messages between two users
 
     if (userId) {
-      // دریافت پیام‌های بین کاربر فعلی و کاربر دیگر
+      // Fetch the messages between the current user and the other user
       const messages = await prisma.message.findMany({
         where: {
           OR: [
@@ -32,7 +32,7 @@ export async function GET(request) {
       return NextResponse.json({ messages });
     }
 
-    // اگر userId وجود نداشت، لیست مکالمات کاربر فعلی را برمی‌گرداند
+    // If userId was absent, return the current user's conversation list
     const conversations = await prisma.message.findMany({
       where: {
         OR: [
@@ -48,7 +48,7 @@ export async function GET(request) {
       distinct: ["senderId", "receiverId"],
     });
 
-    // گروه‌بندی بر اساس کاربر مقابل
+    // Group by the other user
     const uniqueUsers = new Map();
     for (const msg of conversations) {
       const otherUserId = msg.senderId === session.user.id ? msg.receiverId : msg.senderId;
@@ -73,7 +73,7 @@ export async function GET(request) {
   }
 }
 
-// ====== POST: ارسال پیام جدید ======
+// ====== POST: send a new message ======
 export async function POST(request) {
   try {
     const session = await auth();
