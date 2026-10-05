@@ -82,7 +82,9 @@ export default function ImageGallery({ images, productName }) {
   };
 
   const handleMoreClick = () => {
-    openLightbox(5);
+    // Open at the first image that is not shown as a thumbnail
+    // (was a hardcoded 5, which overshot for products with few images).
+    openLightbox(displayThumbnails.length);
   };
 
   // ====== No-image state ======
@@ -191,18 +193,13 @@ export default function ImageGallery({ images, productName }) {
           gap: 10px;
           flex-shrink: 0;
           width: 64px;
-          max-height: 260px;
-          overflow-x: hidden;   
+          max-height: none;
+          /* Never scroll: the strip is capped at 4 thumbnails plus the
+             "more" tile (see displayThumbnails), so its height is bounded
+             and always fits without a scrollbar. */
+          overflow: visible;   
           scrollbar-width: thin;
           padding: 2px 0;                   
-        }
-
-        .product-thumbnails::-webkit-scrollbar {
-          width: 4px;
-        }
-        .product-thumbnails::-webkit-scrollbar-thumb {
-          background: #e8e2da;
-          border-radius: 4px;
         }
 
         .product-thumbnail {
@@ -416,8 +413,8 @@ export default function ImageGallery({ images, productName }) {
             width: 100%;
             max-height: none;
             max-width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
+            flex-wrap: wrap;
+            overflow: visible;
             padding-bottom: 4px;
             justify-content: center;
             scrollbar-width: thin;
