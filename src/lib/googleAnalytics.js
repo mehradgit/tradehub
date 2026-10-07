@@ -9,11 +9,36 @@ let clientInstance = null;
 function getClient() {
   if (clientInstance) return clientInstance;
 
+  // روش ۱ (توصیه‌شده): کل فایل JSON سرویس‌اکانت به صورت base64
+  const b64 = process.env.GA_SERVICE_ACCOUNT_B64;
+
+  if (b64) {
+    let sa;
+    try {
+      sa = JSON.parse(Buffer.from(b64, "base64").toString("utf8"));
+    } catch (e) {
+      throw new Error("GA_SERVICE_ACCOUNT_B64 is not valid base64 JSON: " + e.message);
+    }
+
+    clientInstance = new BetaAnalyticsDataClient({
+      credentials: {
+        client_email: sa.client_email,
+        private_key: sa.private_key,
+      },
+      projectId: sa.project_id,
+    });
+
+    return clientInstance;
+  }
+
+  // روش ۲ (fallback): جداگانه GA_CLIENT_EMAIL و GA_PRIVATE_KEY
   const clientEmail = process.env.GA_CLIENT_EMAIL;
   const privateKey = process.env.GA_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
   if (!clientEmail || !privateKey) {
-    throw new Error("GA credentials missing (GA_CLIENT_EMAIL / GA_PRIVATE_KEY)");
+    throw new Error(
+      "GA credentials missing. Set GA_SERVICE_ACCOUNT_B64 (recommended) or GA_CLIENT_EMAIL + GA_PRIVATE_KEY."
+    );
   }
 
   clientInstance = new BetaAnalyticsDataClient({
@@ -33,7 +58,7 @@ function getPropertyId() {
 }
 
 // ============================================================
-// ۱. خلاصه‌ی دوره (کاربران، نشست‌ها، بازدید صفحه، نرخ پرش...)
+// ۱. خلاصه‌ی دوره
 // ============================================================
 export async function getAnalyticsSummary({ days = 28 } = {}) {
   const client = getClient();
@@ -59,14 +84,14 @@ export async function getAnalyticsSummary({ days = 28 } = {}) {
     activeUsers: m[0] || 0,
     sessions: m[1] || 0,
     pageViews: m[2] || 0,
-    bounceRate: m[3] || 0,          // 0..1
-    avgSessionDuration: m[4] || 0,  // ثانیه
+    bounceRate: m[3] || 0,
+    avgSessionDuration: m[4] || 0,
     newUsers: m[5] || 0,
   };
 }
 
 // ============================================================
-// ۲. نمودار روزانه (برای Chart)
+// ۲. نمودار روزانه
 // ============================================================
 export async function getAnalyticsDaily({ days = 28 } = {}) {
   const client = getClient();
@@ -85,7 +110,7 @@ export async function getAnalyticsDaily({ days = 28 } = {}) {
   });
 
   return (response.rows || []).map((row) => {
-    const dateStr = row.dimensionValues[0].value; // "20261007"
+    const dateStr = row.dimensionValues[0].value;
     const y = dateStr.slice(0, 4);
     const m = dateStr.slice(4, 6);
     const d = dateStr.slice(6, 8);
@@ -174,7 +199,7 @@ export async function getTopCountries({ days = 28, limit = 10 } = {}) {
 }
 
 // ============================================================
-// ۶. دستگاه‌ها (موبایل/دسکتاپ/تبلت)
+// ۶. دستگاه‌ها
 // ============================================================
 export async function getDeviceBreakdown({ days = 28 } = {}) {
   const client = getClient();
@@ -195,7 +220,7 @@ export async function getDeviceBreakdown({ days = 28 } = {}) {
 }
 
 // ============================================================
-// ۷. Realtime (کاربران همین الان)
+// ۷. Realtime
 // ============================================================
 export async function getRealtimeUsers() {
   const client = getClient();
