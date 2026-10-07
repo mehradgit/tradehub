@@ -41,7 +41,7 @@ async function getProductData(productNumber) {
   if (!product) {
     notFound();
   }
-
+ 
   // ====== Dynamic specifications (EAV) ======
   // If the attribute table/service is unavailable, the page must not break.
   let attributes = [];
@@ -78,6 +78,8 @@ async function getProductData(productNumber) {
     certifications: product.certifications || null,
     leadTime: product.leadTime || null,
     unit: product.unit || null,
+    ratingAverage: product.ratingAverage  || 0,
+    ratingCount: product.ratingCount  || 0,
     // ====== Dynamic specifications (EAV) — an array of plain objects ======
     // { attributeId, key, label, dataType, unit, options, values, value }
     attributes,
@@ -112,6 +114,73 @@ async function getProductData(productNumber) {
   };
 
   return { productData, supplierData, rawProduct: product };
+}
+// ============================================================
+// محصولات مشابه — اولویت با categoryPath، fallback به category
+// ============================================================
+async function getSimilarProducts(product, limit = 6) {
+  const where = {
+    id: { not: product.id },
+    userId: { not: product.userId },   // محصولات خود همان فروشنده را نشان نده
+    isVisible: true,
+    status: "APPROVED",
+  };
+
+  // اگر categoryPath پر است، دقیق‌ترش کن؛ وگرنه به category تکیه کن
+  if (product.categoryPath) {
+    where.categoryPath = { startsWith: product.categoryPath };
+  } else if (product.category) {
+    where.category = product.category;
+  }
+
+  let items = await prisma.product.findMany({
+    where,
+    take: limit,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      unit: true,
+      images: true,
+      badge: true,
+      country: true,
+      countryCode: true,
+      slug: true,
+      productNumber: true,
+      category: true,
+      user: { select: { companyName: true } },
+    },
+  });
+
+  // اگر با categoryPath نتیجه نداد (مثلاً محصولات قدیمی هنوز rebuild نشدن)
+  if (items.length === 0 && product.categoryPath) {
+    items = await prisma.product.findMany({
+      where: {
+        ...where,
+        categoryPath: undefined,
+        category: product.category,
+      },
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        unit: true,
+        images: true,
+        badge: true,
+        country: true,
+        countryCode: true,
+        slug: true,
+        productNumber: true,
+        category: true,
+        user: { select: { companyName: true } },
+      },
+    });
+  }
+
+  return items;
 }
 
 // ============================================================
@@ -216,15 +285,15 @@ export async function generateMetadata({ params }) {
     },
     robots: isIndexable
       ? {
+        index: true,
+        follow: true,
+        googleBot: {
           index: true,
           follow: true,
-          googleBot: {
-            index: true,
-            follow: true,
-            "max-image-preview": "large",
-            "max-snippet": -1,
-          },
-        }
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
+      }
       : { index: false, follow: false },
   };
 }
@@ -238,6 +307,7 @@ export default async function ProductPage({ params }) {
   const { productData, supplierData, rawProduct } =
     await getProductData(productNum);
 
+  const similarProducts = await getSimilarProducts(rawProduct, 6);
   // ====== Access check ======
   const session = await auth();
   const productSettings = await getSectionSettings("product");
@@ -334,6 +404,7 @@ export default async function ProductPage({ params }) {
           supplierInfoPermission={supplierInfoPermission}
           alreadyRevealed={alreadyRevealed}
           shouldAutoReveal={shouldAutoReveal}
+          similarProducts={similarProducts}     
         />
       </div>
     </>

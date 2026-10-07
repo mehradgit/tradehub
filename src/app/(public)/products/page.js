@@ -133,8 +133,8 @@ export default async function ProductsPage({ searchParams }) {
   const categoryLabel = filters.categoryPath
     ? describePath(filters.categoryPath, filters.index)
     : category && subCategory
-    ? `${category} › ${subCategory}`
-    : category || subCategory || "";
+      ? `${category} › ${subCategory}`
+      : category || subCategory || "";
 
   // Breadcrumb from the path levels (each level is a link)
   const crumbs = String(filters.categoryPath || "")
@@ -165,6 +165,8 @@ export default async function ProductsPage({ searchParams }) {
         createdAt: true,
         slug: true,
         productNumber: true,
+        ratingAverage: true,
+        ratingCount: true,
         user: {
           select: { companyName: true },
         },

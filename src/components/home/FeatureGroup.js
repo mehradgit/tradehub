@@ -26,7 +26,10 @@ export default function FeatureGroup() {
               <i className="fa-solid fa-check"></i> Global Shipping
             </div>
           </div>
-          <Link href="/products" className="btn btn-primary">
+          <Link
+            href="/categories/spices-herbs-seasonings"
+            className="btn btn-primary"
+          >
             Explore Spice Products
             <i className="fa-solid fa-arrow-right"></i>
           </Link>

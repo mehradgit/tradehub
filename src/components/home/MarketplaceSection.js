@@ -1,7 +1,7 @@
 // src/components/home/MarketplaceSection.js
 import Link from "next/link";
 
-export default function MarketplaceSection() {
+export default function MarketplaceSection({ suppliers = [], buyers = [] }) {
   return (
     <section className="section mb-5">
       <div className="section-heading">
@@ -19,30 +19,20 @@ export default function MarketplaceSection() {
               <small>Verified food businesses</small>
             </div>
           </div>
-          <div className="company">
-            <div className="company-logo"><i className="fa-solid fa-wheat-awn"></i></div>
-            <div className="company-info">
-              <strong>Golden Harvest Foods</strong>
-              <small>Turkey · Grains & Pulses</small>
+          {suppliers.map((s) => (
+            <div className="company" key={s.id}>
+              <div className="company-logo">
+                <i className="fa-solid fa-wheat-awn"></i>
+              </div>
+              <div className="company-info">
+                <strong>{s.companyName || s.name}</strong>
+                <small>
+                  {s.country || "—"} · {s._count.products} products
+                </small>
+              </div>
+              <Link href={`/profiles/${s.profileNumber}/${s.slug}`}>View</Link>
             </div>
-            <Link href="#">View</Link>
-          </div>
-          <div className="company">
-            <div className="company-logo"><i className="fa-solid fa-leaf"></i></div>
-            <div className="company-info">
-              <strong>Green Valley Organics</strong>
-              <small>Spain · Organic Produce</small>
-            </div>
-            <Link href="#">View</Link>
-          </div>
-          <div className="company">
-            <div className="company-logo"><i className="fa-solid fa-jar"></i></div>
-            <div className="company-info">
-              <strong>Pure Nature Honey</strong>
-              <small>New Zealand · Natural Honey</small>
-            </div>
-            <Link href="#">View</Link>
-          </div>
+          ))}
         </div>
 
         <div className="market-box">
@@ -53,30 +43,20 @@ export default function MarketplaceSection() {
               <small>Companies sourcing products</small>
             </div>
           </div>
-          <div className="company">
-            <div className="company-logo"><i className="fa-solid fa-store"></i></div>
-            <div className="company-info">
-              <strong>FreshMart Europe</strong>
-              <small>Germany · Retail Chain</small>
+          {buyers.map((b) => (
+            <div className="company" key={b.id}>
+              <div className="company-logo">
+                <i className="fa-solid fa-store"></i>
+              </div>
+              <div className="company-info">
+                <strong>{b.companyName || b.name}</strong>
+                <small>
+                  {b.country || "—"} · {b._count.buyingRequests} requests
+                </small>
+              </div>
+              <Link href={`/profiles/${b.profileNumber}/${b.slug}`}>View</Link>
             </div>
-            <Link href="#">View</Link>
-          </div>
-          <div className="company">
-            <div className="company-logo"><i className="fa-solid fa-utensils"></i></div>
-            <div className="company-info">
-              <strong>Global Food Service</strong>
-              <small>UAE · Food Distribution</small>
-            </div>
-            <Link href="#">View</Link>
-          </div>
-          <div className="company">
-            <div className="company-logo"><i className="fa-solid fa-box"></i></div>
-            <div className="company-info">
-              <strong>Nature Select Imports</strong>
-              <small>Canada · Food Importer</small>
-            </div>
-            <Link href="#">View</Link>
-          </div>
+          ))}
         </div>
       </div>
     </section>

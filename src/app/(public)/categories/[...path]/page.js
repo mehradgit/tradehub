@@ -184,6 +184,8 @@ export default async function CategoryLandingPage({ params, searchParams }) {
         createdAt: true,
         slug: true,
         productNumber: true,
+        ratingAverage: true,
+        ratingCount: true,
         user: { select: { companyName: true } },
       },
     }),

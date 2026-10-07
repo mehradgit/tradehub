@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-
+import ProductReviews from "./ProductReviews";
 // ============================================================
 // Dynamic attributes (EAV) — formatting for display
 //
@@ -124,7 +124,7 @@ export default function ProductTabs({ product, attributes }) {
       {/* ====== Description tab ====== */}
       <div className={`tab-content ${activeTab === "desc" ? "active" : ""}`}>
         {hasAnyDescription ? (
-          <>            
+          <>
             {/* Full description */}
             {hasFullDesc && (
               <div>
@@ -276,65 +276,7 @@ export default function ProductTabs({ product, attributes }) {
 
       {/* ====== Reviews tab ====== */}
       <div className={`tab-content ${activeTab === "reviews" ? "active" : ""}`}>
-        <div className="review-item">
-          <div className="review-header">
-            <span className="reviewer">John Doe</span>
-            <span className="review-date">2 weeks ago</span>
-          </div>
-          <div className="review-rating">
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-          </div>
-          <p className="review-text">
-            Excellent quality! The honey is pure and has a wonderful flavor.
-            Highly recommended.
-          </p>
-        </div>
-
-        <div className="review-item">
-          <div className="review-header">
-            <span className="reviewer">Sarah Smith</span>
-            <span className="review-date">1 month ago</span>
-          </div>
-          <div className="review-rating">
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star-half-alt"></i>
-          </div>
-          <p className="review-text">
-            Great product, fast shipping. Will order again.
-          </p>
-        </div>
-
-        <div className="review-item">
-          <div className="review-header">
-            <span className="reviewer">Mike Johnson</span>
-            <span className="review-date">2 months ago</span>
-          </div>
-          <div className="review-rating">
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-            <i className="fas fa-star"></i>
-          </div>
-          <p className="review-text">
-            Premium quality honey. The packaging was excellent and delivery was
-            on time.
-          </p>
-        </div>
-
-        {/* Add review button (sample) */}
-        <div className="text-center mt-4">
-          <button className="btn btn-outline-primary rounded-pill px-4">
-            <i className="fas fa-plus me-2"></i>Write a Review
-          </button>
-        </div>
+        <ProductReviews productId={product.id} productOwnerId={product.userId} />
       </div>
 
       {/* ====== Scoped styles ====== */}

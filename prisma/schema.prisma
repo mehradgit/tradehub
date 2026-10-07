@@ -71,6 +71,7 @@ model User {
   couponUsages     CouponUsage[]
   emailLogs              EmailLog[]
   notificationPreferences NotificationPreference[]
+  reviews ProductReview[]
 }
 
 model Product {
@@ -111,6 +112,8 @@ model Product {
   rejectionNote String?  
   approvedAt    DateTime?
   approvedBy    String?  // id 
+  ratingAverage Float  @default(0)
+  ratingCount   Int    @default(0) 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -118,11 +121,12 @@ model Product {
   inquiries ProductInquiry[]
   revealedByUsers RevealedSupplierInfo[]
   attributes ProductAttribute[]
-
+  reviews ProductReview[]
   @@index([categoryPath])
   @@index([status, isVisible])
   @@index([userId])
   @@index([countryCode])
+  @@index([ratingAverage])
 }
 
 model BuyingRequest {
@@ -739,4 +743,23 @@ model ProductAttribute {
   @@index([attributeId, valueString])
   @@index([attributeId, valueNumber])
   @@index([attributeId, valueBool])
+}
+
+model ProductReview {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int      // 1 تا 5
+  title     String?  @db.VarChar(120)
+  comment   String?  @db.Text
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])      // هر کاربر فقط یک نظر
+  @@index([productId, isVisible])
+  @@index([userId])
 }

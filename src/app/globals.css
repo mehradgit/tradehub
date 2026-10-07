@@ -8406,6 +8406,37 @@ a:hover {
     font-size: 9.5px;
   }
 }
+/* ============================================================
+   Product Card Rating
+   ============================================================ */
+.product-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 4px;
+  min-height: 18px;
+}
+
+.product-card-rating .rating-count {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.product-card-rating.empty .no-rating {
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+@media (max-width: 650px) {
+  .product-card-rating .rating-count {
+    font-size: 10px;
+  }
+  .product-card-rating.empty .no-rating {
+    font-size: 10px;
+  }
+}
 
 /* ============================================================
    5. LEGACY COMPACT CARD (used on old pages)
@@ -11200,7 +11231,9 @@ a:hover {
   border-radius: 12px;
   padding: 0 14px;
   background: #fff;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .catpick-box:focus-within {

@@ -65,9 +65,8 @@ export async function GET(request) {
         items: items.map((p) => ({
           id: p.id,
           title: p.name,
-          subtitle: `${p.category}${
-            p.subCategory ? ` › ${p.subCategory}` : ""
-          }`,
+          subtitle: `${p.category}${p.subCategory ? ` › ${p.subCategory}` : ""
+            }`,
           meta: `${p.currency} ${p.price}/${p.unit}`,
           country: p.country,
           countryCode: p.countryCode,
@@ -111,6 +110,8 @@ export async function GET(request) {
         isUrgent: true,
         requestNumber: true,
         slug: true,
+        ratingAverage: true,
+        ratingCount: true,
         user: {
           select: { companyName: true },
         },
@@ -121,9 +122,8 @@ export async function GET(request) {
       items: items.map((r) => ({
         id: r.id,
         title: r.title,
-        subtitle: `${r.category}${
-          r.subCategory ? ` › ${r.subCategory}` : ""
-        }`,
+        subtitle: `${r.category}${r.subCategory ? ` › ${r.subCategory}` : ""
+          }`,
         meta: `${r.quantity} ${r.unit}`,
         country: r.buyerCountry || r.deliveryCountry,
         isUrgent: r.isUrgent,

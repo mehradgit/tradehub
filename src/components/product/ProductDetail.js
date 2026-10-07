@@ -8,10 +8,12 @@ import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import CountryFlag from "@/components/ui/CountryFlag";
 import ProductTabs from "./ProductTabs";
+import ProductCard from "@/components/home/ProductCard";
 import ImageGallery from "./ImageGallery";
 import ShareModal from "@/components/ui/ShareModal";
 import LoginModal from "@/components/ui/LoginModal";
 import SupplierInfoSection from "./SupplierInfoSection";
+import ReviewStars from "../ui/ReviewStars";
 
 export default function ProductDetail({
   product,
@@ -19,6 +21,7 @@ export default function ProductDetail({
   supplierInfoPermission,
   alreadyRevealed,
   shouldAutoReveal,
+  similarProducts = [],
 }) {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -181,6 +184,14 @@ export default function ProductDetail({
           {/* --- Column 2: product info --- */}
           <div className="product-info-wrapper">
             <div className="product-info-header">
+              {data.ratingCount > 0 && (
+                <div className="product-rating-summary">
+                  <ReviewStars value={data.ratingAverage} size={14} readOnly showValue />
+                  <span className="product-rating-count">
+                    ({data.ratingCount} review{data.ratingCount !== 1 ? "s" : ""})
+                  </span>
+                </div>
+              )}
               <h1 className="product-title">{data.name}</h1>
               <div className="product-meta">
                 <span className="product-date">{data.createdAt}</span>
@@ -222,7 +233,6 @@ export default function ProductDetail({
                 </button>
               </div>
             </div>
-
             {/* Specifications — two columns inside this column */}
             <div className="product-specs-grid">
               <div className="product-specs-column">
@@ -445,6 +455,31 @@ export default function ProductDetail({
             </div>
           )}
         </div>
+        {/* ============================================================
+    محصولات مشابه
+    ============================================================ */}
+        {similarProducts.length > 0 && (
+          <section className="similar-products">
+            <div className="similar-products-header">
+              <h2>
+                <i className="fas fa-layer-group"></i>
+                Similar Products
+              </h2>
+              <Link
+                href={`/categories/${data.categoryPath || data.category || ""}`}
+                className="similar-products-more"
+              >
+                View All <i className="fas fa-arrow-right"></i>
+              </Link>
+            </div>
+
+            <div className="similar-products-grid">
+              {similarProducts.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Share Modal */}
@@ -983,6 +1018,103 @@ export default function ProductDetail({
             padding-left: 10px;
           }
         }
+      .product-rating-summary {
+       display: flex;
+       align-items: center;
+       gap: 8px;
+       margin-bottom: 6px;
+      }     
+
+     .product-rating-count {
+      font-size: 12.5px;
+      color: #64748b;
+      font-weight: 600;
+     }
+      /* ============================================================
+   محصولات مشابه
+   ============================================================ */
+.similar-products {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px solid var(--gray-light);
+}
+
+.similar-products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.similar-products-header h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--black);
+  font-family: "Manrope", sans-serif;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.similar-products-header h2 i {
+  color: var(--primary);
+  background: rgba(232, 93, 58, 0.08);
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.similar-products-more {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: gap 0.2s ease;
+}
+
+.similar-products-more:hover {
+  gap: 10px;
+}
+
+.similar-products-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .similar-products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .similar-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 650px) {
+  .similar-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .similar-products-header h2 {
+    font-size: 16px;
+  }
+  .similar-products-header h2 i {
+    padding: 6px;
+    font-size: 14px;
+  }
+}
       `}</style>
     </>
   );

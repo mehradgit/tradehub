@@ -2,25 +2,28 @@
 "use client";
 
 import Link from "next/link";
-import { categories } from "@/lib/categories"; // Use the comprehensive categories file
+
+// نگاشت نام‌های نمایشی → slug واقعی
+const SLUG_MAP = {
+  Protein: "meat-poultry-game",
+  "Legumes, Grains, and Other Foods": "grains-cereals",
+  "Dairy and Breakfast": "dairy-eggs",
+  "Frozen Foods": "processed-convenience-foods",
+  Condiments: "spices-herbs-seasonings",
+  "Canned and Ready-Made Food": "beverages",
+  "Sweets and Snacks": "bakery-confectionery-snacks",
+};
+
+const SHOW = [
+  { name: "Meat & Poultry",         slug: "meat-poultry-game",           icon: "fa-drumstick-bite" },
+  { name: "Grains & Cereals",       slug: "grains-cereals",              icon: "fa-wheat-awn" },
+  { name: "Dairy & Eggs",           slug: "dairy-eggs",                  icon: "fa-cow" },
+  { name: "Spices & Seasonings",    slug: "spices-herbs-seasonings",     icon: "fa-pepper-hot" },
+  { name: "Sweeteners & Honey",     slug: "sweeteners-sugar-honey",      icon: "fa-jar" },
+  { name: "Nuts & Dried Fruits",    slug: "nuts-seeds-dried-fruits",     icon: "fa-seedling" },
+];
 
 export default function CategoriesSection() {
-  // ====== Extract the main categories (maximum 6 items) ======
-  const mainCategories = categories
-    .filter((c) => c.parent === 0)
-    .slice(0, 6);
-
-  // ====== Icon map for specific categories ======
-  const iconMap = {
-    Protein: "fa-drumstick-bite",
-    "Legumes, Grains, and Other Foods": "fa-wheat-awn",
-    "Dairy and Breakfast": "fa-cow",
-    "Frozen Foods": "fa-snowflake",
-    Condiments: "fa-pepper-hot",
-    "Canned and Ready-Made Food": "fa-can-food",
-    "Sweets and Snacks": "fa-candy-cane", // In case a 7th one is needed
-  };
-
   return (
     <section className="categories-section mb-5">
       <div className="section-heading">
@@ -35,17 +38,13 @@ export default function CategoriesSection() {
       </div>
 
       <div className="categories-grid">
-        {mainCategories.map((category, index) => (
-          <Link
-            href={`/products?category=${encodeURIComponent(category.id)}`}
-            key={category.id}
-            className="category-card"
-          >
+        {SHOW.map((c) => (
+          <Link key={c.slug} href={`/categories/${c.slug}`} className="category-card">
             <div className="category-icon">
-              <i className={`fa-solid ${iconMap[category.name] || "fa-tag"}`}></i>
+              <i className={`fa-solid ${c.icon}`}></i>
             </div>
-            <h3>{category.name}</h3>
-            <p>20K+ products</p> {/* Static text matching the sample HTML */}
+            <h3>{c.name}</h3>
+            <p>Browse products</p>
           </Link>
         ))}
       </div>

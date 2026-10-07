@@ -61,6 +61,8 @@ export async function GET(request) {
           slug: true,
           country: true,
           countryCode: true,
+          ratingAverage: true,
+          ratingCount: true,
           user: {
             select: { companyName: true, name: true },
           },

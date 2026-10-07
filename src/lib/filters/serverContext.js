@@ -10,6 +10,7 @@
 //   <FilterBar schemaKey="products" {...ctx.barProps} />
 // ============================================================
 import { getCategories } from "@/lib/categoriesService";
+import { FILTER_SCHEMAS } from "./schemas";
 import {
   buildCategoryTree,
   buildCategoryIndex,
@@ -82,17 +83,29 @@ export async function getFilterContext(schemaKey, searchParams, options = {}) {
     const plan = buildListQuery(schemaKey, effectiveParams, { attributeDefs });
 
     // ===== facet count =====
-    // For option counting we ignore the attributes' own filter
-    // so the user can see the other options as well.
+    // فقط برای schema هایی که dynamicAttributes دارند و
+    // درخت ProductAttribute را می‌شناسند (فعلاً فقط products)
+    const schema = FILTER_SCHEMAS[schemaKey];
+    const hasDynamicAttributes =
+      schema?.fields?.some((f) => f.type === "dynamicAttributes") ?? false;
+
+    // getAttributeFacets روی ProductAttribute کار می‌کند — پس فقط
+    // وقتی معتبر است که schemaKey === "products" باشد.
+    const canComputeAttributeFacets =
+      withFacets &&
+      schemaKey === "products" &&
+      hasDynamicAttributes &&
+      attributeDefs.length > 0;
+
     let attributeFacets = {};
-    if (withFacets && attributeDefs.length > 0) {
+    if (canComputeAttributeFacets) {
       const facetWhere = buildWhereFromValues(schemaKey, plan.values, {
         attributeDefs,
         skipTypes: facetTypesToSkip,
       });
       attributeFacets = await getAttributeFacets(attributeDefs, facetWhere);
     }
-
+    
     return {
       tree,
       index,

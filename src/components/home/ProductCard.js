@@ -1,9 +1,11 @@
 // src/components/home/ProductCard.js
 import Link from "next/link";
 import CountryFlag from "@/components/ui/CountryFlag";
-
+import ReviewStars from "../ui/ReviewStars";
+import SafeImage from "@/components/ui/SafeImage";
+import { getProductImage } from "@/lib/imageHelpers";
 export default function ProductCard({ product }) {
-  const imageUrl = product.images?.[0] || "https://via.placeholder.com/242x209";
+  const imageUrl = getProductImage(product);
 
   const formatPrice = (price) => {
     const num = typeof price === "string" ? parseFloat(price) : price;
@@ -17,7 +19,8 @@ export default function ProductCard({ product }) {
   const priceDisplay = formatPrice(product.price);
   const currency = product.currency || "USD";
   const unit = product.unit ? `/${product.unit}` : "";
-
+  const ratingCount = product.ratingCount || 0;
+  const ratingAvg = product.ratingAverage || 0;
   return (
     <Link
       href={`/products/${product.productNumber}/${product.slug}`}
@@ -27,7 +30,12 @@ export default function ProductCard({ product }) {
         {/* Image with the Enquire Now button */}
         <div className="product-card-modern-image-wrapper">
           <div className="product-card-modern-image">
-            <img src={imageUrl} alt={product.name} />
+            <SafeImage
+              src={imageUrl}
+              alt={product.name}
+              loading="lazy"
+            />
+
             <div className="product-card-modern-overlay"></div>
           </div>
           <div className="product-card-modern-btn-wrapper">
@@ -42,7 +50,16 @@ export default function ProductCard({ product }) {
           </div>
 
           <h3 className="product-card-modern-title">{product.name}</h3>
-
+          {ratingCount > 0 ? (
+            <div className="product-card-rating">
+              <ReviewStars value={ratingAvg} size={12} readOnly />
+              <span className="rating-count">({ratingCount})</span>
+            </div>
+          ) : (
+            <div className="product-card-rating empty">
+              <span className="no-rating">No reviews yet</span>
+            </div>
+          )}
           <div className="product-card-modern-underline" />
 
           {/* Price */}

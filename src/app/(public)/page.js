@@ -114,6 +114,8 @@ async function fetchSectionData(section) {
             origin: true,
             slug: true,
             productNumber: true,
+            ratingAverage: true,
+            ratingCount: true,
             user: { select: { companyName: true } },
           },
         })
@@ -210,7 +212,28 @@ async function fetchSectionData(section) {
 
   return { section, items: requests };
 }
-
+const [topSuppliers, topBuyers] = await Promise.all([
+  prisma.user.findMany({
+    where: { role: "SUPPLIER", registrationComplete: true },
+    orderBy: { products: { _count: "desc" } },
+    take: 3,
+    select: {
+      id: true, companyName: true, name: true, country: true,
+      profileNumber: true, slug: true,
+      _count: { select: { products: true } },
+    },
+  }),
+  prisma.user.findMany({
+    where: { role: "BUYER", registrationComplete: true },
+    orderBy: { buyingRequests: { _count: "desc" } },
+    take: 3,
+    select: {
+      id: true, companyName: true, name: true, country: true,
+      profileNumber: true, slug: true,
+      _count: { select: { buyingRequests: true } },
+    },
+  }),
+]);
 // ============================================================
 // Fetch stats
 // ============================================================
@@ -434,7 +457,7 @@ export default async function HomePage() {
          6. Marketplace (Suppliers + Buyers)
          ============================================================ */}
       <section className="container py-4">
-        <MarketplaceSection />
+        <MarketplaceSection suppliers={topSuppliers} buyers={topBuyers} />
       </section>
 
       {/* ============================================================
