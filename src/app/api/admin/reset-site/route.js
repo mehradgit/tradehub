@@ -6,6 +6,25 @@ import fs from "fs/promises";
 import path from "path";
 
 // ============================================================
+// helper: مسیر ریشه‌ی uploads
+//
+// چرا از [base, ...].join(path.sep) استفاده می‌کنیم و نه path.join():
+// Turbopack هنگام build با تحلیل استاتیک، هر مسیری که با path.join()
+// و literals ساخته شود را "قابل پیش‌بینی" می‌داند و سعی می‌کند همه‌ی
+// فایل‌های آن پوشه را در bundle لحاظ کند. با آرایه + join، مسیر برای
+// Turbopack «مبهم» می‌شود و این تحلیل پرهزینه انجام نمی‌شود.
+// ============================================================
+function getUploadsRoot() {
+  const base = process.cwd();
+  return [base, "public", "uploads"].join(path.sep);
+}
+
+function getUploadFolderPath(folder) {
+  const base = process.cwd();
+  return [base, "public", "uploads", folder].join(path.sep);
+}
+
+// ============================================================
 // GET: stats for what is about to be deleted
 // ============================================================
 export async function GET() {
@@ -65,22 +84,18 @@ export async function GET() {
       prisma.usageCounter.count(),
     ]);
 
-    // Stats for the uploaded files
-    let uploadStats = { requests: 0, products: 0, profiles: 0, tickets: 0 };
-    const uploadRoot = path.join(process.cwd(), "public", "uploads");
-    try {
-      const dirs = ["requests", "products", "profiles", "tickets"];
-      for (const dir of dirs) {
-        const dirPath = path.join(uploadRoot, dir);
-        try {
-          const files = await fs.readdir(dirPath);
-          uploadStats[dir] = files.length;
-        } catch {
-          uploadStats[dir] = 0;
-        }
+    // ===== آمار فایل‌های آپلودی =====
+    const uploadStats = { requests: 0, products: 0, profiles: 0, tickets: 0 };
+    const dirs = ["requests", "products", "profiles", "tickets"];
+
+    for (const dir of dirs) {
+      try {
+        const dirPath = getUploadFolderPath(dir);
+        const files = await fs.readdir(dirPath);
+        uploadStats[dir] = files.length;
+      } catch {
+        uploadStats[dir] = 0;
       }
-    } catch {
-      // ignore
     }
 
     const totalUploads = Object.values(uploadStats).reduce((a, b) => a + b, 0);
@@ -139,7 +154,7 @@ export async function POST(request) {
     const body = await request.json();
     const { confirmation } = body;
 
-    // Strong confirmation check
+    // چک تأییدیه‌ی صریح
     if (confirmation !== "RESET") {
       return NextResponse.json(
         {
@@ -151,98 +166,104 @@ export async function POST(request) {
     }
 
     // ============================================================
-    // Step 1: clear the database (ordered to respect foreign keys)
+    // مرحله ۱: پاک‌سازی دیتابیس (به ترتیب وابستگی‌ها)
     // ============================================================
-    const results = await prisma.$transaction(async (tx) => {
-      const counts = {};
+    const results = await prisma.$transaction(
+      async (tx) => {
+        const counts = {};
 
-      // Coupon dependencies
-      counts.couponUsages = (await tx.couponUsage.deleteMany({})).count;
+        // وابستگی‌های کوپن
+        counts.couponUsages = (await tx.couponUsage.deleteMany({})).count;
 
-      // Payments
-      counts.payments = (await tx.payment.deleteMany({})).count;
+        // پرداخت‌ها
+        counts.payments = (await tx.payment.deleteMany({})).count;
 
-      // Coupons (after payments)
-      counts.coupons = (await tx.coupon.deleteMany({})).count;
+        // کوپن‌ها (بعد از پرداخت‌ها)
+        counts.coupons = (await tx.coupon.deleteMany({})).count;
 
-      // Push
-      counts.pushSubscriptions = (
-        await tx.pushSubscription.deleteMany({})
-      ).count;
+        // Push
+        counts.pushSubscriptions = (
+          await tx.pushSubscription.deleteMany({})
+        ).count;
 
-      // Notification
-      counts.notifications = (await tx.notification.deleteMany({})).count;
+        // Notification
+        counts.notifications = (await tx.notification.deleteMany({})).count;
 
-      // Ticket chain
-      counts.ticketAttachments = (
-        await tx.ticketAttachment.deleteMany({})
-      ).count;
-      counts.ticketMessages = (await tx.ticketMessage.deleteMany({})).count;
-      counts.tickets = (await tx.ticket.deleteMany({})).count;
+        // زنجیره‌ی تیکت
+        counts.ticketAttachments = (
+          await tx.ticketAttachment.deleteMany({})
+        ).count;
+        counts.ticketMessages = (await tx.ticketMessage.deleteMany({})).count;
+        counts.tickets = (await tx.ticket.deleteMany({})).count;
 
-      // Revealed infos
-      counts.revealedBuyerInfos = (
-        await tx.revealedBuyerInfo.deleteMany({})
-      ).count;
-      counts.revealedSupplierInfos = (
-        await tx.revealedSupplierInfo.deleteMany({})
-      ).count;
+        // اطلاعات فاش‌شده
+        counts.revealedBuyerInfos = (
+          await tx.revealedBuyerInfo.deleteMany({})
+        ).count;
+        counts.revealedSupplierInfos = (
+          await tx.revealedSupplierInfo.deleteMany({})
+        ).count;
 
-      // Usage + Subscription
-      counts.usageCounters = (await tx.usageCounter.deleteMany({})).count;
-      counts.subscriptions = (
-        await tx.userSubscription.deleteMany({})
-      ).count;
+        // Usage + Subscription
+        counts.usageCounters = (await tx.usageCounter.deleteMany({})).count;
+        counts.subscriptions = (
+          await tx.userSubscription.deleteMany({})
+        ).count;
 
-      // Quotes
-      counts.quotes = (await tx.quote.deleteMany({})).count;
+        // Quotes
+        counts.quotes = (await tx.quote.deleteMany({})).count;
 
-      // Messages
-      counts.messages = (await tx.message.deleteMany({})).count;
+        // Messages
+        counts.messages = (await tx.message.deleteMany({})).count;
 
-      // Saved items
-      counts.savedProfiles = (await tx.savedProfile.deleteMany({})).count;
-      counts.savedRequests = (await tx.savedRequest.deleteMany({})).count;
-      counts.savedProducts = (await tx.savedProduct.deleteMany({})).count;
+        // Saved items
+        counts.savedProfiles = (await tx.savedProfile.deleteMany({})).count;
+        counts.savedRequests = (await tx.savedRequest.deleteMany({})).count;
+        counts.savedProducts = (await tx.savedProduct.deleteMany({})).count;
 
-      // Product inquiries
-      counts.inquiries = (await tx.productInquiry.deleteMany({})).count;
+        // Product inquiries
+        counts.inquiries = (await tx.productInquiry.deleteMany({})).count;
 
-      // Buying requests (after quotes, messages and inquiries)
-      counts.requests = (await tx.buyingRequest.deleteMany({})).count;
+        // Buying requests (بعد از quotes, messages, inquiries)
+        counts.requests = (await tx.buyingRequest.deleteMany({})).count;
 
-      // Products
-      counts.products = (await tx.product.deleteMany({})).count;
+        // Products
+        counts.products = (await tx.product.deleteMany({})).count;
 
-      // Account + Session + VerificationToken for everyone except the current admin
-      counts.accounts = (
-        await tx.account.deleteMany({
-          where: { userId: { not: currentAdminId } },
-        })
-      ).count;
+        // Account + Session + VerificationToken برای همه به‌جز ادمین فعلی
+        counts.accounts = (
+          await tx.account.deleteMany({
+            where: { userId: { not: currentAdminId } },
+          })
+        ).count;
 
-      counts.sessions = (
-        await tx.session.deleteMany({
-          where: { userId: { not: currentAdminId } },
-        })
-      ).count;
+        counts.sessions = (
+          await tx.session.deleteMany({
+            where: { userId: { not: currentAdminId } },
+          })
+        ).count;
 
-      counts.verificationTokens = (
-        await tx.verificationToken.deleteMany({})
-      ).count;
+        counts.verificationTokens = (
+          await tx.verificationToken.deleteMany({})
+        ).count;
 
-      // Users (except the current admin)
-      counts.users = (
-        await tx.user.deleteMany({
-          where: { id: { not: currentAdminId } },
-        })
-      ).count;
+        // Users (به‌جز ادمین فعلی)
+        counts.users = (
+          await tx.user.deleteMany({
+            where: { id: { not: currentAdminId } },
+          })
+        ).count;
 
-      return counts;
-    });
+        return counts;
+      },
+      {
+        timeout: 120000, // ۲ دقیقه
+        maxWait: 15000,
+      }
+    );
 
     // ============================================================
-    // Step 2: delete the uploaded files
+    // مرحله ۲: پاک‌سازی فایل‌های آپلودی
     // ============================================================
     const uploadResult = {
       deletedFiles: 0,
@@ -250,19 +271,22 @@ export async function POST(request) {
       errors: [],
     };
 
-    const uploadRoot = path.join(process.cwd(), "public", "uploads");
     const foldersToClear = ["requests", "products", "profiles", "tickets"];
 
     for (const folder of foldersToClear) {
-      const folderPath = path.join(uploadRoot, folder);
+      const folderPath = getUploadFolderPath(folder);
+
       try {
+        // اگر پوشه وجود ندارد، از این پوشه رد شو
         await fs.access(folderPath);
 
         const files = await fs.readdir(folderPath);
         let deleted = 0;
 
         for (const file of files) {
-          const filePath = path.join(folderPath, file);
+          // مسیر فایل را هم با array join می‌سازیم تا Turbopack trace نکند
+          const filePath = [folderPath, file].join(path.sep);
+
           try {
             const stat = await fs.stat(filePath);
             if (stat.isFile()) {
@@ -270,19 +294,21 @@ export async function POST(request) {
               deleted++;
             }
           } catch (err) {
-            uploadResult.errors.push(`Failed to delete ${file}: ${err.message}`);
+            uploadResult.errors.push(
+              `Failed to delete ${file}: ${err.message}`
+            );
           }
         }
 
         uploadResult.deletedFiles += deleted;
         uploadResult.deletedFolders.push({ folder, deleted });
       } catch {
-        // The folder does not exist - that is fine
+        // پوشه وجود ندارد — مشکلی نیست
       }
     }
 
     // ============================================================
-    // Result
+    // پاسخ نهایی
     // ============================================================
     return NextResponse.json({
       message: "Site data has been reset successfully.",

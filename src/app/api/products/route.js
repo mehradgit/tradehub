@@ -21,6 +21,11 @@ import {
 } from "@/lib/attributesService";
 
 // ====== Base64 image saving helper ======
+function getUploadDir(folder) {
+  const base = process.cwd();
+  const segments = ["public", "uploads", folder].filter(Boolean);
+  return [base, ...segments].join(path.sep);
+}
 async function saveBase64Image(base64String, folder = "products") {
   if (!base64String) return null;
 
@@ -32,8 +37,8 @@ async function saveBase64Image(base64String, folder = "products") {
   const buffer = Buffer.from(data, "base64");
 
   const filename = `${randomUUID()}.${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
-  const filePath = path.join(uploadDir, filename);
+  const uploadDir = getUploadDir(folder);
+  const filePath = [uploadDir, filename].join(path.sep);
 
   await mkdir(uploadDir, { recursive: true });
   await writeFile(filePath, buffer);
