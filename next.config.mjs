@@ -7,6 +7,19 @@ const nextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+
+  // ============================================================
+  // از bundling پوشه‌ی uploads جلوگیری کن
+  // این پوشه محتوای runtime است، نه بخشی از build
+  // ============================================================
+  outputFileTracingExcludes: {
+    "*": [
+      "public/uploads/**",
+      "public/uploads",
+      ".next/cache/**",
+    ],
+  },
+
   async headers() {
     return [
       {
