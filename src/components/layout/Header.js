@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 import HeaderSearch from "@/components/layout/HeaderSearch";
@@ -12,7 +12,7 @@ import HeaderSearch from "@/components/layout/HeaderSearch";
 export default function Header() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-
+  const searchParams = useSearchParams();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isJoinMenuOpen, setIsJoinMenuOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
@@ -27,6 +27,28 @@ export default function Header() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+
+  const isActiveLink = (href) => {
+    if (href === "/") return pathname === "/";
+
+    const [baseHref, queryString] = href.split("?");
+
+    // اگر مسیر پایه مطابقت نداشت → فعال نیست
+    if (!pathname.startsWith(baseHref)) return false;
+
+    // اگر لینک query دارد، همه‌ی پارامترها باید با URL فعلی یکی باشند
+    if (queryString) {
+      const linkParams = new URLSearchParams(queryString);
+      for (const [key, value] of linkParams) {
+        if (searchParams.get(key) !== value) return false;
+      }
+      return true;
+    }
+
+    // لینک‌های بدون query (مثل /products) مثل قبل رفتار می‌کنند
+    return true;
+  };
 
   // ============================================================
   // User dropdown position
@@ -156,12 +178,6 @@ export default function Header() {
   const handleSignOut = async () => {
     setIsUserMenuOpen(false);
     await signOut({ callbackUrl: "/" });
-  };
-
-  const isActiveLink = (href) => {
-    if (href === "/") return pathname === "/";
-    const baseHref = href.split("?")[0];
-    return pathname.startsWith(baseHref);
   };
 
   // ============================================================
