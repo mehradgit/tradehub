@@ -81,6 +81,11 @@ export default function AdminSidebar({ isOpen, onClose }) {
     },
     { label: "Analytics", icon: "fa-chart-line", href: "/admin/analytics" },
     {
+      label: "Google Analytics",
+      icon: "fa-chart-line",
+      href: "/admin/analytics/google",
+    },
+    {
       label: "Access Control",
       icon: "fa-shield-halved",
       href: "/admin/settings/access-control",
