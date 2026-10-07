@@ -1,27 +1,13 @@
 
 # scripts/download-product-images.py
 # ============================================================
-# دانلود + بهینه‌سازی تصاویر محصولات
+# دانلود تصاویر محصولات از گوگل ایمیج
 #
-# امکانات:
-#   - Google / Bing
-#   - تشخیص CAPTCHA
-#   - Resume
-#   - حداکثر 5 عکس برای هر محصول
-#   - خروجی استاندارد:
-#         1200 × 1200
-#         WebP
-#         کیفیت 82
-#         پس‌زمینه سفید
-#   - رد کردن تصاویر خیلی کوچک
-#   - حفظ نام Product Number
+# ورودی:  اکسل با ستون‌های "Product Number" و "Name"
+# خروجی:  public/uploads/products/{productNumber}-{01..05}.jpg
 #
-# مثال:
-#
-#   2759501-01.webp
-#   2759501-02.webp
-#   2759501-03.webp
-#
+# اجرا:
+#   python scripts/download-product-images.py
 # ============================================================
 
 import os
@@ -31,10 +17,7 @@ import io
 import requests
 import pandas as pd
 
-from urllib.parse import urlparse, quote
-
-from PIL import Image, ImageOps
-
+from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -47,34 +30,20 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 
 # ============================================================
-# تنظیمات پروژه
+# مسیرها — نسبت به ریشه‌ی پروژه
 # ============================================================
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(
-        os.path.dirname(__file__),
-        ".."
-    )
-)
+EXCEL_FILE  = os.path.join(PROJECT_ROOT, "scripts", "products-export.xlsx")
+OUTPUT_DIR  = os.path.join(PROJECT_ROOT, "public", "uploads", "products")
 
-EXCEL_FILE = os.path.join(
-    PROJECT_ROOT,
-    "scripts",
-    "products-export.xlsx"
-)
-
-OUTPUT_DIR = os.path.join(
-    PROJECT_ROOT,
-    "public",
-    "uploads",
-    "products"
-)
+# اگه واقعاً می‌خوای "upload" بدون s باشه، خط بالا رو این کن:
+# OUTPUT_DIR = os.path.join(PROJECT_ROOT, "public", "upload", "products")
 
 
 # ============================================================
-# تنظیمات تصاویر
+# تنظیمات
 # ============================================================
-
 IMAGES_PER_PRODUCT = 5
 
 OUTPUT_SIZE = 1200
@@ -95,19 +64,9 @@ MIN_SOURCE_HEIGHT = 500
 SKIP_FIRST = 1
 
 MAX_SCROLLS = 4
-
-SCROLL_WAIT = 2.2
-
+SCROLL_WAIT = 1.8
 HEADLESS = False
-
-# google / bing
-SEARCH_ENGINE = "google"
-
-# فاصله بین محصولات
-DELAY_BETWEEN_PRODUCTS = 5
-
-# اگر محصول 5 عکس داشته باشد رد می‌شود
-SKIP_EXISTING = True
+SKIP_EXISTING = False
 
 
 # ============================================================
@@ -183,127 +142,11 @@ def build_driver():
 
 
 # ============================================================
-# CAPTCHA
+# جمع‌آوری لینک عکس‌ها
 # ============================================================
-
-def is_captcha_page(driver):
-
-    try:
-        url = driver.current_url.lower()
-    except Exception:
-        return False
-
-    captcha_url_markers = (
-        "sorry/index",
-        "/sorry/",
-        "recaptcha",
-        "captcha",
-    )
-
-    if any(
-        marker in url
-        for marker in captcha_url_markers
-    ):
-        return True
-
-    try:
-        page_text = (
-            driver
-            .find_element(
-                By.TAG_NAME,
-                "body"
-            )
-            .text
-            .lower()
-        )
-    except Exception:
-        return False
-
-    text_markers = (
-        "unusual traffic",
-        "our systems have detected",
-        "not a robot",
-        "recaptcha",
-        "verify you are human",
-    )
-
-    return any(
-        marker in page_text
-        for marker in text_markers
-    )
-
-
-# ============================================================
-# انتظار برای CAPTCHA
-# ============================================================
-
-def wait_for_captcha_solved(
-    driver,
-    timeout_sec=600
-):
-
-    print("\n" + "!" * 60)
-
-    print(
-        "🛑 CAPTCHA نمایش داده شده!"
-    )
-
-    print(
-        "   لطفاً CAPTCHA را در مرورگر حل کن."
-    )
-
-    print(
-        f"   حداکثر {timeout_sec // 60} دقیقه منتظر می‌مانم..."
-    )
-
-    print("!" * 60 + "\n")
-
-    start = time.time()
-
-    while (
-        time.time() - start
-        < timeout_sec
-    ):
-
-        time.sleep(3)
-
-        if not is_captcha_page(driver):
-
-            print(
-                "✅ CAPTCHA حل شد."
-            )
-
-            print(
-                "   ادامه می‌دهم...\n"
-            )
-
-            return True
-
-    print(
-        "⏰ زمان CAPTCHA تمام شد."
-    )
-
-    return False
-
-
-# ============================================================
-# Google Images
-# ============================================================
-
-def collect_google(
-    driver,
-    query,
-    want=30
-):
-
-    driver.get(
-        "https://www.google.com/imghp?hl=en"
-    )
-
-    wait = WebDriverWait(
-        driver,
-        15
-    )
+def collect_image_urls(driver, query, want=30):
+    driver.get("https://www.google.com/imghp?hl=en")
+    wait = WebDriverWait(driver, 15)
 
     box = wait.until(
         EC.presence_of_element_located(
@@ -319,13 +162,6 @@ def collect_google(
 
     time.sleep(3)
 
-    if is_captcha_page(driver):
-
-        if not wait_for_captcha_solved(
-            driver
-        ):
-            return []
-
     urls = set()
 
     for _ in range(MAX_SCROLLS):
@@ -337,13 +173,6 @@ def collect_google(
         time.sleep(
             SCROLL_WAIT
         )
-
-        if is_captcha_page(driver):
-
-            if not wait_for_captcha_solved(
-                driver
-            ):
-                break
 
         html = driver.page_source
 
@@ -392,253 +221,7 @@ def collect_google(
 
 
 # ============================================================
-# Bing Images
-# ============================================================
-
-def collect_bing(
-    driver,
-    query,
-    want=30
-):
-
-    url = (
-        "https://www.bing.com/images/search?q="
-        + quote(query)
-    )
-
-    driver.get(url)
-
-    time.sleep(3)
-
-    urls = set()
-
-    for _ in range(MAX_SCROLLS):
-
-        driver.execute_script(
-            "window.scrollBy(0, document.body.scrollHeight);"
-        )
-
-        time.sleep(
-            SCROLL_WAIT
-        )
-
-        html = driver.page_source
-
-        for match in re.findall(
-            r'"murl":"(https?://[^"]+?)"',
-            html
-        ):
-
-            urls.add(
-                match.replace(
-                    "\\/",
-                    "/"
-                )
-            )
-
-        for match in re.findall(
-            r'mediaurl=([^&"]+)',
-            html
-        ):
-
-            urls.add(
-                requests.utils.unquote(
-                    match
-                )
-            )
-
-        urls = {
-            url
-            for url in urls
-            if not any(
-                bad in url
-                for bad in (
-                    "bing.com",
-                    "bing.net",
-                    "microsoft.com",
-                    "data:image"
-                )
-            )
-        }
-
-        if len(urls) >= want:
-            break
-
-    return list(urls)
-
-
-# ============================================================
-# استانداردسازی تصویر
-# ============================================================
-
-def optimize_image(
-    image_bytes,
-    output_path
-):
-
-    try:
-
-        image = Image.open(
-            io.BytesIO(
-                image_bytes
-            )
-        )
-
-        # ----------------------------------------------------
-        # بررسی ابعاد
-        # ----------------------------------------------------
-
-        width, height = image.size
-
-        if (
-            width < MIN_SOURCE_WIDTH
-            or height < MIN_SOURCE_HEIGHT
-        ):
-
-            raise ValueError(
-                f"image too small: "
-                f"{width}x{height}"
-            )
-
-        # ----------------------------------------------------
-        # اصلاح Orientation بر اساس EXIF
-        # ----------------------------------------------------
-
-        image = ImageOps.exif_transpose(
-            image
-        )
-
-        # ----------------------------------------------------
-        # تبدیل به RGB
-        # ----------------------------------------------------
-
-        if image.mode in (
-            "RGBA",
-            "LA",
-            "P"
-        ):
-
-            background = Image.new(
-                "RGB",
-                image.size,
-                (
-                    255,
-                    255,
-                    255
-                )
-            )
-
-            if image.mode == "P":
-
-                image = image.convert(
-                    "RGBA"
-                )
-
-            background.paste(
-                image,
-                mask=image.getchannel(
-                    "A"
-                )
-                if image.mode == "RGBA"
-                else None
-            )
-
-            image = background
-
-        else:
-
-            image = image.convert(
-                "RGB"
-            )
-
-        # ----------------------------------------------------
-        # قرار دادن در Canvas مربع
-        # ----------------------------------------------------
-
-        ratio = min(
-            OUTPUT_SIZE / image.width,
-            OUTPUT_SIZE / image.height
-        )
-
-        new_width = max(
-            1,
-            int(
-                image.width * ratio
-            )
-        )
-
-        new_height = max(
-            1,
-            int(
-                image.height * ratio
-            )
-        )
-
-        image = image.resize(
-            (
-                new_width,
-                new_height
-            ),
-            Image.Resampling.LANCZOS
-        )
-
-        # ----------------------------------------------------
-        # Canvas سفید 1200×1200
-        # ----------------------------------------------------
-
-        canvas = Image.new(
-            "RGB",
-            (
-                OUTPUT_SIZE,
-                OUTPUT_SIZE
-            ),
-            (
-                255,
-                255,
-                255
-            )
-        )
-
-        left = (
-            OUTPUT_SIZE
-            - new_width
-        ) // 2
-
-        top = (
-            OUTPUT_SIZE
-            - new_height
-        ) // 2
-
-        canvas.paste(
-            image,
-            (
-                left,
-                top
-            )
-        )
-
-        # ----------------------------------------------------
-        # ذخیره WebP
-        # ----------------------------------------------------
-
-        canvas.save(
-            output_path,
-            "WEBP",
-            quality=WEBP_QUALITY,
-            method=6
-        )
-
-        return True
-
-    except Exception as e:
-
-        raise ValueError(
-            f"image processing failed: {e}"
-        )
-
-
-# ============================================================
-# دانلود + Optimize
+# دانلود یک عکس — اسم نهایی رو خودمون تعیین می‌کنیم
 # ============================================================
 
 def download_and_optimize(
@@ -647,75 +230,36 @@ def download_and_optimize(
 ):
 
     headers = {
-
-        "User-Agent":
-            USER_AGENT,
-
-        "Referer":
-            "https://www.google.com/",
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://www.google.com/",
     }
+    r = requests.get(url, headers=headers, timeout=20)
+    r.raise_for_status()
 
-    response = requests.get(
-        url,
-        headers=headers,
-        timeout=REQUEST_TIMEOUT
-    )
+    ctype = r.headers.get("Content-Type", "")
+    if not ctype.startswith("image"):
+        raise ValueError(f"not an image ({ctype})")
 
-    response.raise_for_status()
+    # پسوند رو تشخیص بده
+    ext = os.path.splitext(urlparse(url).path)[1].lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+        if "png" in ctype:
+            ext = ".png"
+        elif "webp" in ctype:
+            ext = ".webp"
+        elif "gif" in ctype:
+            ext = ".gif"
+        else:
+            ext = ".jpg"
 
-    # --------------------------------------------------------
-    # حجم دانلود
-    # --------------------------------------------------------
-
-    max_bytes = (
-        MAX_DOWNLOAD_SIZE_MB
-        * 1024
-        * 1024
-    )
-
-    if len(response.content) > max_bytes:
-
-        raise ValueError(
-            f"image too large "
-            f"({len(response.content) // 1024 // 1024} MB)"
-        )
-
-    # --------------------------------------------------------
-    # Content Type
-    # --------------------------------------------------------
-
-    content_type = (
-        response
-        .headers
-        .get(
-            "Content-Type",
-            ""
-        )
-        .lower()
-    )
-
-    if not content_type.startswith(
-        "image"
-    ):
-
-        raise ValueError(
-            f"not an image ({content_type})"
-        )
-
-    # --------------------------------------------------------
-    # Optimize
-    # --------------------------------------------------------
-
-    optimize_image(
-        response.content,
-        output_path
-    )
-
-    return output_path
+    final_path = dest_path_no_ext + ext
+    with open(final_path, "wb") as f:
+        f.write(r.content)
+    return final_path
 
 
 # ============================================================
-# شمارش عکس‌های محصول
+# بررسی اینکه محصول از قبل چند عکس داره
 # ============================================================
 
 def count_existing(
@@ -778,41 +322,14 @@ def download_images_for_product(
 
         return 0
 
-    start_index = (
-        already
-        if already > 0
-        else 0
-    )
-
-    print(
-        f"   🔍 سرچ: {product_name}"
-    )
+    print(f"   🔍 سرچ: {product_name}")
 
     try:
-
-        want = (
-            start_index
-            + SKIP_FIRST
-            + IMAGES_PER_PRODUCT
-            + 20
+        urls = collect_image_urls(
+            driver,
+            product_name,
+            want=SKIP_FIRST + IMAGES_PER_PRODUCT + 15,
         )
-
-        if SEARCH_ENGINE == "bing":
-
-            urls = collect_bing(
-                driver,
-                product_name,
-                want=want
-            )
-
-        else:
-
-            urls = collect_google(
-                driver,
-                product_name,
-                want=want
-            )
-
     except Exception as e:
 
         print(
@@ -839,76 +356,20 @@ def download_images_for_product(
     )
 
     for url in urls:
-
-        if (
-            search_index
-            < SKIP_FIRST
-            + start_index
-        ):
-
-            search_index += 1
-
+        if index < SKIP_FIRST:
+            index += 1
             continue
-
-        if downloaded >= target_count:
+        if downloaded >= IMAGES_PER_PRODUCT:
             break
 
-        number = (
-            start_index
-            + downloaded
-            + 1
-        )
-
-        filename = (
-            f"{product_number}"
-            f"-{number:02d}"
-            f".webp"
-        )
-
-        output_path = os.path.join(
-            OUTPUT_DIR,
-            filename
-        )
-
-        # ----------------------------------------------------
-        # اگر فایل موجود است
-        # ----------------------------------------------------
-
-        if os.path.exists(
-            output_path
-        ):
-
-            print(
-                f"   ⏭️  {filename} موجود است"
-            )
-
-            downloaded += 1
-
-            search_index += 1
-
-            continue
+        # اسم فایل: 1234567-01.jpg  (بدون پسوند چون download_one خودش اضافه می‌کنه)
+        n = downloaded + 1
+        dest_no_ext = os.path.join(OUTPUT_DIR, f"{product_number}-{n:02d}")
 
         try:
-
-            final_path = (
-                download_and_optimize(
-                    url,
-                    output_path
-                )
-            )
-
-            size_kb = (
-                os.path.getsize(
-                    final_path
-                )
-                // 1024
-            )
-
-            print(
-                f"   ⬇️  {os.path.basename(final_path)} "
-                f"({size_kb} KB)"
-            )
-
+            final_path = download_one(url, dest_no_ext)
+            size_kb = os.path.getsize(final_path) // 1024
+            print(f"   ⬇️  {os.path.basename(final_path)}  ({size_kb} KB)")
             downloaded += 1
 
         except Exception as e:
@@ -928,19 +389,9 @@ def download_images_for_product(
 # ============================================================
 
 def main():
-
-    if not os.path.exists(
-        EXCEL_FILE
-    ):
-
-        print(
-            f"❌ فایل اکسل پیدا نشد:"
-        )
-
-        print(
-            EXCEL_FILE
-        )
-
+    if not os.path.exists(EXCEL_FILE):
+        print(f"❌ فایل اکسل پیدا نشد: {EXCEL_FILE}")
+        print("   اول این رو اجرا کن:  node scripts/export-products.js")
         return
 
     os.makedirs(
@@ -948,60 +399,10 @@ def main():
         exist_ok=True
     )
 
-    print("");
-    print("=" * 60)
-    print(
-        "🚀 Product Image Downloader + Optimizer"
-    )
-    print("=" * 60)
+    print(f"📖 خوندن اکسل: {EXCEL_FILE}")
+    print(f"📁 پوشه‌ی خروجی: {OUTPUT_DIR}\n")
 
-    print(
-        f"📖 اکسل: {EXCEL_FILE}"
-    )
-
-    print(
-        f"📁 خروجی: {OUTPUT_DIR}"
-    )
-
-    print(
-        f"🔎 موتور: {SEARCH_ENGINE.upper()}"
-    )
-
-    print(
-        f"🖼️  عکس برای هر محصول: {IMAGES_PER_PRODUCT}"
-    )
-
-    print(
-        f"📐 اندازه: {OUTPUT_SIZE} × {OUTPUT_SIZE}"
-    )
-
-    print(
-        f"🎨 فرمت: WebP"
-    )
-
-    print(
-        f"⭐ کیفیت: {WEBP_QUALITY}"
-    )
-
-    print(
-        f"📦 حداقل عکس اصلی: "
-        f"{MIN_SOURCE_WIDTH}×{MIN_SOURCE_HEIGHT}"
-    )
-
-    print(
-        f"⏱️  تاخیر: "
-        f"{DELAY_BETWEEN_PRODUCTS}s"
-    )
-
-    print("")
-
-    # --------------------------------------------------------
-    # Excel
-    # --------------------------------------------------------
-
-    df = pd.read_excel(
-        EXCEL_FILE
-    )
+    df = pd.read_excel(EXCEL_FILE)
 
     for col in (
         "Product Number",
@@ -1009,188 +410,41 @@ def main():
     ):
 
         if col not in df.columns:
-
-            print(
-                f"❌ ستون «{col}» وجود ندارد."
-            )
-
-            print(
-                f"ستون‌ها: {list(df.columns)}"
-            )
-
+            print(f"❌ ستون «{col}» توی اکسل نیست.")
+            print(f"   ستون‌های موجود: {list(df.columns)}")
             return
 
-    # --------------------------------------------------------
-    # محصولات ناقص
-    # --------------------------------------------------------
-
-    pending = []
-
-    completed = 0
-
-    for _, row in df.iterrows():
-
-        number = row[
-            "Product Number"
-        ]
-
-        name = str(
-            row["Name"]
-        ).strip()
-
-        if (
-            not name
-            or pd.isna(number)
-        ):
-
-            continue
-
-        # ----------------------------------------------------
-        # جلوگیری از تبدیل 2759501.0
-        # ----------------------------------------------------
-
-        try:
-
-            if float(number).is_integer():
-
-                number = int(number)
-
-        except Exception:
-            pass
-
-        have = count_existing(
-            number
-        )
-
-        if have < IMAGES_PER_PRODUCT:
-
-            pending.append(
-                (
-                    number,
-                    name,
-                    have
-                )
-            )
-
-        else:
-
-            completed += 1
-
-    print(
-        f"📊 کل محصولات: {len(df)}"
-    )
-
-    print(
-        f"✅ تکمیل شده: {completed}"
-    )
-
-    print(
-        f"⏳ باقی‌مانده: {len(pending)}"
-    )
-
-    print("")
+    print(f"✅ {len(df)} محصول داخل اکسل هست.\n")
     print("=" * 60)
-
-    if not pending:
-
-        print(
-            "🎉 همه محصولات ۵ عکس دارند."
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # Driver
-    # --------------------------------------------------------
 
     driver = build_driver()
 
     total_downloaded = 0
 
     try:
+        for i, row in df.iterrows():
+            number = row["Product Number"]
+            name = str(row["Name"]).strip()
 
-        for i, (
-            number,
-            name,
-            have
-        ) in enumerate(
-            pending
-        ):
+            if not name or pd.isna(number):
+                print(f"[{i+1}/{len(df)}] ⚠️  داده ناقص، رد شد")
+                continue
 
-            print("")
+            print(f"\n[{i+1}/{len(df)}] 🆔 {number}")
 
-            print(
-                f"[{i + 1}/{len(pending)}]"
-                f" 🆔 {number}"
-                f"  (دارای {have} عکس)"
-            )
+            count = download_images_for_product(driver, number, name)
+            total_downloaded += count
 
-            try:
-
-                count = (
-                    download_images_for_product(
-                        driver,
-                        number,
-                        name
-                    )
-                )
-
-                total_downloaded += count
-
-            except Exception as e:
-
-                print(
-                    f"   ❌ خطای کلی: {e}"
-                )
-
-            if (
-                i
-                < len(pending) - 1
-            ):
-
-                time.sleep(
-                    DELAY_BETWEEN_PRODUCTS
-                )
+            time.sleep(2)
 
     finally:
 
         driver.quit()
 
-    # --------------------------------------------------------
-    # گزارش
-    # --------------------------------------------------------
+    print("\n" + "=" * 60)
+    print(f"🎉 پایان. {total_downloaded} عکس دانلود شد.")
+    print(f"📁 مسیر: {OUTPUT_DIR}")
 
-    print("")
-    print("=" * 60)
-
-    print(
-        f"🎉 پایان اجرا."
-    )
-
-    print(
-        f"📸 تعداد عکس دانلود شده: "
-        f"{total_downloaded}"
-    )
-
-    print(
-        f"📁 مسیر: {OUTPUT_DIR}"
-    )
-
-    print("")
-    print(
-        "💡 برای ادامه اجرای بعدی، همین اسکریپت را دوباره اجرا کن."
-    )
-
-    print(
-        "   عکس‌های موجود دوباره دانلود نمی‌شوند."
-    )
-
-    print("=" * 60)
-
-
-# ============================================================
-# اجرا
-# ============================================================
 
 if __name__ == "__main__":
     main()
