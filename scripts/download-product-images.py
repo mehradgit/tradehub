@@ -145,7 +145,6 @@ def download_one(url, dest_path_no_ext):
     final_path = dest_path_no_ext + ext
     with open(final_path, "wb") as f:
         f.write(r.content)
-
     return final_path
 
 
