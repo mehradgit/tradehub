@@ -2,27 +2,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import {
+  getProductImage,
+  getProductImages,
+  handleImageError,
+  AVATAR_PLACEHOLDER,
+  PRODUCT_PLACEHOLDER,
+} from "@/lib/imageHelpers";
 export default function ImageGallery({ images, productName }) {
   // ====== Normalise the images ======
-  const normalizeImages = (imgData) => {
-    if (!imgData) return [];
-    if (Array.isArray(imgData)) return imgData;
-    if (typeof imgData === "object") {
-      const result = [];
-      if (imgData.main) result.push(imgData.main);
-      if (Array.isArray(imgData.thumbnails)) {
-        result.push(...imgData.thumbnails);
-      }
-      return result;
-    }
-    return [];
-  };
 
-  const allImages = normalizeImages(images);
+
+  const hasRealImages = Array.isArray(images)
+    ? images.some((i) => typeof i === "string" && i.trim().length > 0)
+    : false;
+
+  // آرایه‌ی امن (اگر خالی باشد، حداقل یک placeholder دارد)
+  const allImages = getProductImages({ images });
+
   const [mainImage, setMainImage] = useState(
-    allImages[0] || "https://placehold.co/360x360",
+    allImages[0] || PRODUCT_PLACEHOLDER
   );
+
+
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -88,7 +90,7 @@ export default function ImageGallery({ images, productName }) {
   };
 
   // ====== No-image state ======
-  if (allImages.length === 0) {
+  if (!hasRealImages) {
     return (
       <div className="product-gallery-wrapper">
         <div className="product-thumbnails">
@@ -102,7 +104,6 @@ export default function ImageGallery({ images, productName }) {
       </div>
     );
   }
-
   return (
     <>
       {/* ====== Main gallery ====== */}
@@ -115,6 +116,7 @@ export default function ImageGallery({ images, productName }) {
               alt={`${productName} - ${index + 1}`}
               className={`product-thumbnail ${mainImage === img ? "active" : ""}`}
               onClick={() => handleThumbnailClick(img, index)}
+              onError={handleImageError}          
             />
           ))}
           {hasMoreImages && (
@@ -128,6 +130,7 @@ export default function ImageGallery({ images, productName }) {
           alt={productName}
           className="product-main-image"
           onClick={handleMainImageClick}
+          onError={handleImageError}          
         />
       </div>
 
@@ -153,6 +156,7 @@ export default function ImageGallery({ images, productName }) {
             <img
               src={allImages[currentIndex]}
               alt={`${productName} - ${currentIndex + 1}`}
+              onError={handleImageError}          
             />
             <div className="lightbox-counter">
               {currentIndex + 1} / {allImages.length}

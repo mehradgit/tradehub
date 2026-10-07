@@ -6,6 +6,7 @@ import Link from "next/link";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ProductApprovalButtons from "@/components/admin/ProductApprovalButtons";
 import { getProductAttributes } from "@/lib/attributesService";
+import SafeImage from "@/components/ui/SafeImage";
 
 // ============================================================
 // Dynamic specifications (EAV) — formatting for display
@@ -219,19 +220,22 @@ export default async function AdminProductDetailPage({ params }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 280 }}>
-          {images[0] && (
-            <img
-              src={images[0]}
-              alt={product.name}
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 12,
-                objectFit: "cover",
-                border: "1px solid var(--line)",
-              }}
-            />
-          )}
+          {images.map((img, i) => (
+            <a key={i} href={img} target="_blank" rel="noopener noreferrer" style={{
+              width: 80,
+              height: 80,
+              borderRadius: 12,
+              objectFit: "cover",
+              border: "1px solid var(--line)",
+            }}>
+              <SafeImage
+                src={img}
+                alt={`${product.name} ${i + 1}`}
+                fallbackType="product"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            </a>
+          ))}
           <div>
             <h1 style={{ font: "800 20px Manrope", color: "var(--dark)", margin: 0 }}>
               {product.name}
@@ -317,61 +321,65 @@ export default async function AdminProductDetailPage({ params }) {
           </Link>
           <ProductApprovalButtons product={product} />
         </div>
-      </div>
+      </div >
 
       {/* Rejection Note */}
-      {product.status === "REJECTED" && product.rejectionNote && (
-        <div
-          style={{
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 16,
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 12,
-          }}
-        >
-          <i className="fa-solid fa-exclamation-triangle" style={{ color: "#dc2626", fontSize: 18, marginTop: 2 }}></i>
-          <div>
-            <div style={{ fontWeight: 700, color: "#991b1b", fontSize: 13, marginBottom: 4 }}>
-              Rejection Reason
+      {
+        product.status === "REJECTED" && product.rejectionNote && (
+          <div
+            style={{
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 16,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 12,
+            }}
+          >
+            <i className="fa-solid fa-exclamation-triangle" style={{ color: "#dc2626", fontSize: 18, marginTop: 2 }}></i>
+            <div>
+              <div style={{ fontWeight: 700, color: "#991b1b", fontSize: 13, marginBottom: 4 }}>
+                Rejection Reason
+              </div>
+              <div style={{ fontSize: 13, color: "#7f1d1d" }}>{product.rejectionNote}</div>
             </div>
-            <div style={{ fontSize: 13, color: "#7f1d1d" }}>{product.rejectionNote}</div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Images */}
-      {images.length > 0 && (
-        <Section title="Product Images" icon="fa-images">
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            {images.map((img, i) => (
-              <a
-                key={i}
-                href={img}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  width: 110,
-                  height: 110,
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  border: "1px solid var(--line)",
-                  display: "block",
-                }}
-              >
-                <img
-                  src={img}
-                  alt={`${product.name} ${i + 1}`}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              </a>
-            ))}
-          </div>
-        </Section>
-      )}
+      {
+        images.length > 0 && (
+          <Section title="Product Images" icon="fa-images">
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              {images.map((img, i) => (
+                <a
+                  key={i}
+                  href={img}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    width: 110,
+                    height: 110,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    border: "1px solid var(--line)",
+                    display: "block",
+                  }}
+                >
+                  <img
+                    src={img}
+                    alt={`${product.name} ${i + 1}`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </a>
+              ))}
+            </div>
+          </Section>
+        )
+      }
 
       {/* Basic Information */}
       <Section title="Basic Information" icon="fa-info-circle">
@@ -392,18 +400,20 @@ export default async function AdminProductDetailPage({ params }) {
       </Section>
 
       {/* Full Description */}
-      {product.fullDesc && (
-        <Section title="Full Description" icon="fa-align-left">
-          <div
-            style={{
-              fontSize: 14,
-              lineHeight: 1.8,
-              color: "var(--text)",
-            }}
-            dangerouslySetInnerHTML={{ __html: product.fullDesc }}
-          />
-        </Section>
-      )}
+      {
+        product.fullDesc && (
+          <Section title="Full Description" icon="fa-align-left">
+            <div
+              style={{
+                fontSize: 14,
+                lineHeight: 1.8,
+                color: "var(--text)",
+              }}
+              dangerouslySetInnerHTML={{ __html: product.fullDesc }}
+            />
+          </Section>
+        )
+      }
 
       {/* Pricing & Inventory */}
       <Section title="Pricing & Inventory" icon="fa-tag">
@@ -440,19 +450,21 @@ export default async function AdminProductDetailPage({ params }) {
       </Section>
 
       {/* Technical Specifications — dynamic (EAV) */}
-      {attributeRows.length > 0 && (
-        <Section title="Specifications" icon="fa-list-alt">
-          <FieldGrid cols={2}>
-            {attributeRows.map((row, index) => (
-              <Field
-                key={row.id || index}
-                label={row.label}
-                value={row.value}
-              />
-            ))}
-          </FieldGrid>
-        </Section>
-      )}
+      {
+        attributeRows.length > 0 && (
+          <Section title="Specifications" icon="fa-list-alt">
+            <FieldGrid cols={2}>
+              {attributeRows.map((row, index) => (
+                <Field
+                  key={row.id || index}
+                  label={row.label}
+                  value={row.value}
+                />
+              ))}
+            </FieldGrid>
+          </Section>
+        )
+      }
 
       {/* Supplier Information */}
       <Section title="Supplier Information" icon="fa-building">

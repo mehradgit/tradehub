@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default async function AdminUserDetailPage({ params }) {
   const session = await auth();
@@ -106,27 +107,20 @@ export default async function AdminUserDetailPage({ params }) {
       >
         <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
           {user.image ? (
-            <img
+            <SafeImage
               src={user.image}
               alt={displayName}
-              style={{
-                width: 80, height: 80, borderRadius: "50%",
-                border: "3px solid rgba(255,255,255,0.3)",
-                objectFit: "cover",
-              }}
+              fallbackType="avatar"
+              style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", border: "3px solid rgba(255,255,255,0.3)" }}
             />
           ) : (
-            <div
-              style={{
-                width: 80, height: 80, borderRadius: "50%",
-                background: "rgba(255,255,255,0.15)",
-                display: "grid", placeItems: "center",
-                fontSize: 28, fontWeight: 800,
-                border: "3px solid rgba(255,255,255,0.3)",
-              }}
-            >
-              {initials}
-            </div>
+            <div style={{
+              width: 80, height: 80, borderRadius: "50%",
+              background: "rgba(255,255,255,0.15)",
+              display: "grid", placeItems: "center",
+              fontSize: 28, fontWeight: 800,
+              border: "3px solid rgba(255,255,255,0.3)",
+            }}>{initials}</div>
           )}
           <div style={{ flex: 1, minWidth: 200 }}>
             <h1 style={{ color: "white", font: "800 22px Manrope", margin: 0 }}>
@@ -218,7 +212,12 @@ export default async function AdminUserDetailPage({ params }) {
                   <tr key={p.id}>
                     <td>
                       <div className="admin-person">
-                        <img src={p.images?.[0] || "https://via.placeholder.com/40"} style={{ borderRadius: 8 }} />
+                        <SafeImage
+                          src={p.images?.[0]}
+                          alt={p.name}
+                          fallbackType="product"
+                          style={{ borderRadius: 8, width: 40, height: 40, objectFit: "cover" }}
+                        />
                         <b>{p.name}</b>
                       </div>
                     </td>
@@ -301,11 +300,10 @@ export default async function AdminUserDetailPage({ params }) {
                     <td>{new Date(s.startDate).toLocaleDateString()}</td>
                     <td>{new Date(s.endDate).toLocaleDateString()}</td>
                     <td>
-                      <span className={`admin-pill ${
-                        s.status === "active" ? "active" :
+                      <span className={`admin-pill ${s.status === "active" ? "active" :
                         s.status === "reserved" ? "pending" :
-                        s.status === "cancelled" ? "suspended" : "basic"
-                      }`}>
+                          s.status === "cancelled" ? "suspended" : "basic"
+                        }`}>
                         {s.status}
                       </span>
                     </td>

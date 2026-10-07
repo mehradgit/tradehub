@@ -11,6 +11,7 @@ import {
   getPriorityColor,
   getStatusColor,
 } from "@/utils/ticketHelpers";
+import SafeImage from "@/components/ui/SafeImage";
 
 export async function generateMetadata({ params }) {
   const { ticketNumber } = await params;
@@ -231,14 +232,11 @@ export default async function AdminTicketDetailPage({ params }) {
             }}
           >
             {ticket.user?.image ? (
-              <img
+              <SafeImage
                 src={ticket.user.image}
                 alt=""
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
+                fallbackType="avatar"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             ) : (
               (ticket.user?.name || "U").charAt(0).toUpperCase()

@@ -1,28 +1,46 @@
 "use client";
 
-import { getProductImage, handleImageError } from "@/lib/imageHelpers";
+import {
+  PRODUCT_PLACEHOLDER,
+  AVATAR_PLACEHOLDER,
+  COVER_PLACEHOLDER,
+  handleImageError,
+} from "@/lib/imageHelpers";
 
 // ============================================================
 // <SafeImage />
+//
 // یک <img> که:
-//   â€¢ در Server Component قابل استفاده است (خودش Client است)
-//   â€¢ اگر src خالی باشد placeholder می‌گذارد
-//   â€¢ اگر src خطا داد (404)، onError placeholder جایگزین می‌کند
+//   • در Server Component قابل استفاده است
+//   • اگر src خالی بود → placeholder
+//   • اگر 404 داد → placeholder
+//
+// نوع placeholder با prop "fallbackType" انتخاب می‌شود:
+//   <SafeImage src={...} fallbackType="avatar" />
 // ============================================================
 export default function SafeImage({
   src,
-  fallback = null,
   alt = "",
+  fallbackType = "product",   // "product" | "avatar" | "cover"
+  fallbackSrc,
   ...rest
 }) {
-  // اگر src خالی بود، از ابتدا fallback
-  const initialSrc = src && String(src).trim() ? src : fallback || undefined;
+  const fallback =
+    fallbackSrc ||
+    (fallbackType === "avatar"
+      ? AVATAR_PLACEHOLDER
+      : fallbackType === "cover"
+      ? COVER_PLACEHOLDER
+      : PRODUCT_PLACEHOLDER);
+
+  const initialSrc =
+    src && String(src).trim() ? src : fallback;
 
   return (
     <img
       src={initialSrc}
       alt={alt}
-      onError={(e) => handleImageError(e, fallback || undefined)}
+      onError={(e) => handleImageError(e, fallback)}
       {...rest}
     />
   );

@@ -33,6 +33,7 @@ export default function ProductCard({ product }) {
             <SafeImage
               src={imageUrl}
               alt={product.name}
+              fallbackType="product"
               loading="lazy"
             />
 

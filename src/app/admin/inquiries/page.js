@@ -6,6 +6,7 @@ import Link from "next/link";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminFilterBar from "@/components/admin/AdminFilterBar";
 import AdminPagination from "@/components/admin/AdminPagination";
+import SafeImage from "@/components/ui/SafeImage";
 
 export const metadata = { title: "Inquiries | Admin" };
 
@@ -104,10 +105,11 @@ export default async function AdminInquiriesPage({ searchParams }) {
                   <tr key={inq.id}>
                     <td>
                       <div className="admin-person">
-                        <img
-                          src={inq.product?.images?.[0] || "https://via.placeholder.com/40"}
+                        <SafeImage
+                          src={inq.product?.images?.[0]}
                           alt={inq.product?.name}
-                          style={{ borderRadius: 8 }}
+                          fallbackType="product"
+                          style={{ borderRadius: 8, width: 40, height: 40, objectFit: "cover" }}
                         />
                         <b>{inq.product?.name || "—"}</b>
                       </div>

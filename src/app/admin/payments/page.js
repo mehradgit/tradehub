@@ -12,6 +12,7 @@ import {
   formatCurrency,
   formatDate,
 } from "@/utils/invoiceHelpers";
+import SafeImage from "@/components/ui/SafeImage";
 
 export const metadata = { title: "Payments | Admin" };
 
@@ -191,20 +192,20 @@ export default async function AdminPaymentsPage({ searchParams }) {
                       <td>
                         <div className="admin-person">
                           {payment.user?.image ? (
-                            <img
+                            <SafeImage
                               src={payment.user.image}
                               alt={payment.user.name}
+                              fallbackType="avatar"
+                              style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
                             />
                           ) : (
-                            <div className="avatar-letter">
-                              {(
-                                payment.user?.companyName ||
-                                payment.user?.name ||
-                                "U"
-                              )
-                                .charAt(0)
-                                .toUpperCase()}
-                            </div>
+                            <div className="avatar-letter">{(
+                              payment.user?.companyName ||
+                              payment.user?.name ||
+                              "U"
+                            )
+                              .charAt(0)
+                              .toUpperCase()}</div>
                           )}
                           <div>
                             <b>
@@ -218,13 +219,12 @@ export default async function AdminPaymentsPage({ searchParams }) {
                       </td>
                       <td>
                         <span
-                          className={`admin-pill ${
-                            payment.plan?.name === "Gold"
+                          className={`admin-pill ${payment.plan?.name === "Gold"
                               ? "premium"
                               : payment.plan?.name === "Basic"
                                 ? "basic"
                                 : "active"
-                          }`}
+                            }`}
                         >
                           {payment.plan?.name || "—"}
                         </span>
