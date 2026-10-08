@@ -12,7 +12,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 
 // ===== Fonts =====
 const inter = localFont({
-  src: "../../public/fonts/Inter-VariableFont_opsz,wght.ttf",
+  src: "../../public/fonts/Inter-VariableFont_opsz,wght.woff2",
   variable: "--font-inter",
   display: "swap",
 });
