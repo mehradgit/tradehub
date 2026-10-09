@@ -14,6 +14,7 @@ import ShareModal from "@/components/ui/ShareModal";
 import LoginModal from "@/components/ui/LoginModal";
 import SupplierInfoSection from "./SupplierInfoSection";
 import ReviewStars from "../ui/ReviewStars";
+import ViewTracker from "@/components/ui/ViewTracker";
 
 export default function ProductDetail({
   product,
@@ -152,6 +153,9 @@ export default function ProductDetail({
   return (
     <>
       <div className="product-detail-container">
+        {/* View Tracker */}
+        <ViewTracker type="product" id={product.id} />
+
         {/* ====== Breadcrumb ====== */}
         <nav className="product-breadcrumb" aria-label="Breadcrumb">
           <ol className="breadcrumb-list">

@@ -1,5 +1,6 @@
 // src/lib/eventHandlers.js
 import { prisma } from "@/lib/prisma";
+import { alertNewUser } from "@/lib/adminAlerts";
 
 // ============================================================
 // helper: site base URL (without a trailing slash)
@@ -50,9 +51,12 @@ export const HANDLERS = {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { name: true, companyName: true, email: true },
+      select: { id: true, name: true, companyName: true, email: true, country: true },
     });
     if (!user) return [];
+
+    // ====== اطلاع تلگرامی ادمین (fire-and-forget) ======
+    alertNewUser(user);
 
     return [
       {

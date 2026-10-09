@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ProfileHeader from "@/components/profiles/ProfileHeader";
 import ProfileTabs from "@/components/profiles/ProfileTabs";
+import ViewTracker from "@/components/ui/ViewTracker";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -39,6 +40,7 @@ async function getUserProfile(profileNumber) {
       createdAt: true,
       profileNumber: true,
       slug: true,
+      views: true,
     },
   });
 
@@ -309,6 +311,9 @@ export default async function ProfilePage({ params }) {
         </nav>
 
         {/* Header */}
+        {/* View Tracker */}
+        <ViewTracker type="profile" id={user.id} />
+
         <ProfileHeader
           user={serializedUser}
           productCount={serializedProducts.length}

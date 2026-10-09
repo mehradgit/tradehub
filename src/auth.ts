@@ -6,6 +6,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { generateNumber, generateSlug } from "@/utils/generate";
+import { alertNewUser } from "@/lib/adminAlerts";
 
 const prismaAdapter = PrismaAdapter(prisma);
 
@@ -24,7 +25,7 @@ const customAdapter = {
 
     const slug = generateSlug(data.name || data.email || "user");
 
-    return prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         ...data,
         profileNumber,
@@ -32,6 +33,18 @@ const customAdapter = {
         registrationComplete: false,
       },
     });
+
+    // ====== اطلاع تلگرامی ادمین — عضویت OAuth جدید ======
+    // fire-and-forget — اگر تلگرام پایین باشد ثبت‌نام تأثیری نمی‌گیرد
+    alertNewUser({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      companyName: user.companyName,
+      country: user.country,
+    });
+
+    return user;
   },
 };
 
