@@ -65,7 +65,13 @@ async function sendToChat(chatId, text) {
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
+    // از fetch خودِ undici استفاده می‌کنیم تا dispatcher (پروکسی)
+    // قطعی اعمال شود و با cache ساختگی Next.js تداخلی نداشته باشد
+    const { fetch: undiciFetch } = await import("undici");
+    const { getOutboundDispatcher } = await import("@/lib/proxyAgent");
+    const dispatcher = await getOutboundDispatcher();
+
+    const res = await undiciFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -75,6 +81,7 @@ async function sendToChat(chatId, text) {
         disable_web_page_preview: true,
       }),
       signal: controller.signal,
+      ...(dispatcher ? { dispatcher } : {}),
     });
 
     if (!res.ok) {
@@ -99,6 +106,7 @@ export async function sendTelegramMessage(text) {
 
   const chatIds = getChatIds();
   let sent = 0;
+  const errors = [];
 
   await Promise.allSettled(
     chatIds.map(async (chatId) => {
@@ -107,11 +115,12 @@ export async function sendTelegramMessage(text) {
         sent += 1;
       } catch (err) {
         console.error("[Telegram] خطا در ارسال:", err.message);
+        errors.push(err.message);
       }
     })
   );
 
-  return { sent };
+  return { sent, errors };
 }
 
 // ============================================================
