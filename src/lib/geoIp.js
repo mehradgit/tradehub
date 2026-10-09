@@ -60,13 +60,25 @@ async function lookupByIp(ip) {
       signal: controller.signal,
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // مثلاً 429 (محدودیت درخواست) یا 403 —
+      // قبلاً ساکت بود، حالا لاگ می‌شود
+      console.error(
+        `[GeoIP] lookup failed: HTTP ${res.status} for ${ip}`
+      );
+      return null;
+    }
 
     const data = await res.json();
     const code = normalizeCode(data?.country_code);
 
     if (code) {
       ipCache.set(ip, { code, expiresAt: Date.now() + CACHE_TTL_MS });
+    } else {
+      console.error(
+        `[GeoIP] no country_code in response for ${ip}:`,
+        JSON.stringify(data).slice(0, 200)
+      );
     }
     return code;
   } catch (err) {
