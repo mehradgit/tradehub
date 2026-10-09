@@ -61,35 +61,54 @@ function escapeHtml(text) {
 
 async function sendToChat(chatId, text) {
   const url = `${TELEGRAM_API}/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const body = JSON.stringify({
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+  });
 
-  try {
-    // از fetch خودِ undici استفاده می‌کنیم تا dispatcher (پروکسی)
-    // قطعی اعمال شود و با cache ساختگی Next.js تداخلی نداشته باشد
+  const { getOutboundDispatcher } = await import("@/lib/proxyAgent");
+  const dispatcher = await getOutboundDispatcher();
+
+  let res;
+
+  if (dispatcher) {
+    // ====== پروکسی فعال ======
+    // از fetch خودِ undici با dispatcher استفاده می‌کنیم.
+    // ⚠️ AbortSignal سراسری Node با undici نسخه‌ی npm
+    //    سازگار نیست (markAsUncloneable) — پس timeout
+    //    را با headersTimeout/bodyTimeout مدیریت می‌کنیم.
     const { fetch: undiciFetch } = await import("undici");
-    const { getOutboundDispatcher } = await import("@/lib/proxyAgent");
-    const dispatcher = await getOutboundDispatcher();
-
-    const res = await undiciFetch(url, {
+    res = await undiciFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
-      signal: controller.signal,
-      ...(dispatcher ? { dispatcher } : {}),
+      body,
+      dispatcher,
+      headersTimeout: REQUEST_TIMEOUT_MS,
+      bodyTimeout: REQUEST_TIMEOUT_MS,
     });
+  } else {
+    // ====== بدون پروکسی ======
+    // fetch سراسری Node — سازگاری کامل با AbortSignal
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      throw new Error(`Telegram API ${res.status}: ${detail.slice(0, 160)}`);
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
     }
-  } finally {
-    clearTimeout(timer);
+  }
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Telegram API ${res.status}: ${detail.slice(0, 160)}`);
   }
 }
 
