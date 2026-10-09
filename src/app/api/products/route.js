@@ -19,6 +19,7 @@ import {
   setProductAttributes,
   getProductAttributes,
 } from "@/lib/attributesService";
+import { alertNewProduct } from "@/lib/adminAlerts";
 
 // ====== Base64 image saving helper ======
 function getUploadDir(folder) {
@@ -202,6 +203,13 @@ export async function POST(request) {
         console.error("Error saving product attributes:", attrError);
       }
     }
+
+    // ====== اطلاع تلگرامی ادمین — محصول جدید ======
+    // fire-and-forget — اگر تلگرام پایین باشد محصول تأثیری نمی‌گیرد
+    alertNewProduct(product, {
+      name: session.user.name,
+      companyName: session.user.companyName,
+    });
 
     // ====== Align searchText with the attribute values ======
     // nice-to-have: the stored values are read back (because

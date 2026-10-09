@@ -46,6 +46,7 @@
     "react-toastify": "^11.1.0",
     "sharp": "^0.35.5",
     "sweetalert2": "^11.26.25",
+    "undici": "^8.11.2",
     "uuid": "^14.0.1",
     "web-push": "^3.6.7",
     "xlsx": "^0.18.5"

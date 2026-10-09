@@ -8,6 +8,7 @@ import {
   getUserActivePlan,
   incrementUsage,
 } from "@/lib/planService";
+import { alertNewBuyingRequest } from "@/lib/adminAlerts";
 
 export async function POST(request) {
   try {
@@ -71,7 +72,7 @@ export async function POST(request) {
     // Get the buyer country from the session, or fall back to the default
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { country: true },
+      select: { name: true, companyName: true, country: true },
     });
 
     // Create the buying request
@@ -109,6 +110,10 @@ export async function POST(request) {
 
     // Increment the usage counter
     await incrementUsage(userId, "request", subscription);
+
+    // ====== اطلاع تلگرامی ادمین — درخواست خرید جدید ======
+    // fire-and-forget — اگر تلگرام پایین باشد درخواست تأثیری نمی‌گیرد
+    alertNewBuyingRequest(buyingRequest, user);
 
     return NextResponse.json(
       {
