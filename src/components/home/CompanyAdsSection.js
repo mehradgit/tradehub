@@ -38,7 +38,7 @@ const COMPANY_ADS = [
         title: "Your Cargo. Our Network.",
         description:
             "Door-to-door logistics, customs clearance and international freight solutions.",
-        link: "#",
+        link: "/advertise",
     },
     {
         label: "Featured",
@@ -51,7 +51,7 @@ const COMPANY_ADS = [
         title: "Find Buyers. Close Deals.",
         description:
             "Professional food trade agents connecting producers with international buyers.",
-        link: "#",
+        link: "/advertise",
     },
     {
         label: "Sponsored",
@@ -64,7 +64,7 @@ const COMPANY_ADS = [
         title: "Store Food. Ship With Confidence.",
         description:
             "Temperature-controlled storage and distribution for food businesses.",
-        link: "#",
+        link: "/advertise",
     },
 ];
 
@@ -73,25 +73,25 @@ const SERVICE_ADS = [
         icon: "fa-plane",
         name: "SkyRoute Cargo",
         desc: "Fast Air Freight Worldwide",
-        link: "#",
+        link: "/advertise",
     },
     {
         icon: "fa-file-invoice",
         name: "TradeSure Finance",
         desc: "Trade Finance & Payment Solutions",
-        link: "#",
+        link: "/advertise",
     },
     {
         icon: "fa-passport",
         name: "GlobalCert Services",
         desc: "Food Certificates & Inspection",
-        link: "#",
+        link: "/advertise",
     },
     {
         icon: "fa-boxes-stacked",
         name: "Atlas Fulfillment",
         desc: "Global Warehousing & Distribution",
-        link: "#",
+        link: "/advertise",
     },
 ];
 

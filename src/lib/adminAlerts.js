@@ -10,6 +10,7 @@
 //   TELEGRAM_PRODUCT_ALERTS  ← محصولات جدید (پیش‌فرض true)
 //   TELEGRAM_REQUEST_ALERTS  ← درخواست‌های خرید جدید (پیش‌فرض true)
 //   TELEGRAM_VIEW_ALERTS     ← بازدیدها (پیش‌فرض true)
+//   TELEGRAM_AD_ALERTS       ← درخواست‌های تبلیغات (پیش‌فرض true)
 // ============================================================
 import { sendTelegramAlert } from "@/lib/telegramService";
 import { countryLabel } from "@/lib/geoIp";
@@ -170,4 +171,47 @@ export function alertNewView({ kind, title, url, countryCode, views }) {
       link: url ? { url, label: "مشاهده صفحه" } : undefined,
     }
   );
+}
+
+// ============================================================
+// 📣 درخواست تبلیغات (صفحه /advertise)
+// ============================================================
+export function alertAdvertiseInquiry({
+  name,
+  company,
+  email,
+  phone,
+  country,
+  placements = [],
+  budget,
+  message,
+}) {
+  if (!flagEnabled("TELEGRAM_AD_ALERTS")) return;
+
+  const rows = [
+    ["نام", name || "—"],
+    ["شرکت", company || "—"],
+    ["ایمیل", email || "—"],
+    ["تلفن", phone || "—"],
+    ["کشور", country || "—"],
+    ["بودجه", budget || "—"],
+    ["صفحات", placements.join(", ") || "—"],
+  ];
+
+  if (message) {
+    rows.push([
+      "پیام",
+      message.length > 180 ? message.slice(0, 180) + "…" : message,
+    ]);
+  }
+
+  rows.push(["زمان", formatTime()]);
+
+  sendTelegramAlert("درخواست تبلیغات", rows, {
+    icon: "📣",
+    link: {
+      url: `${baseUrl()}/advertise`,
+      label: "صفحه تبلیغات",
+    },
+  });
 }
