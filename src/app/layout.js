@@ -9,6 +9,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import localFont from "next/font/local";
 import BootstrapClient from "@/components/ui/BootstrapClient";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import StyledJsxRegistry from "./styled-jsx-registry";
 
 // ===== Fonts =====
 const inter = localFont({
@@ -209,7 +210,7 @@ export default function RootLayout({ children }) {
             pauseOnHover
             theme="light"
           />
-          {children}
+          <StyledJsxRegistry>{children}</StyledJsxRegistry>
         </Providers>
 
         <BootstrapClient />

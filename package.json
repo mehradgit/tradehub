@@ -45,6 +45,7 @@
     "react-quill-new": "^3.8.3",
     "react-toastify": "^11.1.0",
     "sharp": "^0.35.5",
+    "styled-jsx": "^5.1.7",
     "sweetalert2": "^11.26.25",
     "undici": "^8.11.2",
     "uuid": "^14.0.1",
