@@ -22,14 +22,14 @@ const MAIN_AD = {
     ],
     ctaText: "Request Freight Quote",
     link: "/advertise",
-    image: "/images/ads/nordicfresh-storage.jpg",
+    image: "/images/ads/nordicfresh-storage.webp",
     imageAlt: "OceanBridge Lines — Global Ocean Freight for Food Trade",
 };
 
 const COMPANY_ADS = [
     {
         label: "Sponsored",
-        image: "/images/ads/gulfport-logistics.jpg",
+        image: "/images/ads/gulfport-logistics.webp",
         imageAlt: "GulfPort Logistics — Freight & Customs Services",
         icon: "fa-truck-fast",
         iconColor: "#2563eb",
@@ -42,7 +42,7 @@ const COMPANY_ADS = [
     },
     {
         label: "Featured",
-        image: "/images/ads/meridian-brokers.jpg",
+        image: "/images/ads/meridian-brokers.webp",
         imageAlt: "Meridian Food Brokers — International Food Trade",
         icon: "fa-handshake",
         iconColor: "#7c3aed",
@@ -55,7 +55,7 @@ const COMPANY_ADS = [
     },
     {
         label: "Sponsored",
-        image: "/images/ads/gulfport-logistics.jpg",
+        image: "/images/ads/gulfport-logistics.webp",
         imageAlt: "NordicFresh Storage — Cold Chain & Warehousing",
         icon: "fa-warehouse",
         iconColor: "#d97706",
