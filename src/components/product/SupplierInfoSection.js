@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import CountryFlag from "@/components/ui/CountryFlag";
 import LoginModal from "@/components/ui/LoginModal";
 import ConnectModal from "@/components/ui/ConnectModal";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function SupplierInfoSection({
   productId,
@@ -121,9 +122,17 @@ export default function SupplierInfoSection({
           /* ====== Revealed card ====== */
           <div className="supplier-card">
             <div className="supplier-card-cover">
-              <img src={supplier.coverImage} alt="Cover" />
+              <SafeImage
+                src={supplier.coverImage}
+                alt="Cover"
+                fallbackType="cover"
+              />
               <div className="supplier-logo-wrapper">
-                <img src={supplier.logo} alt={supplier.name} />
+                <SafeImage
+                  src={supplier.logo}
+                  alt={supplier.name}
+                  fallbackType="avatar"
+                />
               </div>
             </div>
 

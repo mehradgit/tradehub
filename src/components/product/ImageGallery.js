@@ -6,7 +6,6 @@ import {
   getProductImage,
   getProductImages,
   handleImageError,
-  AVATAR_PLACEHOLDER,
   PRODUCT_PLACEHOLDER,
 } from "@/lib/imageHelpers";
 export default function ImageGallery({ images, productName }) {

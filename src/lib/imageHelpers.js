@@ -7,13 +7,13 @@
 //
 // سه نوع placeholder:
 //   • محصول     → /images/placeholder-product.png
-//   • آواتار    → /images/placeholder-avatar.png
-//   • کاور      → /images/placeholder-cover.png
+//   • آواتار    → /images/company-avatar.webp
+//   • کاور      → /images/company-cover.webp
 // ============================================================
 
 export const PRODUCT_PLACEHOLDER = "/images/placeholder-product.png";
-export const AVATAR_PLACEHOLDER = "/images/placeholder-avatar.png";
-export const COVER_PLACEHOLDER = "/images/placeholder-cover.png";
+export const AVATAR_PLACEHOLDER = "/images/company-avatar.webp";
+export const COVER_PLACEHOLDER = "/images/company-cover.webp";
 
 // ============================================================
 // مقادیر امن برای src

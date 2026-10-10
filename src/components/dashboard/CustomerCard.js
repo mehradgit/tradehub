@@ -2,6 +2,10 @@
 "use client";
 
 import Link from "next/link";
+import {
+  AVATAR_PLACEHOLDER,
+  handleImageError,
+} from "@/lib/imageHelpers";
 
 export default function CustomerCard({ customer }) {
   const { user, inquiryCount, quoteCount, lastContact, messageCount } =
@@ -9,12 +13,6 @@ export default function CustomerCard({ customer }) {
 
   const displayName =
     user.companyName || user.name || "Unknown Company";
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   const profileUrl =
     user.profileNumber && user.slug
@@ -67,19 +65,16 @@ export default function CustomerCard({ customer }) {
             boxShadow: "0 4px 12px rgba(15,158,110,0.2)",
           }}
         >
-          {user.logo || user.image ? (
-            <img
-              src={user.logo || user.image}
-              alt={displayName}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-          ) : (
-            initials
-          )}
+          <img
+            src={user.logo || user.image || AVATAR_PLACEHOLDER}
+            alt={displayName}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+            onError={(e) => handleImageError(e, AVATAR_PLACEHOLDER)}
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div

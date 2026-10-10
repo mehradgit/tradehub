@@ -8,6 +8,10 @@ import { usePathname } from "next/navigation";
 import { toast } from "react-toastify";
 import CountryFlag from "@/components/ui/CountryFlag";
 import LoginModal from "@/components/ui/LoginModal";
+import {
+  AVATAR_PLACEHOLDER,
+  handleImageError,
+} from "@/lib/imageHelpers";
 
 export default function BuyerInfoSection({
   requestId,
@@ -129,20 +133,17 @@ export default function BuyerInfoSection({
           /* ====== Revealed card ====== */
           <div className="buyer-card">
             <div className="buyer-avatar">
-              {buyer.image || buyer.logo ? (
-                <img
-                  src={buyer.image || buyer.logo}
-                  alt={buyerName}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <i className="fas fa-user-tie"></i>
-              )}
+              <img
+                src={buyer.image || buyer.logo || AVATAR_PLACEHOLDER}
+                alt={buyerName}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+                onError={(e) => handleImageError(e, AVATAR_PLACEHOLDER)}
+              />
             </div>
             <div className="buyer-details">
               <h4>

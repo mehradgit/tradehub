@@ -9,6 +9,7 @@ import Layout from "@/components/layout/Layout";
 import UploadProgress from "@/components/ui/UploadProgress";
 import { uploadFileWithProgress } from "@/utils/uploadHelpers";
 import CountrySelect from "@/components/ui/CountrySelect";
+import { COVER_PLACEHOLDER } from "@/lib/imageHelpers";
 import CategorySelect from "@/components/ui/CategorySelect";
 import VocabularySelect from "@/components/ui/VocabularySelect";
 import RichTextEditor from "@/components/ui/RichTextEditor";
@@ -820,19 +821,15 @@ function CompleteRegistrationContent() {
                     onError={(e) => (e.target.style.display = "none")}
                   />
                 ) : (
-                  <div
+                  <img
+                    src={COVER_PLACEHOLDER}
+                    alt="Default cover preview"
                     style={{
                       width: "100%",
                       height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "var(--gray-light)",
-                      color: "var(--gray)",
+                      objectFit: "cover",
                     }}
-                  >
-                    <i className="fas fa-image fa-2x"></i>
-                  </div>
+                  />
                 )}
 
                 {formData.logo || existingLogo ? (

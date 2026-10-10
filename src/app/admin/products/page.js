@@ -6,6 +6,7 @@ import Link from "next/link";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminFilterBar from "@/components/admin/AdminFilterBar";
 import AdminPagination from "@/components/admin/AdminPagination";
+import SafeImage from "@/components/ui/SafeImage";
 
 export const metadata = { title: "Products | Admin" };
 
@@ -226,8 +227,8 @@ export default async function AdminProductsPage({ searchParams }) {
                     <tr key={product.id}>
                       <td>
                         <div className="admin-person">
-                          <img
-                            src={product.images?.[0] || "https://via.placeholder.com/40"}
+                          <SafeImage
+                            src={product.images?.[0]}
                             alt={product.name}
                             style={{ borderRadius: 8 }}
                           />

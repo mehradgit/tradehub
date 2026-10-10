@@ -3,15 +3,14 @@
 
 import Link from "next/link";
 import CountryFlag from "@/components/ui/CountryFlag";
+import {
+  AVATAR_PLACEHOLDER,
+  COVER_PLACEHOLDER,
+  handleImageError,
+} from "@/lib/imageHelpers";
 
 export default function ProfileHeader({ user, productCount = 0, galleryCount = 0 }) {
   const displayName = user.companyName || user.name || "User";
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 
   const isSupplier = user.role === "SUPPLIER";
   const isVerified = user.plan === "GOLD" || user.plan === "SILVER";
@@ -34,24 +33,22 @@ export default function ProfileHeader({ user, productCount = 0, galleryCount = 0
         <div
           className={`profile-cover ${coverImage ? "has-image" : "default"}`}
         >
-          {coverImage ? (
-            <img src={coverImage} alt={displayName} />
-          ) : (
-            <div className="cover-default">
-              <i className={isSupplier ? "fas fa-store" : "fas fa-shopping-bag"}></i>
-            </div>
-          )}
+          <img
+            src={coverImage || COVER_PLACEHOLDER}
+            alt={displayName}
+            onError={(e) => handleImageError(e, COVER_PLACEHOLDER)}
+          />
         </div>
 
         {/* ===== Info Row ===== */}
         <div className="profile-info-row">
           {/* Avatar */}
           <div className={`profile-avatar ${isSupplier ? "supplier" : "buyer"}`}>
-            {logo ? (
-              <img src={logo} alt={displayName} />
-            ) : (
-              <span className="avatar-initials">{initials}</span>
-            )}
+            <img
+              src={logo || AVATAR_PLACEHOLDER}
+              alt={displayName}
+              onError={(e) => handleImageError(e, AVATAR_PLACEHOLDER)}
+            />
           </div>
 
           {/* Details */}

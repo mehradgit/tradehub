@@ -5,6 +5,7 @@ import Link from "next/link";
 import KpiCard from "@/components/admin/KpiCard";
 import GrowthChart from "@/components/admin/GrowthChart";
 import CategoriesDonut from "@/components/admin/CategoriesDonut";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -272,9 +273,9 @@ export default async function AdminDashboard() {
           <div className="admin-list">
             {recentInquiries.slice(0, 4).map((inq) => (
               <div className="admin-list-item" key={inq.id}>
-                <img
+                <SafeImage
                   className="admin-inquiry-thumb"
-                  src={inq.product?.images?.[0] || "https://via.placeholder.com/30"}
+                  src={inq.product?.images?.[0]}
                   alt={inq.product?.name}
                 />
                 <div>

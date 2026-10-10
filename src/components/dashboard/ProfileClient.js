@@ -4,18 +4,17 @@
 import Link from "next/link";
 import DOMPurify from "dompurify";
 import { useMemo, useState } from "react";
+import {
+  AVATAR_PLACEHOLDER,
+  COVER_PLACEHOLDER,
+  handleImageError,
+} from "@/lib/imageHelpers";
 
 export default function ProfileClient({ user }) {
     const [lightboxImage, setLightboxImage] = useState(null);
 
     // ===== Derived =====
     const displayName = user.companyName || user.name || "User";
-    const initials = (user.name || user.email || "U")
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
 
     const isSupplier = user.role === "SUPPLIER";
     const isVerified = user.plan === "GOLD" || user.plan === "SILVER";
@@ -163,17 +162,11 @@ export default function ProfileClient({ user }) {
                     <div
                         className={`pp-cover ${user.coverImage ? "has-image" : "default"}`}
                     >
-                        {user.coverImage ? (
-                            <img src={user.coverImage} alt={displayName} />
-                        ) : (
-                            <div className="pp-cover-placeholder">
-                                <i
-                                    className={
-                                        isSupplier ? "fas fa-store" : "fas fa-shopping-bag"
-                                    }
-                                ></i>
-                            </div>
-                        )}
+                        <img
+                            src={user.coverImage || COVER_PLACEHOLDER}
+                            alt={displayName}
+                            onError={(e) => handleImageError(e, COVER_PLACEHOLDER)}
+                        />
                     </div>
 
                     {/* Body */}
@@ -183,11 +176,11 @@ export default function ProfileClient({ user }) {
                                 className={`pp-avatar ${avatarUrl ? "has-image" : isSupplier ? "supplier" : "buyer"
                                     }`}
                             >
-                                {avatarUrl ? (
-                                    <img src={avatarUrl} alt={displayName} />
-                                ) : (
-                                    <span>{initials}</span>
-                                )}
+                                <img
+                                    src={avatarUrl || AVATAR_PLACEHOLDER}
+                                    alt={displayName}
+                                    onError={(e) => handleImageError(e, AVATAR_PLACEHOLDER)}
+                                />
                             </div>
                         </div>
 
