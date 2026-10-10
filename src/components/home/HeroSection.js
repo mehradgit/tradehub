@@ -57,7 +57,7 @@ export default function HeroSection({ stats }) {
 
           {/* ====== Image ====== */}
           <div className="hero-image">
-            <img src="/images/hero.jpg" alt="Global food marketplace" />
+            <img src="/images/hero.webp" alt="Global food marketplace" />
             <div className="floating-card">
               <i className="fa-solid fa-shield-halved"></i>
               <div>
