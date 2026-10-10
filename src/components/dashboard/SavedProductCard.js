@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import { PRODUCT_PLACEHOLDER } from "@/lib/imageHelpers";
 
 export default function SavedProductCard({ product }) {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function SavedProductCard({ product }) {
         className="card-img-top"
         style={{
           height: "180px",
-          backgroundImage: `url(${product.images?.[0] || "https://via.placeholder.com/300x200"})`,
+          backgroundImage: `url(${product.images?.[0] || PRODUCT_PLACEHOLDER})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

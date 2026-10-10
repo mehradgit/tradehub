@@ -9,6 +9,11 @@ import {
   hasRevealedSupplierInfo,
 } from "@/lib/accessControlService";
 import { getProductAttributes } from "@/lib/attributesService";
+import {
+  PRODUCT_PLACEHOLDER,
+  AVATAR_PLACEHOLDER,
+  COVER_PLACEHOLDER,
+} from "@/lib/imageHelpers";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -96,7 +101,7 @@ async function getProductData(productNumber) {
       ? product.images
       : product.images?.main
         ? [product.images.main, ...(product.images.thumbnails || [])]
-        : ["https://placehold.co/360x360"],
+        : [PRODUCT_PLACEHOLDER],
   };
 
   const supplierData = {
@@ -107,8 +112,8 @@ async function getProductData(productNumber) {
     country: product.user.country || "Unknown",
     countryCode: product.user.countryCode || null,
     logo:
-      product.user.logo || product.user.image || "https://placehold.co/55x50",
-    coverImage: product.user.coverImage || "https://placehold.co/303x80",
+      product.user.logo || product.user.image || AVATAR_PLACEHOLDER,
+    coverImage: product.user.coverImage || COVER_PLACEHOLDER,
     profileNumber: product.user.profileNumber,
     slug: product.user.slug,
   };

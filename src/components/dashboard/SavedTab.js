@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PRODUCT_PLACEHOLDER } from "@/lib/imageHelpers";
 
 export default function SavedTab({ products, requests }) {
   const [activeTab, setActiveTab] = useState("products");
@@ -31,7 +32,7 @@ export default function SavedTab({ products, requests }) {
               <div key={product.id} className="col-12 col-md-6 col-lg-4">
                 <div className="card h-100 shadow-sm border-0">
                   <img
-                    src={product.images?.[0] || "https://placehold.co/300x200"}
+                    src={product.images?.[0] || PRODUCT_PLACEHOLDER}
                     className="card-img-top"
                     style={{ height: "180px", objectFit: "cover" }}
                     alt={product.name}

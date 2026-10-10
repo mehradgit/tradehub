@@ -4,6 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import InquiryModal from "./InquiryModal";
+import { PRODUCT_PLACEHOLDER } from "@/lib/imageHelpers";
 
 export default function InquiryListItem({ inquiry, tab }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function InquiryListItem({ inquiry, tab }) {
   const status = getStatusInfo();
 
   const imageUrl =
-    inquiry.product?.images?.[0] || "https://placehold.co/180x180";
+    inquiry.product?.images?.[0] || PRODUCT_PLACEHOLDER;
   const productUrl =
     inquiry.product?.productNumber && inquiry.product?.slug
       ? `/products/${inquiry.product.productNumber}/${inquiry.product.slug}`

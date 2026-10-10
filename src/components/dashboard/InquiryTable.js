@@ -4,6 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import InquiryModal from "./InquiryModal";
+import { PRODUCT_PLACEHOLDER } from "@/lib/imageHelpers";
 
 export default function InquiryTable({ inquiries, tab }) {
   const [selectedInquiry, setSelectedInquiry] = useState(null);
@@ -46,7 +47,7 @@ export default function InquiryTable({ inquiries, tab }) {
                   <td>
                     <div className="d-flex align-items-center gap-2">
                       <img
-                        src={inquiry.product.images?.[0] || "https://via.placeholder.com/40"}
+                        src={inquiry.product.images?.[0] || PRODUCT_PLACEHOLDER}
                         alt={inquiry.product.name}
                         style={{
                           width: "40px",

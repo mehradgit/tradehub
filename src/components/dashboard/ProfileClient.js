@@ -8,6 +8,7 @@ import {
   AVATAR_PLACEHOLDER,
   COVER_PLACEHOLDER,
   handleImageError,
+  isRealImageUrl,
 } from "@/lib/imageHelpers";
 
 export default function ProfileClient({ user }) {
@@ -163,7 +164,7 @@ export default function ProfileClient({ user }) {
                         className={`pp-cover ${user.coverImage ? "has-image" : "default"}`}
                     >
                         <img
-                            src={user.coverImage || COVER_PLACEHOLDER}
+                            src={isRealImageUrl(user.coverImage) ? user.coverImage : COVER_PLACEHOLDER}
                             alt={displayName}
                             onError={(e) => handleImageError(e, COVER_PLACEHOLDER)}
                         />
@@ -177,7 +178,7 @@ export default function ProfileClient({ user }) {
                                     }`}
                             >
                                 <img
-                                    src={avatarUrl || AVATAR_PLACEHOLDER}
+                                    src={isRealImageUrl(avatarUrl) ? avatarUrl : AVATAR_PLACEHOLDER}
                                     alt={displayName}
                                     onError={(e) => handleImageError(e, AVATAR_PLACEHOLDER)}
                                 />

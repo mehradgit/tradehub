@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import { PRODUCT_PLACEHOLDER } from "@/lib/imageHelpers";
 
 export default function ApprovalsTable({ products, requests }) {
   const router = useRouter();
@@ -125,7 +126,7 @@ export default function ApprovalsTable({ products, requests }) {
                           <img
                             src={
                               p.images?.[0] ||
-                              "https://via.placeholder.com/40"
+                              PRODUCT_PLACEHOLDER
                             }
                             style={{ borderRadius: 8 }}
                           />

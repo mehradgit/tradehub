@@ -7,6 +7,7 @@ import {
   AVATAR_PLACEHOLDER,
   COVER_PLACEHOLDER,
   handleImageError,
+  isRealImageUrl,
 } from "@/lib/imageHelpers";
 
 export default function ProfileHeader({ user, productCount = 0, galleryCount = 0 }) {
@@ -34,7 +35,7 @@ export default function ProfileHeader({ user, productCount = 0, galleryCount = 0
           className={`profile-cover ${coverImage ? "has-image" : "default"}`}
         >
           <img
-            src={coverImage || COVER_PLACEHOLDER}
+            src={isRealImageUrl(coverImage) ? coverImage : COVER_PLACEHOLDER}
             alt={displayName}
             onError={(e) => handleImageError(e, COVER_PLACEHOLDER)}
           />
@@ -45,7 +46,7 @@ export default function ProfileHeader({ user, productCount = 0, galleryCount = 0
           {/* Avatar */}
           <div className={`profile-avatar ${isSupplier ? "supplier" : "buyer"}`}>
             <img
-              src={logo || AVATAR_PLACEHOLDER}
+              src={isRealImageUrl(logo) ? logo : AVATAR_PLACEHOLDER}
               alt={displayName}
               onError={(e) => handleImageError(e, AVATAR_PLACEHOLDER)}
             />

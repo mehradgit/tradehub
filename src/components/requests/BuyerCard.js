@@ -5,6 +5,7 @@ import {
   AVATAR_PLACEHOLDER,
   COVER_PLACEHOLDER,
   handleImageError,
+  isRealImageUrl,
 } from "@/lib/imageHelpers";
 
 export default function BuyerCard({ user }) {
@@ -16,7 +17,7 @@ export default function BuyerCard({ user }) {
     <div className="buyer-card">
       <div className="buyer-card-cover">
         <img
-          src={user?.image || user?.logo || COVER_PLACEHOLDER}
+          src={isRealImageUrl(user?.image || user?.logo) ? user?.image || user?.logo : COVER_PLACEHOLDER}
           alt={displayName}
           onError={(e) => handleImageError(e, COVER_PLACEHOLDER)}
         />
@@ -24,7 +25,7 @@ export default function BuyerCard({ user }) {
       <div className="buyer-card-body">
         <div className="buyer-avatar">
           <img
-            src={user?.image || user?.logo || AVATAR_PLACEHOLDER}
+            src={isRealImageUrl(user?.image || user?.logo) ? user?.image || user?.logo : AVATAR_PLACEHOLDER}
             alt={displayName}
             onError={(e) => handleImageError(e, AVATAR_PLACEHOLDER)}
           />

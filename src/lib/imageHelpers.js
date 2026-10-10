@@ -16,19 +16,56 @@ export const AVATAR_PLACEHOLDER = "/images/company-avatar.webp";
 export const COVER_PLACEHOLDER = "/images/company-cover.webp";
 
 // ============================================================
+// سرویس‌های تولید عکس placeholder — عکس واقعی نیستند
+// (اگر کاربر لینک این سرویس‌ها را وارد کند، به عنوان
+//  «بدون عکس» رفتار می‌کنیم و placeholder محلی را نشان می‌دهیم)
+// ============================================================
+const PLACEHOLDER_HOSTS = [
+  "placehold.co",
+  "via.placeholder.com",
+  "placeholder.com",
+  "dummyimage.com",
+  "fakeimg.pl",
+];
+
+export function isPlaceholderUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  try {
+    const host = new URL(url, "https://example.com").hostname.replace(
+      /^www\./,
+      ""
+    );
+    return PLACEHOLDER_HOSTS.some(
+      (h) => host === h || host.endsWith("." + h)
+    );
+  } catch {
+    return false;
+  }
+}
+
+// آیا رشته‌ی داده‌شده عکس قابل استفاده است؟
+export function isRealImageUrl(url) {
+  return (
+    typeof url === "string" &&
+    url.trim().length > 0 &&
+    !isPlaceholderUrl(url)
+  );
+}
+
+// ============================================================
 // مقادیر امن برای src
 // ============================================================
 export function getProductImage(product) {
   if (!product) return PRODUCT_PLACEHOLDER;
   const imgs = Array.isArray(product.images) ? product.images : [];
-  const first = imgs.find((i) => typeof i === "string" && i.trim().length > 0);
+  const first = imgs.find((i) => isRealImageUrl(i));
   return first || PRODUCT_PLACEHOLDER;
 }
 
 export function getProductImages(product, fallback = PRODUCT_PLACEHOLDER) {
   if (!product) return [fallback];
   const imgs = (Array.isArray(product.images) ? product.images : []).filter(
-    (i) => typeof i === "string" && i.trim().length > 0
+    (i) => isRealImageUrl(i)
   );
   return imgs.length > 0 ? imgs : [fallback];
 }

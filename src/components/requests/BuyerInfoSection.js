@@ -11,6 +11,7 @@ import LoginModal from "@/components/ui/LoginModal";
 import {
   AVATAR_PLACEHOLDER,
   handleImageError,
+  isRealImageUrl,
 } from "@/lib/imageHelpers";
 
 export default function BuyerInfoSection({
@@ -134,7 +135,9 @@ export default function BuyerInfoSection({
           <div className="buyer-card">
             <div className="buyer-avatar">
               <img
-                src={buyer.image || buyer.logo || AVATAR_PLACEHOLDER}
+                src={isRealImageUrl(buyer.image || buyer.logo)
+                  ? buyer.image || buyer.logo
+                  : AVATAR_PLACEHOLDER}
                 alt={buyerName}
                 style={{
                   width: "100%",

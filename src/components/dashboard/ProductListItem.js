@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import ProductInquiriesModal from "./ProductInquiriesModal";
+import { PRODUCT_PLACEHOLDER } from "@/lib/imageHelpers";
 
 export default function ProductListItem({ product }) {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function ProductListItem({ product }) {
   const [deleting, setDeleting] = useState(false);
 
   const inquiryCount = product._count?.inquiries || 0;
-  const imageUrl = product.images?.[0] || "https://placehold.co/80x80";
+  const imageUrl = product.images?.[0] || PRODUCT_PLACEHOLDER;
   const detailUrl = `/products/${product.productNumber}/${product.slug}`;
 
   // ===== Status info =====

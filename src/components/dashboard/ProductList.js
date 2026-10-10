@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { PRODUCT_PLACEHOLDER } from "@/lib/imageHelpers";
 
 export default function ProductList({ products: initialProducts }) {
   const [products, setProducts] = useState(initialProducts);
@@ -77,7 +78,7 @@ export default function ProductList({ products: initialProducts }) {
           </thead>
           <tbody>
             {products.map((product) => {
-              const imageUrl = product.images?.[0] || "https://via.placeholder.com/50x50";
+              const imageUrl = product.images?.[0] || PRODUCT_PLACEHOLDER;
               return (
                 <tr key={product.id} className={`product-row ${getStatusClass(product)}`}>
                   <td>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AVATAR_PLACEHOLDER,
   handleImageError,
+  isRealImageUrl,
 } from "@/lib/imageHelpers";
 
 export default function CustomerCard({ customer }) {
@@ -66,7 +67,7 @@ export default function CustomerCard({ customer }) {
           }}
         >
           <img
-            src={user.logo || user.image || AVATAR_PLACEHOLDER}
+            src={isRealImageUrl(user.logo || user.image) ? user.logo || user.image : AVATAR_PLACEHOLDER}
             alt={displayName}
             style={{
               width: "100%",

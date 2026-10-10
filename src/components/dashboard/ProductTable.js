@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { PRODUCT_PLACEHOLDER } from "@/lib/imageHelpers";
 
 export default function ProductTable({ products }) {
   const router = useRouter();
@@ -115,7 +116,7 @@ export default function ProductTable({ products }) {
             {products.map((product) => {
               const status = getStatusInfo(product);
               const imageUrl =
-                product.images?.[0] || "https://placehold.co/42x42";
+                product.images?.[0] || PRODUCT_PLACEHOLDER;
               const inquiryCount = product._count?.inquiries || 0;
 
               return (

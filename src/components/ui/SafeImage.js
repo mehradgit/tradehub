@@ -5,6 +5,7 @@ import {
   AVATAR_PLACEHOLDER,
   COVER_PLACEHOLDER,
   handleImageError,
+  isRealImageUrl,
 } from "@/lib/imageHelpers";
 
 // ============================================================
@@ -33,8 +34,8 @@ export default function SafeImage({
       ? COVER_PLACEHOLDER
       : PRODUCT_PLACEHOLDER);
 
-  const initialSrc =
-    src && String(src).trim() ? src : fallback;
+  // اگر src خالی باشد یا لینک یک سرویس placeholder باشد → fallback
+  const initialSrc = isRealImageUrl(src) ? src : fallback;
 
   return (
     <img
