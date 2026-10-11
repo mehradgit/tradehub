@@ -1,23 +1,29 @@
 // src/components/product/ImageGallery.js
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   getProductImage,
   getProductImages,
   handleImageError,
+  isRealImageUrl,
   PRODUCT_PLACEHOLDER,
 } from "@/lib/imageHelpers";
 export default function ImageGallery({ images, productName }) {
   // ====== Normalise the images ======
 
+  // باید با useMemo پایدار باشد؛ در غیر این صورت هر رندر
+  // یک آرایه‌ی جدید می‌سازد و effect همگام‌سازی زیر روی
+  // هر رندر اجرا شده و currentIndex ناوبری lightbox را
+  // همیشه به عکس اصلی برمی‌گرداند.
+  const allImages = useMemo(
+    () => getProductImages({ images }),
+    [images]
+  );
 
   const hasRealImages = Array.isArray(images)
-    ? images.some((i) => typeof i === "string" && i.trim().length > 0)
+    ? images.some((i) => isRealImageUrl(i))
     : false;
-
-  // آرایه‌ی امن (اگر خالی باشد، حداقل یک placeholder دارد)
-  const allImages = getProductImages({ images });
 
   const [mainImage, setMainImage] = useState(
     allImages[0] || PRODUCT_PLACEHOLDER
