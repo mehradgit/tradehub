@@ -9,7 +9,12 @@ import { toast } from "react-toastify";
 import CountryFlag from "@/components/ui/CountryFlag";
 import LoginModal from "@/components/ui/LoginModal";
 import ConnectModal from "@/components/ui/ConnectModal";
-import SafeImage from "@/components/ui/SafeImage";
+import {
+  AVATAR_PLACEHOLDER,
+  COVER_PLACEHOLDER,
+  handleImageError,
+  isRealImageUrl,
+} from "@/lib/imageHelpers";
 
 export default function SupplierInfoSection({
   productId,
@@ -122,16 +127,24 @@ export default function SupplierInfoSection({
           /* ====== Revealed card ====== */
           <div className="supplier-card">
             <div className="supplier-card-cover">
-              <SafeImage
-                src={supplier.coverImage}
+              <img
+                src={
+                  isRealImageUrl(supplier.coverImage)
+                    ? supplier.coverImage
+                    : COVER_PLACEHOLDER
+                }
                 alt="Cover"
-                fallbackType="cover"
+                onError={(e) => handleImageError(e, COVER_PLACEHOLDER)}
               />
               <div className="supplier-logo-wrapper">
-                <SafeImage
-                  src={supplier.logo}
+                <img
+                  src={
+                    isRealImageUrl(supplier.logo)
+                      ? supplier.logo
+                      : AVATAR_PLACEHOLDER
+                  }
                   alt={supplier.name}
-                  fallbackType="avatar"
+                  onError={(e) => handleImageError(e, AVATAR_PLACEHOLDER)}
                 />
               </div>
             </div>
