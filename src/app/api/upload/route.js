@@ -95,32 +95,37 @@ export async function POST(request) {
     //    The final check happens in PUT /api/user/update-profile.
 
     // ============================================================
-    // Image processing
+    // Image processing — WebP
+    // (WebP is ~25-35% smaller than JPEG at the same quality;
+    //  every upload is resized, then encoded with a quality
+    //  ladder so the result stays near the size target.)
     // ============================================================
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    let maxWidth = 800;
-    let maxHeight = 800;
-    let quality = 75;
+    // Per-type dimensions and output-size targets
+    const presets = {
+      profiles: { max: 400, targetKB: 80 }, // logo / cover
+      products: { max: 800, targetKB: 80 }, // gallery
+      requests: { max: 800, targetKB: 80 },
+      tickets: { max: 1200, targetKB: 150 }, // attachments
+    };
+    const preset = presets[type] || presets.products;
 
-    if (type === "profiles") {
-      maxWidth = 400;
-      maxHeight = 400;
-      quality = 80;
-    } else if (type === "tickets") {
-      maxWidth = 1200;
-      maxHeight = 1200;
-      quality = 80;
+    const resizeOptions = { fit: "inside", withoutEnlargement: true };
+
+    // Encode at q80; if still over the target, retry at q70 then q60
+    let processedBuffer;
+    for (const quality of [80, 70, 60]) {
+      processedBuffer = await sharp(buffer)
+        .resize(preset.max, preset.max, resizeOptions)
+        .webp({ quality })
+        .toBuffer();
+      if (processedBuffer.length <= preset.targetKB * 1024) break;
     }
 
-    const processedBuffer = await sharp(buffer)
-      .resize(maxWidth, maxHeight, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality, progressive: true })
-      .toBuffer();
-
-    const ext = "jpg";
-    const filename = `${randomUUID()}.${ext}`;
+    const ext = "webp";
+    const filename = `${randomUUID}.${ext}`;
 
     const uploadDir = path.join(process.cwd(), "public", "uploads", type);
     const filePath = path.join(uploadDir, filename);
