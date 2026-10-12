@@ -129,13 +129,24 @@ export default function CompanyAdsSection() {
       ===================================================== */}
             <div className={styles.companyAdMain}>
                 <div className={styles.adMainImageWrap}>
-                    <Image
+                    {/* Plain <img>: the source is already an optimized
+                        1400px WebP that matches the ~1380px display
+                        slot. Going through the image optimizer would
+                        upscale it to 1920px on retina displays
+                        (~380KB JPEG / ~230KB WebP) — bigger than the
+                        source itself. */}
+                    <img
                         src={MAIN_AD.image}
                         alt={MAIN_AD.imageAlt}
-                        fill
-                        sizes="(max-width: 900px) 100vw, 1380px"
-                        priority
-                        style={{ objectFit: "cover" }}
+                        width={1400}
+                        height={933}
+                        fetchPriority="high"
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                        }}
                     />
                 </div>
 
