@@ -189,7 +189,7 @@ export default function CompanyAdsSection() {
                                 src={ad.image}
                                 alt={ad.imageAlt}
                                 fill
-                                sizes="(max-width: 650px) 100vw, (max-width: 900px) 50vw, 450px"
+                                sizes="(max-width: 650px) 100vw, (max-width: 900px) 50vw, 400px"
                                 style={{ objectFit: "cover" }}
                             />
                             <span className={styles.adLabel}>{ad.label}</span>

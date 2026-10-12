@@ -194,6 +194,13 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+        {/* LCP image — start loading as soon as the HTML is parsed */}
+        <link
+          rel="preload"
+          href="/images/hero.webp"
+          as="image"
+          fetchPriority="high"
+        />
       </head>
 
       <body>

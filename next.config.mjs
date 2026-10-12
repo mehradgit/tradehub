@@ -2,6 +2,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ["prisma", "@prisma/client"],
+
+  // ============================================================
+  // Image optimizer limits
+  // Next.js defaults include 2048/3840 device sizes, so a
+  // "fill" banner with sizes ~1380px was served at 3840px
+  // (~335KB) on retina displays. Cap the largest width at 1920.
+  // ============================================================
+  images: {
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
