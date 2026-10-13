@@ -10,6 +10,7 @@ import {
   createSubscriptionFromPayment,
 } from "@/lib/paymentService";
 import { requestYekPayPayment } from "@/lib/yekpayService";
+import { createNowPaymentsPayment } from "@/lib/nowpaymentsService";
 
 // ============================================================
 // base URL
@@ -36,7 +37,10 @@ export async function POST(request) {
 
     const userId = session.user.id;
     const body = await request.json();
-    const { planId, duration, couponCode } = body;
+    const { planId, duration, couponCode, gateway } = body;
+
+    // "yekpay" (default) | "nowpayments"
+    const gatewayName = gateway === "nowpayments" ? "nowpayments" : "yekpay";
 
     if (!planId || !duration) {
       return NextResponse.json(
@@ -240,9 +244,85 @@ export async function POST(request) {
       couponId,
       status: "pending",
       method: "gateway",
-      gatewayName: "yekpay",
+      gatewayName,
       description,
     });
+
+    // ============================================================
+    // Case A: NOWPayments (crypto — BTC)
+    // ============================================================
+    if (gatewayName === "nowpayments") {
+      const baseUrl = getBaseUrl();
+      const orderNumber = payment.invoiceNumber.replace(/[^0-9]/g, "");
+
+      let nowpaymentsResult;
+      try {
+        nowpaymentsResult = await createNowPaymentsPayment({
+          amount: finalAmount,
+          orderId: payment.invoiceNumber,
+          orderDescription: description,
+          ipnUrl: `${baseUrl}/api/payments/nowpayments/ipn`,
+          successUrl: `${baseUrl}/dashboard/billing`,
+          cancelUrl: `${baseUrl}/dashboard/billing?payment=cancelled`,
+        });
+      } catch (npError) {
+        console.error("NOWPayments request failed:", npError.message);
+
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: "failed",
+            metadata: {
+              error: npError.message,
+              failedAt: new Date().toISOString(),
+            },
+          },
+        });
+
+        return NextResponse.json(
+          {
+            message:
+              "Crypto payment gateway is currently unavailable. Please try again later.",
+            reason: "gateway_unavailable",
+            detail: npError.message,
+          },
+          { status: 503 }
+        );
+      }
+
+      // ====== Store the NOWPayments payment id on the payment ======
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          transactionId: nowpaymentsResult.paymentId,
+          metadata: {
+            nowpaymentsPaymentId: nowpaymentsResult.paymentId,
+            orderNumber,
+            planName: plan.name,
+            planDuration: duration,
+            planId,
+            payCurrency: nowpaymentsResult.payCurrency,
+            payAmount: nowpaymentsResult.payAmount,
+          },
+        },
+      });
+
+      // ====== Return to the frontend ======
+      return NextResponse.json({
+        message: "Redirecting to payment gateway...",
+        paymentUrl: nowpaymentsResult.paymentUrl,
+        paymentId: payment.id,
+        invoiceNumber: payment.invoiceNumber,
+        amount: finalAmount,
+        gateway: "nowpayments",
+        payAmount: nowpaymentsResult.payAmount,
+        payCurrency: nowpaymentsResult.payCurrency,
+      });
+    }
+
+    // ============================================================
+    // Case B: YekPay (existing flow — unchanged)
+    // ============================================================
 
     // ====== Prepare the name ======
     const fullName = (user.name || user.companyName || "Customer").trim();
