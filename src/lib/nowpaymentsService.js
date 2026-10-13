@@ -31,7 +31,17 @@ async function apiRequest(path, options = {}) {
     },
   });
 
-  const data = await res.json().catch(() => ({}));
+  // Read the raw body first so we can log it when the
+  // response is not what we expect (e.g. non-JSON or
+  // an unexpected shape with a 2xx status).
+  const raw = await res.text();
+
+  let data = {};
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    console.error("[nowpayments] non-JSON response:", res.status, raw);
+  }
 
   if (!res.ok) {
     const message =
@@ -77,6 +87,10 @@ export async function createNowPaymentsPayment({
   const paymentUrl = data.url || data.payment_url;
 
   if (!paymentUrl) {
+    console.error(
+      "[nowpayments] create payment response without url:",
+      JSON.stringify(data)
+    );
     throw new Error("No payment URL returned by the gateway");
   }
 
