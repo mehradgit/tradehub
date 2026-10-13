@@ -254,6 +254,11 @@ export async function POST(request) {
     if (gatewayName === "nowpayments") {
       const baseUrl = getBaseUrl();
       const orderNumber = payment.invoiceNumber.replace(/[^0-9]/g, "");
+      // Must EXACTLY match the IPN URL configured in the
+      // NOWPayments dashboard (Settings → IPN), otherwise
+      // NOWPayments rejects the request with
+      // "callback_url is not allowed"
+      const ipnUrl = `${baseUrl}/api/payments/nowpayments/ipn`;
 
       let nowpaymentsResult;
       try {
@@ -261,12 +266,14 @@ export async function POST(request) {
           amount: finalAmount,
           orderId: payment.invoiceNumber,
           orderDescription: description,
-          ipnUrl: `${baseUrl}/api/payments/nowpayments/ipn`,
+          ipnUrl,
           successUrl: `${baseUrl}/dashboard/billing`,
           cancelUrl: `${baseUrl}/dashboard/billing?payment=cancelled`,
         });
       } catch (npError) {
-        console.error("NOWPayments request failed:", npError.message);
+        console.error("NOWPayments request failed:", npError.message, {
+          ipnUrl,
+        });
 
         await prisma.payment.update({
           where: { id: payment.id },
