@@ -4,6 +4,8 @@
 // https://nowpayments.io/documentation
 // ============================================================
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { prisma } from "@/lib/prisma";
+import { finalizePaidPayment } from "@/lib/paymentService";
 
 const NOWPAYMENTS_API_URL =
   process.env.NOWPAYMENTS_API_URL || "https://api.nowpayments.io/v1";
@@ -49,7 +51,6 @@ export async function createNowPaymentsPayment({
   amount,
   orderId,
   orderDescription,
-  ipnUrl,
   successUrl,
   cancelUrl,
   payCurrency = DEFAULT_PAY_CURRENCY,
@@ -62,7 +63,10 @@ export async function createNowPaymentsPayment({
       pay_currency: payCurrency,
       order_id: String(orderId),
       order_description: orderDescription || "",
-      callback_url: ipnUrl,
+      // NOTE: no callback_url — this merchant account rejects
+      // it with "callback_url is not allowed". IPNs are sent
+      // to the Webhook URL configured in the NOWPayments
+      // dashboard (Settings → IPN) for every payment.
       success_url: successUrl,
       cancel_url: cancelUrl,
     }),
@@ -117,4 +121,72 @@ export function mapNowPaymentsStatus(status) {
     default:
       return "pending";
   }
+}
+
+// ============================================================
+// Poll pending NOWPayments payments — safety net for IPN.
+// BTC confirmations take 10-60 minutes, so payments from
+// the last 24 hours are checked. Called by the scheduled
+// job "check-nowpayments" (every 5 minutes).
+// ============================================================
+export async function syncNowPaymentsPayments() {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const pending = await prisma.payment.findMany({
+    where: {
+      gatewayName: "nowpayments",
+      status: "pending",
+      transactionId: { not: null },
+      createdAt: { gte: since },
+    },
+    include: { plan: true },
+  });
+
+  let paid = 0;
+  let failed = 0;
+
+  for (const payment of pending) {
+    try {
+      const data = await getNowPaymentsPayment(payment.transactionId);
+      const status = mapNowPaymentsStatus(data.payment_status);
+
+      if (status === "paid") {
+        await finalizePaidPayment(payment, {
+          nowpaymentsPaymentId: data.payment_id,
+          nowpaymentsStatus: data.payment_status,
+          actuallyPaid: data.actually_paid,
+          payCurrency: data.pay_currency,
+          confirmedVia: "poller",
+          confirmedAt: new Date().toISOString(),
+        });
+        paid++;
+        console.log(
+          "[nowpayments] payment confirmed:",
+          payment.invoiceNumber
+        );
+      } else if (status === "failed") {
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: "failed",
+            metadata: {
+              ...(payment.metadata || {}),
+              nowpaymentsStatus: data.payment_status,
+              failedAt: new Date().toISOString(),
+            },
+          },
+        });
+        failed++;
+      }
+      // "pending" / "confirming" → keep waiting
+    } catch (err) {
+      console.error(
+        "[nowpayments] sync error for",
+        payment.invoiceNumber,
+        err.message
+      );
+    }
+  }
+
+  return { checked: pending.length, paid, failed };
 }

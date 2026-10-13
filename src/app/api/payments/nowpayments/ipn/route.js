@@ -11,7 +11,7 @@ import {
   verifyNowPaymentsIpn,
   mapNowPaymentsStatus,
 } from "@/lib/nowpaymentsService";
-import { createSubscriptionFromPayment } from "@/lib/paymentService";
+import { finalizePaidPayment } from "@/lib/paymentService";
 
 export async function POST(request) {
   try {
@@ -77,28 +77,14 @@ export async function POST(request) {
       return NextResponse.json({ message: "Failed" }, { status: 200 });
     }
 
-    // ====== Paid — mark, activate the subscription, update the plan ======
-    const paidPayment = await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: "paid",
-        paidAt: new Date(),
-        metadata: {
-          ...(payment.metadata || {}),
-          nowpaymentsPaymentId: paymentId,
-          nowpaymentsStatus: data.payment_status,
-          actuallyPaid: data.actually_paid,
-          payCurrency: data.pay_currency,
-          paidAt: new Date().toISOString(),
-        },
-      },
-    });
-
-    await createSubscriptionFromPayment(paidPayment);
-
-    await prisma.user.update({
-      where: { id: payment.userId },
-      data: { plan: payment.plan.name.toUpperCase() },
+    // ====== Paid — activate the subscription and update the plan ======
+    await finalizePaidPayment(payment, {
+      nowpaymentsPaymentId: paymentId,
+      nowpaymentsStatus: data.payment_status,
+      actuallyPaid: data.actually_paid,
+      payCurrency: data.pay_currency,
+      confirmedVia: "ipn",
+      confirmedAt: new Date().toISOString(),
     });
 
     console.log("NOWPayments IPN: payment paid", payment.invoiceNumber);

@@ -15,6 +15,7 @@
 import { prisma } from "@/lib/prisma";
 import { processEmailQueue } from "@/lib/emailQueueService";
 import { dispatchEvent } from "@/lib/eventService";
+import { syncNowPaymentsPayments } from "@/lib/nowpaymentsService";
 
 // ============================================================
 // Closes stale resolved tickets.
@@ -147,6 +148,21 @@ export const JOB_HANDLERS = {
       }
 
       return { ok: true, summary: `sent ${total} reminder(s)` };
+    },
+  },
+
+  // ----------------------------------------------------------
+  "check-nowpayments": {
+    name: "Check pending NOWPayments payments",
+    description:
+      "Polls NOWPayments for pending BTC payments and confirms or fails them. Safety net when IPN is delayed or not delivered. Should run every 5 minutes.",
+    defaultCron: "*/5 * * * *",
+    run: async () => {
+      const result = await syncNowPaymentsPayments();
+      return {
+        ok: true,
+        summary: `checked ${result.checked}, paid ${result.paid}, failed ${result.failed}`,
+      };
     },
   },
 };

@@ -199,3 +199,28 @@ export async function createSubscriptionFromPayment(payment) {
 
   return subscription;
 }
+
+// ====== Finalize a confirmed gateway payment ======
+// Marks the payment paid, activates the subscription and
+// updates the user's plan. Shared by the IPN webhook and
+// the NOWPayments status poller.
+// NOTE: the payment object must include its plan.
+export async function finalizePaidPayment(payment, metadata = {}) {
+  const paidPayment = await prisma.payment.update({
+    where: { id: payment.id },
+    data: {
+      status: "paid",
+      paidAt: new Date(),
+      metadata: { ...(payment.metadata || {}), ...metadata },
+    },
+  });
+
+  await createSubscriptionFromPayment(paidPayment);
+
+  await prisma.user.update({
+    where: { id: payment.userId },
+    data: { plan: payment.plan.name.toUpperCase() },
+  });
+
+  return paidPayment;
+}
