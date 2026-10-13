@@ -480,7 +480,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
                     NOWPayments
                   </div>
                   <div style={{ fontSize: 11, color: "#71807b" }}>
-                    BTC · ETH · USDT + more
+                    Bitcoin (BTC)
                   </div>
                 </button>
               </div>
@@ -547,7 +547,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
                       }`}
                     ></i>
                     {gateway === "nowpayments"
-                      ? `Pay $${formatPrice(displayAmount)} in Crypto`
+                      ? `Pay $${formatPrice(displayAmount)} in BTC`
                       : `Pay $${formatPrice(displayAmount)}`}
                   </>
                 )}
