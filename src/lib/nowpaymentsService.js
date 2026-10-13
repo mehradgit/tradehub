@@ -82,9 +82,17 @@ export async function createNowPaymentsPayment({
     }),
   });
 
-  // NOWPayments returns the checkout page URL in "url"
-  // (some API versions also expose "payment_url").
-  const paymentUrl = data.url || data.payment_url;
+  // NOWPayments normally returns the checkout page URL in
+  // "url" (some API versions expose "payment_url"). When the
+  // response omits it, build it from the payment id — the
+  // hosted checkout page lives at
+  // https://nowpayments.io/payment/<payment_id>.
+  const paymentUrl =
+    data.url ||
+    data.payment_url ||
+    (data.payment_id
+      ? `https://nowpayments.io/payment/${data.payment_id}`
+      : null);
 
   if (!paymentUrl) {
     console.error(
