@@ -72,9 +72,17 @@ export async function createNowPaymentsPayment({
     }),
   });
 
+  // NOWPayments returns the checkout page URL in "url"
+  // (some API versions also expose "payment_url").
+  const paymentUrl = data.url || data.payment_url;
+
+  if (!paymentUrl) {
+    throw new Error("No payment URL returned by the gateway");
+  }
+
   return {
     paymentId: data.payment_id,
-    paymentUrl: data.payment_url,
+    paymentUrl,
     payAmount: data.pay_amount,
     payCurrency: data.pay_currency,
   };
