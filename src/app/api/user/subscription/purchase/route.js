@@ -10,7 +10,7 @@ import {
   createSubscriptionFromPayment,
 } from "@/lib/paymentService";
 import { requestYekPayPayment } from "@/lib/yekpayService";
-import { createNowPaymentsPayment } from "@/lib/nowpaymentsService";
+import { createNowPaymentsInvoice } from "@/lib/nowpaymentsService";
 
 // ============================================================
 // base URL
@@ -255,19 +255,19 @@ export async function POST(request) {
       const baseUrl = getBaseUrl();
       const orderNumber = payment.invoiceNumber.replace(/[^0-9]/g, "");
 
-      // NOTE: no callback_url is sent — this merchant account
-      // rejects it with "callback_url is not allowed".
-      // NOWPayments delivers IPNs to the Webhook URL set in
-      // the dashboard (Settings → IPN), and the scheduled
-      // job "check-nowpayments" confirms payments as a
-      // safety net when IPN is delayed.
+      // An invoice (payment link) is created and the user
+      // is redirected to its hosted checkout page. The
+      // IPN URL is sent per-invoice (ipn_callback_url);
+      // the scheduled job "check-nowpayments" is the
+      // safety net if IPN is delayed.
 
       let nowpaymentsResult;
       try {
-        nowpaymentsResult = await createNowPaymentsPayment({
+        nowpaymentsResult = await createNowPaymentsInvoice({
           amount: finalAmount,
           orderId: payment.invoiceNumber,
           orderDescription: description,
+          ipnUrl: `${baseUrl}/api/payments/nowpayments/ipn`,
           successUrl: `${baseUrl}/dashboard/billing`,
           cancelUrl: `${baseUrl}/dashboard/billing?payment=cancelled`,
         });
@@ -298,19 +298,18 @@ export async function POST(request) {
         );
       }
 
-      // ====== Store the NOWPayments payment id on the payment ======
+      // ====== Store the NOWPayments invoice id on the payment ======
       await prisma.payment.update({
         where: { id: payment.id },
         data: {
-          transactionId: nowpaymentsResult.paymentId,
+          transactionId: nowpaymentsResult.invoiceId,
           metadata: {
-            nowpaymentsPaymentId: nowpaymentsResult.paymentId,
+            nowpaymentsInvoiceId: nowpaymentsResult.invoiceId,
             orderNumber,
             planName: plan.name,
             planDuration: duration,
             planId,
             payCurrency: nowpaymentsResult.payCurrency,
-            payAmount: nowpaymentsResult.payAmount,
           },
         },
       });
@@ -318,12 +317,11 @@ export async function POST(request) {
       // ====== Return to the frontend ======
       return NextResponse.json({
         message: "Redirecting to payment gateway...",
-        paymentUrl: nowpaymentsResult.paymentUrl,
+        paymentUrl: nowpaymentsResult.invoiceUrl,
         paymentId: payment.id,
         invoiceNumber: payment.invoiceNumber,
         amount: finalAmount,
         gateway: "nowpayments",
-        payAmount: nowpaymentsResult.payAmount,
         payCurrency: nowpaymentsResult.payCurrency,
       });
     }

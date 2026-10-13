@@ -53,19 +53,27 @@ async function apiRequest(path, options = {}) {
 }
 
 // ============================================================
-// Create a payment — returns the checkout URL the user is
-// redirected to. The IPN webhook is the source of truth for
-// confirmation (the browser redirect can be spoofed).
+// Create an invoice — the hosted checkout page.
+//
+// This is NOWPayments' "payment link" API: the response
+// contains "invoice_url" (e.g.
+// https://nowpayments.io/payment/?iid=4522625843) and the
+// customer completes the payment on that page.
+//
+// NOTE: POST /v1/payment is a different, inline API ("pay
+// without leaving your website") whose response has no URL —
+// it cannot be used for a redirect flow.
 // ============================================================
-export async function createNowPaymentsPayment({
+export async function createNowPaymentsInvoice({
   amount,
   orderId,
   orderDescription,
+  ipnUrl,
   successUrl,
   cancelUrl,
   payCurrency = DEFAULT_PAY_CURRENCY,
 }) {
-  const data = await apiRequest("/payment", {
+  const data = await apiRequest("/invoice", {
     method: "POST",
     body: JSON.stringify({
       price_amount: Number(amount).toFixed(2),
@@ -73,48 +81,47 @@ export async function createNowPaymentsPayment({
       pay_currency: payCurrency,
       order_id: String(orderId),
       order_description: orderDescription || "",
-      // NOTE: no callback_url — this merchant account rejects
-      // it with "callback_url is not allowed". IPNs are sent
-      // to the Webhook URL configured in the NOWPayments
-      // dashboard (Settings → IPN) for every payment.
+      // Per-invoice IPN override. The documented parameter
+      // name is ipn_callback_url — NOT callback_url, which
+      // the API rejects as an unknown field.
+      ipn_callback_url: ipnUrl,
       success_url: successUrl,
       cancel_url: cancelUrl,
     }),
   });
 
-  // NOWPayments normally returns the checkout page URL in
-  // "url" (some API versions expose "payment_url"). When the
-  // response omits it, build it from the payment id — the
-  // hosted checkout page lives at
-  // https://nowpayments.io/payment/<payment_id>.
-  const paymentUrl =
-    data.url ||
-    data.payment_url ||
-    (data.payment_id
-      ? `https://nowpayments.io/payment/${data.payment_id}`
-      : null);
+  const invoiceUrl = data.invoice_url;
 
-  if (!paymentUrl) {
+  if (!invoiceUrl) {
     console.error(
-      "[nowpayments] create payment response without url:",
+      "[nowpayments] create invoice response without url:",
       JSON.stringify(data)
     );
-    throw new Error("No payment URL returned by the gateway");
+    throw new Error("No invoice URL returned by the gateway");
   }
 
   return {
-    paymentId: data.payment_id,
-    paymentUrl,
-    payAmount: data.pay_amount,
-    payCurrency: data.pay_currency,
+    invoiceId: String(data.id),
+    invoiceUrl,
+    payCurrency: data.pay_currency || payCurrency,
   };
 }
 
 // ============================================================
-// Check payment status (fallback when IPN is delayed)
+// List the payments created under an invoice.
+//
+// There is no GET /v1/invoice/:id — an invoice's status is
+// derived from the payments linked to it. The response is
+// paginated: { data: [...], limit, page, pagesCount, total }.
 // ============================================================
-export async function getNowPaymentsPayment(paymentId) {
-  return apiRequest(`/payment/${encodeURIComponent(paymentId)}`);
+export async function getNowPaymentsInvoicePayments(invoiceId) {
+  const data = await apiRequest(
+    `/payment/?invoiceId=${encodeURIComponent(
+      invoiceId
+    )}&limit=10&sortBy=created_at&orderBy=desc`
+  );
+
+  return Array.isArray(data.data) ? data.data : [];
 }
 
 // ============================================================
@@ -146,8 +153,9 @@ export function mapNowPaymentsStatus(status) {
       return "paid";
     case "expired":
     case "failed":
+    case "refunded":
       return "failed";
-    // "confirming" / "pending" — payment detected, not final yet
+    // "confirming" / "pending" / "partially_paid" — not final yet
     default:
       return "pending";
   }
@@ -177,15 +185,25 @@ export async function syncNowPaymentsPayments() {
 
   for (const payment of pending) {
     try {
-      const data = await getNowPaymentsPayment(payment.transactionId);
-      const status = mapNowPaymentsStatus(data.payment_status);
+      // transactionId holds the NOWPayments invoice id (iid).
+      // There is no GET /v1/invoice/:id — an invoice's status
+      // comes from the payments created under it.
+      const invoicePayments = await getNowPaymentsInvoicePayments(
+        payment.transactionId
+      );
 
-      if (status === "paid") {
+      // Any "finished" payment under the invoice = paid.
+      const finished = invoicePayments.find(
+        (p) => mapNowPaymentsStatus(p.payment_status) === "paid"
+      );
+
+      if (finished) {
         await finalizePaidPayment(payment, {
-          nowpaymentsPaymentId: data.payment_id,
-          nowpaymentsStatus: data.payment_status,
-          actuallyPaid: data.actually_paid,
-          payCurrency: data.pay_currency,
+          nowpaymentsInvoiceId: payment.transactionId,
+          nowpaymentsPaymentId: String(finished.payment_id),
+          nowpaymentsStatus: finished.payment_status,
+          actuallyPaid: finished.actually_paid,
+          payCurrency: finished.pay_currency,
           confirmedVia: "poller",
           confirmedAt: new Date().toISOString(),
         });
@@ -194,21 +212,34 @@ export async function syncNowPaymentsPayments() {
           "[nowpayments] payment confirmed:",
           payment.invoiceNumber
         );
-      } else if (status === "failed") {
+        continue;
+      }
+
+      // Payments exist but ALL failed/expired → the invoice
+      // will not be paid. An empty list means the customer
+      // has not paid yet — keep waiting.
+      const allFailed =
+        invoicePayments.length > 0 &&
+        invoicePayments.every(
+          (p) => mapNowPaymentsStatus(p.payment_status) === "failed"
+        );
+
+      if (allFailed) {
         await prisma.payment.update({
           where: { id: payment.id },
           data: {
             status: "failed",
             metadata: {
               ...(payment.metadata || {}),
-              nowpaymentsStatus: data.payment_status,
+              nowpaymentsInvoiceId: payment.transactionId,
+              nowpaymentsStatus: invoicePayments[0].payment_status,
               failedAt: new Date().toISOString(),
             },
           },
         });
         failed++;
       }
-      // "pending" / "confirming" → keep waiting
+      // otherwise → still waiting for payment/confirmation
     } catch (err) {
       console.error(
         "[nowpayments] sync error for",

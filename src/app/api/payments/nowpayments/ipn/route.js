@@ -3,7 +3,9 @@
 // NOWPayments Instant Payment Notification (webhook)
 // NOWPayments POSTs payment status updates here. There is no
 // session/auth — the HMAC-SHA512 signature is the proof.
-// Set this URL in the NOWPayments dashboard → Settings → IPN.
+// Delivered via the per-invoice ipn_callback_url and/or the
+// Webhook URL configured in the NOWPayments dashboard
+// (Settings → IPN).
 // ============================================================
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -27,25 +29,34 @@ export async function POST(request) {
 
     const data = JSON.parse(rawBody);
     const paymentId = String(data.payment_id || "");
+    const invoiceId = String(data.invoice_id || "");
     const orderId = String(data.order_id || "");
     const status = mapNowPaymentsStatus(data.payment_status);
 
-    if (!paymentId) {
-      return NextResponse.json({ message: "Missing payment_id" }, { status: 400 });
+    if (!paymentId && !invoiceId) {
+      return NextResponse.json(
+        { message: "Missing payment_id" },
+        { status: 400 }
+      );
     }
 
-    // ====== Find the payment (NOWPayments payment_id is
-    // stored on the Payment record as transactionId) ======
+    // ====== Find the payment. transactionId holds the
+    // NOWPayments invoice id (iid) for invoice payments;
+    // order_id is our invoiceNumber ======
+    const orClauses = [];
+    if (paymentId) orClauses.push({ transactionId: paymentId });
+    if (invoiceId) orClauses.push({ transactionId: invoiceId });
+    if (orderId) orClauses.push({ invoiceNumber: orderId });
+
     const payment = await prisma.payment.findFirst({
-      where: {
-        OR: [{ transactionId: paymentId }, { invoiceNumber: orderId }],
-      },
+      where: { gatewayName: "nowpayments", OR: orClauses },
       include: { plan: true },
     });
 
     if (!payment) {
       console.error("NOWPayments IPN: payment not found", {
         paymentId,
+        invoiceId,
         orderId,
       });
       return NextResponse.json({ message: "Payment not found" }, { status: 404 });
@@ -79,7 +90,8 @@ export async function POST(request) {
 
     // ====== Paid — activate the subscription and update the plan ======
     await finalizePaidPayment(payment, {
-      nowpaymentsPaymentId: paymentId,
+      nowpaymentsInvoiceId: invoiceId || null,
+      nowpaymentsPaymentId: paymentId || null,
       nowpaymentsStatus: data.payment_status,
       actuallyPaid: data.actually_paid,
       payCurrency: data.pay_currency,
