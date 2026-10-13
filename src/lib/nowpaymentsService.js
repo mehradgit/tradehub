@@ -71,23 +71,35 @@ export async function createNowPaymentsInvoice({
   ipnUrl,
   successUrl,
   cancelUrl,
-  payCurrency = DEFAULT_PAY_CURRENCY,
+  payCurrency,
 }) {
+  // pay_currency is optional. When omitted, the
+  // customer chooses the cryptocurrency on the
+  // hosted checkout page (BTC, ETH, USDT, ... —
+  // every currency enabled for the account).
+  // NOTE: fiat (usd, eur, ...) is only allowed for
+  // accounts with fiat payments enabled — this
+  // account is crypto-only.
+  const body = {
+    price_amount: Number(amount).toFixed(2),
+    price_currency: PRICE_CURRENCY,
+    order_id: String(orderId),
+    order_description: orderDescription || "",
+    // Per-invoice IPN override. The documented parameter
+    // name is ipn_callback_url — NOT callback_url, which
+    // the API rejects as an unknown field.
+    ipn_callback_url: ipnUrl,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+  };
+
+  if (payCurrency) {
+    body.pay_currency = payCurrency;
+  }
+
   const data = await apiRequest("/invoice", {
     method: "POST",
-    body: JSON.stringify({
-      price_amount: Number(amount).toFixed(2),
-      price_currency: PRICE_CURRENCY,
-      pay_currency: payCurrency,
-      order_id: String(orderId),
-      order_description: orderDescription || "",
-      // Per-invoice IPN override. The documented parameter
-      // name is ipn_callback_url — NOT callback_url, which
-      // the API rejects as an unknown field.
-      ipn_callback_url: ipnUrl,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    }),
+    body: JSON.stringify(body),
   });
 
   const invoiceUrl = data.invoice_url;

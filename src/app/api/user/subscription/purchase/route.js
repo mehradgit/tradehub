@@ -249,7 +249,8 @@ export async function POST(request) {
     });
 
     // ============================================================
-    // Case A: NOWPayments (crypto — BTC)
+    // Case A: NOWPayments (crypto — the customer picks
+    // the coin on the hosted checkout page)
     // ============================================================
     if (gatewayName === "nowpayments") {
       const baseUrl = getBaseUrl();
