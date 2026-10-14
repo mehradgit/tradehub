@@ -13,7 +13,6 @@ export default function CheckoutClient({ plan, user, missingFields }) {
   const [couponCode, setCouponCode] = useState(null);
   const [discount, setDiscount] = useState(0);
   const [finalAmount, setFinalAmount] = useState(null);
-  const [gateway, setGateway] = useState("yekpay"); // "yekpay" | "nowpayments"
 
   const originalAmount = plan.price;
   const displayAmount = finalAmount !== null ? finalAmount : originalAmount;
@@ -34,7 +33,7 @@ export default function CheckoutClient({ plan, user, missingFields }) {
           planId: plan.id,
           duration: plan.duration,
           couponCode: couponCode || undefined,
-          gateway,
+          gateway: "nowpayments",
         }),
       });
 
@@ -394,96 +393,27 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               </div>
             )}
 
-            {/* ====== Payment gateway ====== */}
-            <div style={{ marginBottom: 20 }}>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: "#71807b",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  marginBottom: 8,
-                }}
-              >
-                Payment Method
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setGateway("yekpay")}
-                  style={{
-                    flex: 1,
-                    padding: "12px 10px",
-                    borderRadius: 12,
-                    border:
-                      gateway === "yekpay"
-                        ? "2px solid #13795b"
-                        : "1px solid #e2e9e5",
-                    background: gateway === "yekpay" ? "#eaf7f1" : "white",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  <i
-                    className="fas fa-university"
-                    style={{
-                      color: "#13795b",
-                      fontSize: 18,
-                      marginBottom: 4,
-                    }}
-                  ></i>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 800,
-                      color: "#13251f",
-                    }}
-                  >
-                    1Pay
-                  </div>
-                  <div style={{ fontSize: 11, color: "#71807b" }}>
-                    Card / Bank
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGateway("nowpayments")}
-                  style={{
-                    flex: 1,
-                    padding: "12px 10px",
-                    borderRadius: 12,
-                    border:
-                      gateway === "nowpayments"
-                        ? "2px solid #f7931a"
-                        : "1px solid #e2e9e5",
-                    background: gateway === "nowpayments" ? "#fef3e2" : "white",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  <i
-                    className="fab fa-bitcoin"
-                    style={{
-                      color: "#f7931a",
-                      fontSize: 18,
-                      marginBottom: 4,
-                    }}
-                  ></i>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 800,
-                      color: "#13251f",
-                    }}
-                  >
-                    NOWPayments
-                  </div>
-                  <div style={{ fontSize: 11, color: "#71807b" }}>
-                    Bitcoin (BTC)
-                  </div>
-                </button>
-              </div>
+            {/* ====== Payment method notice ====== */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "12px 14px",
+                borderRadius: 12,
+                background: "#fef3e2",
+                border: "1px solid #fde3c0",
+                marginBottom: 20,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#9a5b13",
+              }}
+            >
+              <i
+                className="fab fa-bitcoin"
+                style={{ fontSize: 18, color: "#f7931a" }}
+              ></i>
+              <span>موقتاً پرداخت با ارز دیجیتال انجام می‌شود</span>
             </div>
 
             {/* Buttons */}
@@ -541,14 +471,8 @@ export default function CheckoutClient({ plan, user, missingFields }) {
                   </>
                 ) : (
                   <>
-                    <i
-                      className={`fas ${
-                        gateway === "nowpayments" ? "fa-bitcoin" : "fa-lock"
-                      }`}
-                    ></i>
-                    {gateway === "nowpayments"
-                      ? `Pay $${formatPrice(displayAmount)} in BTC`
-                      : `Pay $${formatPrice(displayAmount)}`}
+                    <i className="fab fa-bitcoin"></i>
+                    Pay ${formatPrice(displayAmount)} in BTC
                   </>
                 )}
               </button>
