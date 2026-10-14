@@ -393,29 +393,6 @@ export default function CheckoutClient({ plan, user, missingFields }) {
               </div>
             )}
 
-            {/* ====== Payment method notice ====== */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "12px 14px",
-                borderRadius: 12,
-                background: "#fef3e2",
-                border: "1px solid #fde3c0",
-                marginBottom: 20,
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#9a5b13",
-              }}
-            >
-              <i
-                className="fab fa-bitcoin"
-                style={{ fontSize: 18, color: "#f7931a" }}
-              ></i>
-              <span>موقتاً پرداخت با ارز دیجیتال انجام می‌شود</span>
-            </div>
-
             {/* Buttons */}
             {hasMissingFields ? (
               <Link
