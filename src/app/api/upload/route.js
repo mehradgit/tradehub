@@ -125,7 +125,7 @@ export async function POST(request) {
     }
 
     const ext = "webp";
-    const filename = `${randomUUID}.${ext}`;
+    const filename = `${randomUUID()}.${ext}`;
 
     const uploadDir = path.join(process.cwd(), "public", "uploads", type);
     const filePath = path.join(uploadDir, filename);
