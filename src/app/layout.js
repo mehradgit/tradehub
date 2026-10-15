@@ -52,7 +52,7 @@ export const metadata = {
     template: "%s | FoodTradeLink",
   },
   description:
-    "FoodTradeLink is the largest global B2B food marketplace. Connect with verified suppliers, manufacturers, and buyers across 120+ countries. Trade food products without borders.",
+    "FoodTradeLink is a global B2B food marketplace. Connect with verified suppliers, manufacturers, and buyers across 120+ countries. Trade food without borders.",
 
   applicationName: "FoodTradeLink",
   authors: [{ name: "FoodTradeLink", url: "https://foodtradelink.com" }],
@@ -169,21 +169,14 @@ export default function RootLayout({ children }) {
   };
 
   // JSON-LD WebSite
+  // NOTE: no SearchAction — the sitelinks searchbox is deprecated
+  // (removed from schema.org Nov 2024) and the /search page no
+  // longer exists, so a SearchAction would be dead weight.
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "FoodTradeLink",
     url: "https://foodtradelink.com",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        // The /search page was removed; the header mega search goes to the
-        // filtered products page, so the sitelinks searchbox target is the same.
-        urlTemplate: "https://foodtradelink.com/products?search={search_term_string}",
-      },
-      "query-input": "required name=search_term_string",
-    },
   };
 
   return (

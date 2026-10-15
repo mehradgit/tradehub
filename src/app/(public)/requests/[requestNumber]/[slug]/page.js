@@ -8,6 +8,7 @@ import {
   canViewBuyerInfo,
   hasRevealedBuyerInfo,
 } from "@/lib/accessControlService";
+import SchemaBreadcrumbs from "@/components/SchemaBreadcrumbs";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -344,6 +345,12 @@ export default async function RequestPage({ params }) {
     },
   };
 
+  const breadcrumbItems = [
+    { name: "Home", url: `${BASE_URL}/` },
+    { name: "Buying Requests", url: `${BASE_URL}/requests` },
+    { name: request.title },
+  ];
+
   return (
     <>
       {/* ✅ Structured Data */}
@@ -351,6 +358,7 @@ export default async function RequestPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <SchemaBreadcrumbs items={breadcrumbItems} />
 
       <RequestDetail
         request={serializedRequest}

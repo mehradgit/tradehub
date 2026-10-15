@@ -6,6 +6,7 @@ import Pagination from "@/components/requests/Pagination";
 import FilterBar from "@/components/filters/FilterBar";
 import { getFilterContext } from "@/lib/filters/serverContext";
 import { describePath } from "@/lib/categoryTree";
+import SchemaBreadcrumbs from "@/components/SchemaBreadcrumbs";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -147,6 +148,21 @@ export default async function ProductsPage({ searchParams }) {
       isLast: idx === arr.length - 1,
     }));
 
+  const breadcrumbItems = [
+    { name: "Home", url: `${BASE_URL}/` },
+    ...crumbs.map((c) => ({
+      name: c.name,
+      url: `${BASE_URL}/categories/${c.path}`,
+    })),
+    {
+      name: search
+        ? `Search: "${search}"`
+        : category
+          ? `${category} Products`
+          : "All Products",
+    },
+  ];
+
   const [products, totalCount] = await Promise.all([
     prisma.product.findMany({
       where,
@@ -204,6 +220,7 @@ export default async function ProductsPage({ searchParams }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
+      <SchemaBreadcrumbs items={breadcrumbItems} />
 
       <div className="container py-4">
         {/* Breadcrumb */}

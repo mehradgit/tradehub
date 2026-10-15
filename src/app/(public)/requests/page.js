@@ -6,6 +6,7 @@ import Pagination from "@/components/requests/Pagination";
 import SharedFilterBar from "@/components/filters/FilterBar";
 import { getFilterContext } from "@/lib/filters/serverContext";
 import { describePath } from "@/lib/categoryTree";
+import SchemaBreadcrumbs from "@/components/SchemaBreadcrumbs";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -174,12 +175,24 @@ export default async function RequestsPage({ searchParams }) {
     })),
   };
 
+  const breadcrumbItems = [
+    { name: "Home", url: `${BASE_URL}/` },
+    {
+      name: search
+        ? `Buying requests for "${search}"`
+        : category
+          ? `${category} Buying Requests`
+          : "Buying Requests",
+    },
+  ];
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
+      <SchemaBreadcrumbs items={breadcrumbItems} />
 
       <div className="container py-4">
         <nav

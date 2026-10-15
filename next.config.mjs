@@ -33,7 +33,24 @@ const nextConfig = {
   },
 
   async headers() {
+    const isProd = process.env.NODE_ENV === "production";
+
     return [
+      // HSTS — only in production (browsers ignore it over plain HTTP,
+      // and sending it in dev would lock localhost into HTTPS).
+      ...(isProd
+        ? [
+            {
+              source: "/:path*",
+              headers: [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=31536000; includeSubDomains",
+                },
+              ],
+            },
+          ]
+        : []),
       {
         source: "/service-worker.js",
         headers: [

@@ -14,6 +14,7 @@ import {
   AVATAR_PLACEHOLDER,
   COVER_PLACEHOLDER,
 } from "@/lib/imageHelpers";
+import SchemaBreadcrumbs from "@/components/SchemaBreadcrumbs";
 
 const BASE_URL = "https://foodtradelink.com";
 
@@ -394,6 +395,12 @@ export default async function ProductPage({ params }) {
     }),
   };
 
+  const breadcrumbItems = [
+    { name: "Home", url: `${BASE_URL}/` },
+    { name: "Products", url: `${BASE_URL}/products` },
+    { name: productData.name },
+  ];
+
   return (
     <>
       {/* ✅ Structured Data */}
@@ -401,6 +408,7 @@ export default async function ProductPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <SchemaBreadcrumbs items={breadcrumbItems} />
 
       <div className="container py-4">
         <ProductDetail

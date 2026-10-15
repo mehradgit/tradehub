@@ -5,6 +5,7 @@ import ProfileCard from "@/components/profiles/ProfileCard";
 import SharedFilterBar from "@/components/filters/FilterBar";
 import { getFilterContext } from "@/lib/filters/serverContext";
 import { describePath } from "@/lib/categoryTree";
+import SchemaBreadcrumbs from "@/components/SchemaBreadcrumbs";
 import Pagination from "@/components/requests/Pagination";
 
 const BASE_URL = "https://foodtradelink.com";
@@ -207,12 +208,25 @@ export default async function ProfilesPage({ searchParams }) {
     })),
   };
 
+  const breadcrumbItems = [
+    { name: "Home", url: `${BASE_URL}/` },
+    {
+      name:
+        role === "supplier"
+          ? "Verified Suppliers"
+          : role === "buyer"
+            ? "Verified Buyers"
+            : "B2B Directory",
+    },
+  ];
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
+      <SchemaBreadcrumbs items={breadcrumbItems} />
 
       <div className="container py-4">
         <nav
