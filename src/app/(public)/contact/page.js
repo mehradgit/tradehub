@@ -61,9 +61,9 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <strong>Phone</strong>
-                  <a href="tel:+96824567890">+968 2456 7890</a>
+                  <a href="tel:+96824567890">+44 7460 607217</a>
                   <br />
-                  <a href="tel:+96891234567">+968 9123 4567</a>
+                  {/* <a href="tel:+96891234567">+968 9123 4567</a> */}
                 </div>
               </div>
 

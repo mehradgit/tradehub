@@ -119,7 +119,8 @@ export default function PrivacyPolicyPage() {
                     <strong>Payment Information:</strong> payment history,
                     invoices, and transaction references. We do not store full
                     card details — payments are processed by our payment
-                    gateway partner (<strong>YekPay</strong>).
+                    gateway partner
+                     {/* (<strong>YekPay</strong>). */}
                   </li>
                   <li>
                     <strong>Authentication Data:</strong> if you sign in with
@@ -150,7 +151,7 @@ export default function PrivacyPolicyPage() {
                 <h3>2.3 Information from Third Parties</h3>
                 <ul>
                   <li>Google (for OAuth sign-in)</li>
-                  <li>Payment gateway providers (YekPay)</li>
+                  <li>Payment gateway providers</li>
                   <li>Email delivery services (for transactional emails)</li>
                 </ul>
               </section>
