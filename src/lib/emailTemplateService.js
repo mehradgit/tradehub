@@ -95,7 +95,7 @@ export async function renderEmail(key, variables = {}) {
     .toLowerCase()
     .includes("<!doctype") || template.htmlBody.toLowerCase().includes("<html");
   const bodyContent = renderTemplate(template.htmlBody, variables);
-  const htmlBody = isFullHtml ? bodyContent : emailLayout(bodyContent);
+  const htmlBody = isFullHtml ? bodyContent : await emailLayout(bodyContent);
 
   const textBody = template.textBody
     ? renderTemplate(template.textBody, variables)

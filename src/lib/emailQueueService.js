@@ -117,8 +117,8 @@ export async function processEmailQueue(limit = 30, options = {}) {
   let failed = 0;
 
   for (const log of pending) {
-    const html = log.metadata?._html;
-    const text = log.metadata?._text;
+    const html = typeof log.metadata?._html === "string" ? log.metadata._html : "";
+    const text = typeof log.metadata?._text === "string" ? log.metadata._text : "";
 
     if (!html) {
       await markPermanentlyFailed(log.id, "Missing HTML content");

@@ -67,12 +67,19 @@ export async function GET(_request, { params }) {
       );
     }
 
+    if (typeof rendered.htmlBody !== "string") {
+      return NextResponse.json(
+        { message: "Rendered HTML was not a string (template issue)" },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       key: template.key,
       name: template.name,
-      subject: rendered.subject,
+      subject: String(rendered.subject || ""),
       htmlBody: rendered.htmlBody,
-      textBody: rendered.textBody,
+      textBody: String(rendered.textBody || ""),
     });
   } catch (error) {
     console.error("[Email Template Preview]", error);
