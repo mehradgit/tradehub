@@ -21,9 +21,18 @@ function renderTemplate(text, variables = {}) {
 }
 
 // ============================================================
-// Shared layout (similar to the current email.js)
+// Shared layout — wraps every email the site sends.
+// The layout itself is stored in the DB as the "_layout"
+// template so admins can edit it (logo, header, footer links)
+// from the admin panel (Email Templates). Falls back to a
+// basic inline layout if the template is missing/inactive.
 // ============================================================
-export function emailLayout(content) {
+export async function emailLayout(content) {
+  const layout = await getTemplate("_layout");
+  if (layout && layout.htmlBody) {
+    return layout.htmlBody.replace("{{content}}", content);
+  }
+  // Fallback — should not normally happen (seed creates _layout)
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e8e2da; border-radius: 16px;">
       <div style="text-align: center; margin-bottom: 20px;">
@@ -34,7 +43,7 @@ export function emailLayout(content) {
       ${content}
       <hr style="border: 1px solid #e8e2da; margin: 24px 0;" />
       <p style="color: #7a6e64; font-size: 11px; text-align: center; margin: 0;">
-        This is an automated message from FoodTradeLink. Please do not reply directly to this email.
+        This is an automated message from FoodTradeLink.
       </p>
     </div>
   `;

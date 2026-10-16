@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { queueEmail } from "@/lib/emailQueueService";
+import { emailLayout } from "@/lib/emailTemplateService";
 
 // ===== Guard: verify the admin =====
 async function checkAdmin() {
@@ -28,9 +29,9 @@ export async function POST(request) {
   if (!guard.ok) return guard.response;
 
   try {
-    const { toEmail, subject, htmlBody, textBody } = await request.json();
+    const { toEmail, subject, body } = await request.json();
 
-    if (!toEmail || !subject || !htmlBody) {
+    if (!toEmail || !subject || !body) {
       return NextResponse.json(
         { message: "Recipient, subject and body are required" },
         { status: 400 }
@@ -44,12 +45,20 @@ export async function POST(request) {
       );
     }
 
+    // Wrap the raw message in the shared, editable layout
+    const paragraphs = String(body)
+      .split(/\n+/)
+      .map((p) => `<p style="margin: 0 0 14px; line-height: 1.7;">${p.replace(/</g, "&lt;")}</p>`)
+      .join("");
+    const htmlBody = await emailLayout(
+      `<div style="font-size: 14.5px; color: #333;">${paragraphs}</div>`
+    );
+
     const log = await queueEmail({
       userId: null,
       toEmail,
       subject,
       htmlBody,
-      textBody: textBody || null,
       metadata: { source: "admin-compose" },
     });
 

@@ -80,6 +80,25 @@ export default function EmailTemplateEditor({ templates = [] }) {
   const [selectedId, setSelectedId] = useState(templates[0]?.id || null);
   const [form, setForm] = useState(() => toForm(templates[0]));
   const [busy, setBusy] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const openPreview = async () => {
+    if (!selectedId) return;
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreviewData(null);
+    try {
+      const res = await fetch(`/api/admin/email-templates/${selectedId}/preview`);
+      const data = await res.json();
+      setPreviewData(data);
+    } catch (e) {
+      setPreviewData({ error: e.message });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const selected = templates.find((t) => t.id === selectedId) || null;
 
@@ -146,6 +165,94 @@ export default function EmailTemplateEditor({ templates = [] }) {
       setBusy(null);
     }
   };
+
+  {previewOpen && (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15,23,42,0.6)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+      }}
+      onClick={() => setPreviewOpen(false)}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 14,
+          width: "min(720px, 94vw)",
+          maxHeight: "88vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "14px 18px",
+            borderBottom: "1px solid var(--line)",
+          }}
+        >
+          <div style={{ fontWeight: 800, fontSize: 13 }}>
+            Preview{previewData ? `: ${previewData.name || previewData.key}` : ""}
+          </div>
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(false)}
+            style={{
+              border: "none",
+              background: "transparent",
+              fontSize: 16,
+              cursor: "pointer",
+              color: "var(--muted)",
+            }}
+          >
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div style={{ padding: 14, overflow: "auto", background: "#f7f5f2" }}>
+          {previewLoading ? (
+            <div style={{ textAlign: "center", padding: 40, color: "var(--muted)" }}>
+              <i className="fa-solid fa-spinner fa-spin"></i> Rendering preview…
+            </div>
+          ) : previewData?.error ? (
+            <div style={{ padding: 30, color: "#b91c1c" }}>{previewData.error}</div>
+          ) : previewData ? (
+            <>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--muted)",
+                  marginBottom: 8,
+                }}
+              >
+                Subject: <strong>{previewData.subject}</strong>
+              </div>
+              <iframe
+                title="Email preview"
+                srcDoc={previewData.htmlBody}
+                style={{
+                  width: "100%",
+                  height: "52vh",
+                  border: "1px solid var(--line)",
+                  borderRadius: 10,
+                  background: "#fff",
+                }}
+              />
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )}
 
   if (templates.length === 0) {
     return (
@@ -257,6 +364,21 @@ export default function EmailTemplateEditor({ templates = [] }) {
           </div>
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              style={{ ...btnStyle, background: "#eef4ff", borderColor: "#c7d7f5" }}
+              onClick={openPreview}
+              disabled={busy !== null}
+              title="Preview how the email looks (with logo, layout and links)"
+            >
+              <i
+                className={`fa-solid ${
+                  previewLoading ? "fa-spinner fa-spin" : "fa-eye"
+                }`}
+              ></i>
+              Preview
+            </button>
+
             <button
               type="button"
               style={btnStyle}

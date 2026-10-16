@@ -5,25 +5,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
-// Wrap the body in the shared site layout (FoodTradeLink branding)
-// so the email always comes from the site's identity.
-function emailLayout(content) {
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e8e2da; border-radius: 16px;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div style="display: inline-block; background: #13795b; padding: 12px 24px; border-radius: 12px; color: white; font-size: 22px; font-weight: bold;">
-          FoodTradeLink
-        </div>
-      </div>
-      ${content}
-      <hr style="border: 1px solid #e8e2da; margin: 24px 0;" />
-      <p style="color: #7a6e64; font-size: 11px; text-align: center; margin: 0;">
-        This message was sent from FoodTradeLink.
-      </p>
-    </div>
-  `;
-}
-
 const inputStyle = {
   width: "100%",
   padding: "10px 14px",
@@ -61,18 +42,11 @@ export default function EmailComposeForm() {
     }
     setBusy(true);
     try {
-      const htmlBody = emailLayout(
-        `<div style="font-size: 14px; line-height: 1.6; color: #333;">${body
-          .trim()
-          .split(/\n+/)
-          .map((p) => `<p style="margin: 0 0 12px;">${p.replace(/</g, "&lt;")}</p>`)
-          .join("")}</div>`
-      );
-
+      // Raw text only — the server wraps it in the shared layout
       const res = await fetch("/api/admin/emails/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toEmail, subject, htmlBody }),
+        body: JSON.stringify({ toEmail, subject, body: body.trim() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Send failed");
@@ -126,7 +100,7 @@ export default function EmailComposeForm() {
         />
         <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
           The message is sent from the site's email address, wrapped in the
-          FoodTradeLink layout.
+          global layout (header, logo and footer links).
         </p>
       </div>
 

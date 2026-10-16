@@ -413,6 +413,34 @@ const TEMPLATES = [
       </p>
     `,
   },
+  // ---------- Global layout (wraps every email) ----------
+  {
+    key: "_layout",
+    name: "Global Email Layout",
+    description: "Shared layout that wraps every email. Edit to change the logo, header, footer links.",
+    category: "system",
+    subject: "",
+    variables: ["content", "year"],
+    htmlBody: `<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #f7f5f2; border-radius: 16px; overflow: hidden; border: 1px solid #e8e2da;">
+  <div style="background: linear-gradient(135deg, #13795b, #0d6b47); padding: 26px 30px; text-align: center;">
+    <img src="https://foodtradelink.com/images/logo-foodtradelink-white.svg" alt="FoodTradeLink" style="height: 42px; width: auto;" />
+    <div style="color: rgba(255,255,255,0.85); font-size: 11px; margin-top: 8px; letter-spacing: 1.2px; text-transform: uppercase;">Global B2B Food Marketplace</div>
+  </div>
+  <div style="padding: 30px; background: #ffffff; color: #333;">{{content}}</div>
+  <div style="background: #faf8f5; padding: 22px 30px; border-top: 1px solid #e8e2da;">
+    <div style="text-align: center; margin-bottom: 14px;">
+      <a href="https://foodtradelink.com/products" style="color:#13795b; text-decoration:none; font-size:12px; margin:0 7px; font-weight:600;">Browse Products</a>
+      <a href="https://foodtradelink.com/requests/new" style="color:#13795b; text-decoration:none; font-size:12px; margin:0 7px; font-weight:600;">Post a Request</a>
+      <a href="https://foodtradelink.com/about" style="color:#13795b; text-decoration:none; font-size:12px; margin:0 7px; font-weight:600;">About Us</a>
+      <a href="https://foodtradelink.com/contact" style="color:#13795b; text-decoration:none; font-size:12px; margin:0 7px; font-weight:600;">Contact</a>
+    </div>
+    <p style="color: #7a6e64; font-size: 10.5px; text-align: center; margin: 0; line-height: 1.7;">
+      You received this email because you have an account on FoodTradeLink.<br/>&copy; {{year}} FoodTradeLink &middot; Global B2B Food Marketplace
+    </p>
+  </div>
+</div>`,
+  },
+];
 ];
 
 async function main() {
