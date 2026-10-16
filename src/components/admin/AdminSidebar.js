@@ -68,6 +68,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
       icon: "fa-clipboard-check",
       href: "/admin/approvals",
     },
+    { label: "Compose Email", icon: "fa-pen", href: "/admin/emails/compose" },
     { label: "Email Queue", icon: "fa-envelope-open-text", href: "/admin/emails" },
     {
       label: "Email Templates",
